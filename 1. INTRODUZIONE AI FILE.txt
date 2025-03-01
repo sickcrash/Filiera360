@@ -1,0 +1,39 @@
+In questo documento verranno spiegati i file e le cartelle principali di cui l'app è composta. Guardare il diagramma architetturale per una maggiore comprensione. Si può immaginare l'app come un insieme di 4 microservizi principali che comunicano tra loro, regolati dai 4 file che spiegheremo di seguito:
+
+[ product-tracking ] -> è la cartella che contiene il frontend React. Ogni pagina di questo frontend inoltrerà richieste al server Flask.
+Si avvia con: npm start		// DEVI SPOSTARTI NELLA CARTELLA product-tracking
+
+[ app.py ] -> è il file del server Flask che riceve tutte le richieste del frontend e le inoltra al server Node (middleware), previa autenticazione/autorizzazione.
+Si avvia con: flask run		// DEVI SPOSTARTI NELLA CARTELLA CONTENENTE IL FILE
+Tiene traccia degli utenti e dei modelli 3D nei file users.json e models.json
+Contiene un endpoint /initLedger che se chiamato al primo avvio della blockchain, registra i prodotti esempio contenuti in sampleData.json.
+Si noti che il progetto originale prevede un'interfaccia html per questo server, che è stata mantenuta, e che consente di interagire con il modello AI.
+
+[ appServer.js ] -> questo è un server Node presente in Linux (WSL) che permette la comunicazione con il chaincode.
+Si avvia con: avvio dei containers Docker (anche da Docker Desktop),
+poi nella WSL: cd go/src/github.com/filiera360/fabric-samples/myapp && npm start
+Una volta avviato, questo server si collega automaticamente alla blockchain e carica i prodotti prova AGRI_X e FIN_X.
+Espone al server Flask tutte le operazioni di lettura e scrittura dei prodotti su blockchain e dei relativi sensor/movement/certification data.
+
+[ supplychain.js ] è il chaincode stesso presente nel canale, comprende diverse funzioni di creazione, update, letture e cancellazione del prodotto.
+Si avvia automaticamente quando avvii i container Docker.
+Queste funzioni si possono richiamare direttamente tramite comando peer.
+
+
+
+NOTA: per modificare effettivamente appServer.js e supplychain.js, bisogna modificarli nella cartella del proprio computer e poi sovrascrivere quelli presenti su WSL:
+
+{ riscrittura server e chaincode, cambia i path opportunamente }
+rm -v go/src/github.com/Filiera360/fabric-samples/myapp/src/appServer.js && \
+cp -v /mnt/c/Users/***TUO USERNAME WINDOWS***/Desktop/Filiera360/linux_files/myapp/src/appServer.js go/src/github.com/Filiera360/fabric-samples/myapp/src/appServer.js && \
+rm -v go/src/github.com/Filiera360/fabric-samples/mychaincode/lib/supplyChain.js && \
+cp -v /mnt/c/Users/***TUO USERNAME WINDOWS***/Desktop/alessio-lore/linux_files/mychaincode/lib/supplyChain.js go/src/github.com/Filiera360/fabric-samples/mychaincode/lib/supplyChain.js
+
+{ semplice riavvio }
+cd go/src/github.com/Filiera360/fabric-samples/test-network && ./network.sh deployCC -ccn basic -ccp ../mychaincode/ -ccl javascript && cd ../myapp && npm start
+
+{ reset dei dati nella rete }
+cd go/src/github.com/Filiera360/fabric-samples/test-network &&
+./network.sh down &&
+./network.sh up createChannel -c mychannel -ca &&
+./network.sh deployCC -ccn basic -ccp ../mychaincode/ -ccl javascript
