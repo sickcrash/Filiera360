@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { Card } from "react-bootstrap";
+import { Card, Button } from "react-bootstrap";
 import { Navigate, useNavigate } from "react-router-dom";
 
 const Account = ({ setIsLoggedIn }) => {
-  const navigate = useNavigate()
-  const [manufacturer, setManufacturer] = useState('')
-  const [email, setEmail] = useState('')
+  const navigate = useNavigate();
+  const [manufacturer, setManufacturer] = useState('');
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
-    setManufacturer(localStorage.getItem("manufacturer"))
-    setEmail(localStorage.getItem("email"))
-  }, [])
+    setManufacturer(localStorage.getItem("manufacturer"));
+    setEmail(localStorage.getItem("email"));
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
     navigate("/login");
+  };
+
+  const handleForgotPassword = () => {
+    navigate("/forgot-password");
   };
 
   return (
@@ -24,14 +28,24 @@ const Account = ({ setIsLoggedIn }) => {
         <div className="col-md-6">
           <div className="card shadow">
             <div className="card-body">
-              <Card.Header style={{textAlign:"center"}}>
+              <Card.Header style={{ textAlign: "center" }}>
                 <h4>Account 👤</h4>
               </Card.Header>
-              <br/>
+              <br />
               <div className="form-group">
-                <h4 style={{ textAlign: "center", fontWeight: "lighter" }}>Manufacturer: <b>{manufacturer}</b></h4>
-                <h4 style={{ textAlign: "center", fontWeight: "lighter" }}>email: <b>{email}</b></h4>
-                <button onClick={handleLogout} className="btn btn-primary mt-3 w-100">Logout</button>
+                <h4 style={{ textAlign: "center", fontWeight: "lighter" }}>
+                  Manufacturer: <b>{manufacturer}</b>
+                </h4>
+                <h4 style={{ textAlign: "center", fontWeight: "lighter" }}>
+                  email: <b>{email}</b>
+                </h4>
+                <hr/>
+                <Button onClick={handleForgotPassword} className="btn btn-secondary w-100" >
+                  Reset password
+                </Button>
+                <Button onClick={handleLogout} className="btn btn-primary my-3 w-100">
+                  Logout
+                </Button>
               </div>
             </div>
           </div>

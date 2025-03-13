@@ -6,6 +6,8 @@ import Account from "./Account";
 import AddProduct from "./AddProduct";
 import ScanProduct from "./ScanProduct";
 import Navbar from "./components/Navbar";
+import ForgotPassword from "./components/ForgotPassword";  
+import ResetPassword from "./components/ResetPassword";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -24,6 +26,8 @@ function App() {
       )}
 
       <Routes>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/login" element={isLoggedIn ? <Navigate to="/add-product" /> : <Login setIsLoggedIn={setIsLoggedIn} />} />
         <Route path="/signup" element={isLoggedIn ? <Navigate to="/add-product" /> : <SignUp />} />
         <Route path="/add-product" element={isLoggedIn ? <AddProduct /> : <Navigate to="/login" />} />

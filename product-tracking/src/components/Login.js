@@ -90,6 +90,11 @@ const Login = ({ setIsLoggedIn }) => {
                 Don’t have an account?{" "}
                 <span onClick={() => navigate("/signup")} style={{ color: "blue", cursor: "pointer" }}>Sign Up</span>
               </p>
+              <p className="mt-3">
+                <span onClick={() => navigate("/forgot-password")} style={{ color: "darkgrey", cursor: "pointer", textDecoration:"underline" }}>
+                  Forgot your password?
+                </span>
+              </p>
             </div>
           </div>
         </div>

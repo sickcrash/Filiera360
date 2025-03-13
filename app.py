@@ -1,20 +1,34 @@
-from langchain_community.llms import Ollama
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from flask import Flask, render_template, request, jsonify
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-import requests
-from flask_cors import CORS
-import prompts_variables_storage
-import bcrypt
 import json
 import os
 import secrets
+from datetime import datetime, timedelta
+
+import bcrypt
+import requests
+from flask import Flask, jsonify, render_template, request
+from flask_cors import CORS
+from flask_jwt_extended import (JWTManager, create_access_token, decode_token,
+                                get_jwt_identity, jwt_required)
+from flask_jwt_extended.exceptions import JWTExtendedException
+from flask_mail import Mail, Message
+from langchain_community.llms import Ollama
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+import prompts_variables_storage
+
+# FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3001')
 
 app = Flask(__name__, instance_relative_config=True)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'filiera360@gmail.com'  
+app.config['MAIL_PASSWORD'] = 'bspi hkbw jcwh yckx '
+mail = Mail(app)
 
 # Verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
 def verify_manufacturer(product_id, real_manufacturer):
@@ -40,8 +54,68 @@ def index():
 
 # configurazione JWT: genera una chiave sicura
 # se la variabile di ambiente non è impostata
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', secrets.token_hex(32))  
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', secrets.token_hex(32)) 
 jwt = JWTManager(app)
+
+
+def generate_reset_token(email):
+    expiration = timedelta(hours=1)  
+
+    token = create_access_token(email, expires_delta=expiration)
+    return token
+
+
+def verify_reset_token(token):
+    try:
+        decoded_token = decode_token(token)
+        return decoded_token['sub']
+    except JWTExtendedException as e:
+        print(f"Errore nel token: {e}")
+        return None
+
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    email = request.json.get('email')
+    
+    if email not in users:
+        return jsonify({"message": "Email not found"}), 404
+
+    token = generate_reset_token(email)
+
+    reset_url = f"http://localhost:3000/reset-password/{token}"
+    msg = Message('Password Reset Request',
+                  sender='noreply@example.com',
+                  recipients=[email])
+    msg.body = f"To reset your password, visit the following link: {reset_url}"
+    mail.send(msg)
+    
+    return jsonify({"message": "Password reset email sent"}), 200
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    email = verify_reset_token(token)
+
+    if email is None:
+        return jsonify({"message": "Invalid or expired token"}), 400
+
+
+    if request.method == 'POST':
+        if request.content_type != 'application/json':
+            return jsonify({"message": "Content-Type must be application/json"}), 415  
+
+        new_password = request.json.get('password')
+
+        if not new_password:
+            return jsonify({"message": "Password is required"}), 400
+
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        users[email]["password"] = hashed_password
+        save_users(users)
+
+        return jsonify({"message": "Password updated successfully"}), 200
+
+    return jsonify({"message": "Token is valid, proceed with password reset"}), 200
 
 # Carica gli utenti dal file JSON (database utenti)
 def load_users():
@@ -90,7 +164,7 @@ def init_ledger():
     errors = []
     for product in products:
         try:
-            response = requests.post('http://localhost:3000/uploadProduct', json=product)
+            response = requests.post(f'http://localhost:3000/uploadProduct', json=product)
             if response.status_code != 200:
                 errors.append({"product_id": product.get("ID"), "error": response.json().get("message", "Unknown error")})
         except Exception as e:
@@ -206,7 +280,7 @@ def upload_product():
 
     try:
         # Send the cleaned product data to the external service
-        response = requests.post('http://localhost:3000/uploadProduct', json=product_data)
+        response = requests.post(f'http://localhost:3000/uploadProduct', json=product_data)
 
         if response.status_code == 200:
             return jsonify({'message': response.json().get('message', 'Product uploaded successfully!')})
@@ -300,7 +374,7 @@ def update_product():
     # in caso di corrispondenza manufacturer
     print("Updating Product:", product_data)
     try:
-        response = requests.post('http://localhost:3000/api/product/updateProduct', json=product_data)
+        response = requests.post(f'http://localhost:3000/api/product/updateProduct', json=product_data)
         if response.status_code == 200:
             return jsonify({'message': 'Product updated successfully!'})
         else:
@@ -330,7 +404,7 @@ def add_sensor_data():
     # in caso di corrispondenza manufacturer
     print("Uploading sensor data:", sensor_data)
     try:
-        response = requests.post('http://localhost:3000/api/product/sensor', json=sensor_data)
+        response = requests.post(f'http://localhost:3000/api/product/sensor', json=sensor_data)
         if response.status_code == 200:
             return jsonify({'message': 'Product uploaded successfully!'})
         else:
@@ -360,7 +434,7 @@ def add_movement_data():
     # in caso di corrispondenza manufacturer
     print("Add movement data:", movement_data)
     try:
-        response = requests.post('http://localhost:3000/api/product/movement', json=movement_data)
+        response = requests.post(f'http://localhost:3000/api/product/movement', json=movement_data)
         if response.status_code == 200:
             return jsonify({'message': 'Product uploaded successfully!'})
         else:
@@ -390,7 +464,7 @@ def add_certification_data():
     # in caso di corrispondenza manufacturer
     print("Add certification data:", certification_data)
     try:
-        response = requests.post('http://localhost:3000/api/product/certification', json=certification_data)
+        response = requests.post(f'http://localhost:3000/api/product/certification', json=certification_data)
         if response.status_code == 200:
             return jsonify({'message': 'Product uploaded successfully!'})
         else:
@@ -405,7 +479,7 @@ def verify_product_compliance():
     compliance_data  = request.json
     print("Check if product is complaint:", compliance_data)
     try:
-        response = requests.post('http://localhost:3000/api/product/verifyProductCompliance', json=compliance_data)
+        response = requests.post(f'http://localhost:3000/api/product/verifyProductCompliance', json=compliance_data)
         print(response.json())
         if response.status_code == 200:
             return jsonify({'message': 'Product is compliant!'})
