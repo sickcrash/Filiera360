@@ -10,12 +10,90 @@ import bcrypt
 import json
 import os
 import secrets
+import pyotp
+import jwt
+from werkzeug.security import check_password_hash
+from datetime import datetime, timedelta
+import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from flask_mail import Mail
 
 app = Flask(__name__, instance_relative_config=True)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+mail = Mail(app)
 
 
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'abcdefgh123456654321123@gmail.com'  # Modifica con il tuo indirizzo email
+app.config['MAIL_PASSWORD'] = 'cracovia'  # Modifica con la tua password
+app.config['MAIL_DEFAULT_SENDER'] = 'abcdefgh123456654321123@gmail.com'
+
+app.config['SECRET_KEY'] = 'mysecretkey'  # Cambialo con una chiave segreta
+
+# Funzione per generare l'OTP
+def generate_otp():
+    return random.randint(100000, 999999)  # Genera un OTP a 6 cifre
+
+# Funzione per creare un JWT token
+def create_jwt_token(email):
+    expiration = datetime.utcnow() + timedelta(hours=1)
+    token = jwt.encode({'email': email, 'exp': expiration}, app.config['SECRET_KEY'], algorithm='HS256')
+    return token
+
+# Funzione per generare l'OTP
+def generate_otp():
+    return random.randint(100000, 999999)  # Genera un OTP a 6 cifre
+
+# Funzione per inviare l'OTP tramite email
+def send_otp_email(email, otp):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = app.config['MAIL_USERNAME']
+        msg['To'] = email
+        msg['Subject'] = "Your OTP Code"
+        body = f"Your OTP code is {otp}. It is valid for 5 minutes."
+        msg.attach(MIMEText(body, 'plain'))
+        
+        server = smtplib.SMTP(app.config['MAIL_SERVER'], app.config['MAIL_PORT'])
+        server.starttls()
+        server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
+        text = msg.as_string()
+        server.sendmail(app.config['MAIL_USERNAME'], email, text)
+        server.quit()
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+    return True
+
+
+@app.route('/send-otp', methods=['POST'])
+def send_otp():
+    email = request.json.get('email')
+    
+    # Verifica che l'email sia registrata nel sistema
+    if email not in users:
+        return jsonify({"message": "User not found."}), 404
+    
+    otp = generate_otp()
+    otp_store[email] = {
+        "otp": otp,
+        "expiration": datetime.now() + otp_lifetime
+    }
+
+    # Invia l'OTP via email
+    if send_otp_email(email, otp):
+        return jsonify({"message": "OTP sent to your email."})
+    else:
+        return jsonify({"message": "Failed to send OTP."}), 500
+
+# Funzione per verificare l'OTP (dopo che l'utente lo invia)
+otp_store = {}  # Dovresti salvare OTP e la scadenza in un DB o in un sistema di storage persistente
+otp_lifetime = timedelta(minutes=5)  # OTP valido per 5 minuti
 # Verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
 def verify_manufacturer(product_id, real_manufacturer):
     try:
@@ -136,22 +214,72 @@ def signup():
     return jsonify({"message": "User registered successfully"}), 201
 
 # nuova aggiunta
+# @app.route('/login', methods=['POST'])
+# def login():
+#     data = request.get_json()
+#     email = data.get('email')
+#     password = data.get('password')
+    
+#     # Verifica se l'email esiste, e in tal caso se la password
+#     # corrispondente è giusta:
+#     if email not in users or not bcrypt.checkpw(password.encode('utf-8'), users[email]["password"].encode('utf-8')):
+#         return jsonify({"message": "Wrong email or password"}), 401
+    
+#     # Se l'email esiste accedo al manufacturer
+#     manufacturer = users[email]["manufacturer"]
+    
+#     access_token = create_access_token(identity=manufacturer, expires_delta=False)
+#     return jsonify(access_token=access_token, manufacturer=manufacturer, email=email), 200
+
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    
-    # Verifica se l'email esiste, e in tal caso se la password
-    # corrispondente è giusta:
-    if email not in users or not bcrypt.checkpw(password.encode('utf-8'), users[email]["password"].encode('utf-8')):
-        return jsonify({"message": "Wrong email or password"}), 401
-    
-    # Se l'email esiste accedo al manufacturer
-    manufacturer = users[email]["manufacturer"]
-    
-    access_token = create_access_token(identity=manufacturer, expires_delta=False)
-    return jsonify(access_token=access_token, manufacturer=manufacturer, email=email), 200
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    # Carica gli utenti
+    users = load_users()
+
+    user = users.get(email)
+
+    # Verifica se l'utente esiste e la password è corretta
+    if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+        return jsonify({"message": "Invalid email or password"}), 401
+
+    # Se la 2FA è abilitata, invia il codice OTP
+    if user.get('two_factor_enabled', False):
+        secret = user.get('2fa_secret', None)
+        if not secret:
+            secret = pyotp.random_base32()  # Genera un segreto se non esiste
+            user['2fa_secret'] = secret
+            save_users(users)  # Salva l'utente con il nuovo segreto
+
+        otp = pyotp.TOTP(secret).now()  # Genera il codice OTP
+        # In un'app reale, invieresti l'OTP via email o SMS, ma per ora lo restituiamo nel corpo della risposta
+        return jsonify({"message": "2FA required", "otp": otp})  # Solo per scopi di sviluppo
+
+    # Se la 2FA non è necessaria, crea un token JWT
+    token = create_jwt_token(email, user['manufacturer'])
+    return jsonify({"message": "Login successful", "access_token": token, "manufacturer": user['manufacturer'], "email": email})
+
+# Endpoint per la verifica dell'OTP
+@app.route('/verify-otp', methods=['POST'])
+def verify_otp():
+    email = request.json.get('email')
+    otp = request.json.get('otp')
+
+    # Verifica se l'OTP esiste
+    if email not in otp_store:
+        return jsonify({"message": "OTP has expired or is invalid."}), 400
+
+    otp_data = otp_store[email]
+
+    # Verifica se l'OTP è valido e non è scaduto
+    if otp_data['otp'] == int(otp) and otp_data['expiration'] > datetime.now():
+        return jsonify({"message": "OTP validated successfully.", "token": "JWT_Token"})
+    else:
+        return jsonify({"message": "Invalid OTP."}), 400
+
 
 # già usata su frontend
 @app.route('/getProduct', methods=['GET'])
