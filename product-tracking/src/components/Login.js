@@ -19,13 +19,18 @@ const Login = ({ setIsLoggedIn }) => {
         password,
       });
       const data = response.data;
-      console.log("Response from login:", response.data); // ✅ LOG della risposta del server
+      console.log("Response from login:", response.data); // LOG della risposta del server
       // Salviamo i dati nel localStorage
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("manufacturer", data.manufacturer);
       localStorage.setItem("email", data.email);
 
       // Se il login è riuscito, chiediamo l'OTP
+
+      const otpResponse = await axios.post("http://127.0.0.1:5000/send-otp", {
+        email,
+      });
+
       setIsOtpSent(true); // Mostriamo il campo OTP
       setMessage("Login successful! Please enter the OTP sent to your email.");
     } catch (error) {

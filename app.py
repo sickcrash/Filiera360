@@ -52,26 +52,14 @@ def create_jwt_token(email):
     token = jwt.encode({'email': email, 'exp': expiration}, app.config['SECRET_KEY'], algorithm='HS256')
     return token
 
-# Funzione per generare l'OTP
-def generate_otp():
-    return random.randint(100000, 999999)  # Genera un OTP a 6 cifre
-
 # Funzione per inviare l'OTP tramite email
 def send_otp_email(email, otp):
     try:
-        msg = MIMEMultipart()
-        msg['From'] = app.config['MAIL_USERNAME']
-        msg['To'] = email
-        msg['Subject'] = "Your OTP Code"
-        body = f"Your OTP code is {otp}. It is valid for 5 minutes."
-        msg.attach(MIMEText(body, 'plain'))
-        
-        server = smtplib.SMTP(app.config['MAIL_SERVER'], app.config['MAIL_PORT'])
-        server.starttls()
-        server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
-        text = msg.as_string()
-        server.sendmail(app.config['MAIL_USERNAME'], email, text)
-        server.quit()
+        msg = Message('OTP Code',
+                  sender='noreply@example.com',
+                  recipients=[email])
+        msg.body = f"To reset your password, visit the following link: {otp}"
+        mail.send(msg)
     except Exception as e:
         print(f"Error sending email: {e}")
         return False
@@ -87,6 +75,7 @@ def send_otp():
         return jsonify({"message": "User not found."}), 404
     
     otp = generate_otp()
+    # TODO: Salvare l'OTP 
     otp_store[email] = {
         "otp": otp,
         "expiration": datetime.now() + otp_lifetime
@@ -99,7 +88,7 @@ def send_otp():
         return jsonify({"message": "Failed to send OTP."}), 500
 
 # Funzione per verificare l'OTP (dopo che l'utente lo invia)
-otp_store = {}  # Dovresti salvare OTP e la scadenza in un DB o in un sistema di storage persistente
+otp_store = {}  # Devi!!!!!! salvare OTP e la scadenza in un DB o in un sistema di storage persistente
 otp_lifetime = timedelta(minutes=5)  # OTP valido per 5 minuti
 # Verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
 def verify_manufacturer(product_id, real_manufacturer):
@@ -326,7 +315,7 @@ def login():
         return jsonify({"message": "2FA required", "otp": otp})  # Solo per scopi di sviluppo
 
     # Se la 2FA non è necessaria, crea un token JWT
-    token = create_jwt_token(email, user['manufacturer'])
+    token = create_access_token(email)
     return jsonify({"message": "Login successful", "access_token": token, "manufacturer": user['manufacturer'], "email": email})
 
 # Endpoint per la verifica dell'OTP
@@ -339,13 +328,21 @@ def verify_otp():
     if email not in otp_store:
         return jsonify({"message": "OTP has expired or is invalid."}), 400
 
+    # TODO: Leggere l'OTP 
     otp_data = otp_store[email]
 
+    try:
+        otp_present = email in otp_store and 'otp' in otp_store[email]
+        otp_expired = datetime.strptime(otp_data['expiration'], "%Y-%m-%D") < datetime.now()
+        otp_valid = otp_data['otp'] == int(otp)
+    
     # Verifica se l'OTP è valido e non è scaduto
-    if otp_data['otp'] == int(otp) and otp_data['expiration'] > datetime.now():
-        return jsonify({"message": "OTP validated successfully.", "token": "JWT_Token"})
-    else:
-        return jsonify({"message": "Invalid OTP."}), 400
+        if otp_present and not otp_expired and otp_valid:
+            return jsonify({"message": "OTP validated successfully.", "token": "JWT_Token"})
+        else:
+            return jsonify({"message": "Invalid OTP."}), 400
+    except Exception as e:
+        return jsonify({"message": "Errore nella verifica dell'OTP."}), 500
 
 
 # già usata su frontend
