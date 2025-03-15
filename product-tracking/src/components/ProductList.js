@@ -259,6 +259,67 @@ const ProductList = ({ onProductSelect }) => {
               {message && <p className="mt-3 text-muted">{message}</p>}
             </div>
           </div>
+
+          <div className="card shadow">
+            <div className="card-body">
+              <Card.Header>
+                <h4>Scan Batch 🔎</h4>
+                <p style={{ color: "grey" }}>
+                  🔗 Insert the item code manually or either scan/upload a QR code
+                </p>
+              </Card.Header>
+              <br />
+              <div className="form-group d-flex align-items-center">
+                <input
+                  type="text"
+                  onChange={(e) => setItemCode(e.target.value)}
+                  className="form-control me-2"
+                  id="itemCode"
+                  placeholder="Enter product Item Code"
+                />
+                <input
+                  type="file"
+                  id="uploader"
+                  onChange={handleImageUpload}
+                  onError={handleError}
+                  onClick={() => setShowCamera(false)}
+                  style={{ display: 'none' }}
+                />
+                <label
+                  htmlFor="uploader"
+                  className="btn btn-secondary me-1"
+                  style={{ backgroundColor: "silver", border: 0 }}
+                >
+                  <ion-icon name="cloud-upload-outline"></ion-icon><i className="ion-ios-upload" />
+                </label>
+                <div
+                  className="btn btn-secondary"
+                  title="Scan QR Code"
+                  style={{ backgroundColor: "silver", border: 0 }}
+                  onClick={() => setShowCamera(!showCamera)}
+                >
+                  <ion-icon name="camera-outline"></ion-icon>
+                </div>
+              </div>
+              {showCamera === true ? (
+                <QrScanner
+                  style={{ width: "100%", paddingTop: "2vw" }}
+                  delay={300}
+                  onError={handleError}
+                  onScan={handleQrScan}
+                />
+              ) : null}
+              <input
+                type="submit"
+                className="btn btn-primary mt-3 w-100"
+                id="scanButton"
+                value="Scan Product"
+              />
+              {message && <p className="mt-3 text-muted">{message}</p>}
+            </div>
+          </div>
+
+
         </div>
       </form>
 

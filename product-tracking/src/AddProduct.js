@@ -3,18 +3,16 @@ import axios from 'axios';
 import { Card, Form, Button } from 'react-bootstrap';
 import { QRCodeCanvas } from 'qrcode.react';
 import Viewer3D from './components/Viewer3D';
-import Papa from 'papaparse';  // Assicurati di avere papaparse installato
-
+import Papa from 'papaparse'; // Assicurati di avere papaparse installato
+ 
 const AddProduct = () => {
   const [manufacturer, setManufacturer] = useState('');
   const [id, setId] = useState('');
   const [name, setName] = useState('');
-  const [creationDate, setCreationDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [ingredients, setIngredients] = useState('');
   const [allergens, setAllergens] = useState('');
   const [nutritionalInformation, setNutritionalInformation] = useState('');
-  const [moreInfo, setMoreInfo] = useState('');
   const [harvestDate, setHarvestDate] = useState('');
   const [pesticideUse, setPesticideUse] = useState('');
   const [fertilizerUse, setFertilizerUse] = useState('');
@@ -25,10 +23,11 @@ const AddProduct = () => {
   const [glbFile, setGlbFile] = useState('');
   const [productType, setProductType] = useState('');
   const [csvFile, setCsvFile] = useState(null);
-
   const inputWidth = "30%";
   const placeholderText = "+ add new";
-
+  const [customFields, setCustomFields] = useState([]);
+  
+ 
   useEffect(() => {
     setManufacturer(localStorage.getItem('manufacturer'));
   }, []);
@@ -36,12 +35,10 @@ const AddProduct = () => {
   const resetForm = () => {
     setId('');
     setName('');
-    setCreationDate('');
     setExpiryDate('');
     setIngredients('');
     setAllergens('');
     setNutritionalInformation('');
-    setMoreInfo('');
     setHarvestDate('');
     setPesticideUse('');
     setFertilizerUse('');
@@ -51,85 +48,99 @@ const AddProduct = () => {
     setGlbFile('');
   };
 
+// Metodo per aggiungere un nuovo campo personalizzato con chiave-valore 
+  const addCustomField = () => {
+    setCustomFields([...customFields, { key: '', value: '' }]);
+  };
+ // Metodo per aggiornare il nuovo campo personalizzato
+  const updateCustomField = (index, key, value) => {
+    const newFields = [...customFields];
+    newFields[index] = { key, value };
+    setCustomFields(newFields);
+  };
+ 
   const handleUploadProduct = async (e) => {
     e.preventDefault();
-
-    // Crea un oggetto con tutti i dati del prodotto
+    // Creo funzione if per impostare la data di scadenza superiore a quella di raccolta
+    if (new Date(expiryDate) <= new Date(harvestDate)) {
+      setMessage('Expiry Date must be at least one day after Harvest Date');
+      return;
+    }
+  // Crea un oggetto con tutti i dati del prodotto
     const productData = {
       ID: id,
       Name: name,
       Manufacturer: manufacturer,
-      CreationDate: creationDate,
+      HarvestDate: harvestDate,
       ExpiryDate: expiryDate,
-      Moreinfo: moreInfo,
+      Nutritional_information: nutritionalInformation,
+      CountryOfOrigin: countryOfOrigin,
       Ingredients: ingredients,
       Allergens: allergens,
-      Nutritional_information: nutritionalInformation,
-      HarvestDate: harvestDate,
       PesticideUse: pesticideUse,
       FertilizerUse: fertilizerUse,
-      CountryOfOrigin: countryOfOrigin,
-      Movements: [],
-      SensorData: [],
-      Certifications: []
+      CustomObject: customFields.reduce((obj, field) => {
+        if (field.key.trim()) obj[field.key] = field.value;
+        return obj;
+      }, {})
+      // Movements: [],
+      // SensorData: [],
+      // Certifications: []
+    
     };
-
-    // Funzione per recuperare il Blob da un URL e convertirlo in base64
-    const convertFileToBase64 = async (glbFile) => {
-      return fetch(glbFile)
-        .then((response) => response.blob())  // Recupera il Blob dall'URL
-        .then((blob) => {
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              resolve(reader.result)
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-        })
-        .catch((error) => {
-          console.error("Error fetching blob:", error);
-          throw new Error("Failed to convert blob URL to base64.");
-        });
-    };
-
-    // Funzione per fare POST del modello 3D
-    const uploadModel = async () => {
-      try {
-        const base64File = await convertFileToBase64(glbFile);
-        const postData = {
-          ID: id,
-          ModelBase64: base64File,
+ // Funzione per recuperare il Blob da un URL e convertirlo in base64
+ const convertFileToBase64 = async (glbFile) => {
+  return fetch(glbFile)
+    .then((response) => response.blob())  // Recupera il Blob dall'URL
+    .then((blob) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result)
         };
-
-        const token = localStorage.getItem('token');
-        const response = await axios.post('http://127.0.0.1:5000/uploadModel', postData, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        console.log('Model uploaded successfully!');
-        resetForm();
-      } catch (error) {
-        console.log('Failed to upload model.');
-      }
-    }
-
-    // POST del nuovo prodotto + POST modello 3D 
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    })
+    .catch((error) => {
+      console.error("Error fetching blob:", error);
+      throw new Error("Failed to convert blob URL to base64.");
+    });
+};
+// Funzione per fare POST del modello 3D
+const uploadModel = async () => {
+  try {
+    const base64File = await convertFileToBase64(glbFile);
+    const postData = {
+      ID: id,
+      ModelBase64: base64File,
+    };
+    const token = localStorage.getItem('token');
+    const response = await axios.post('http://127.0.0.1:5000/uploadModel', postData, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    console.log('Model uploaded successfully!');
+    resetForm();
+  } catch (error) {
+    console.log('Failed to upload model.');
+  }
+}
+// POST del nuovo prodotto + POST modello 3D 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://127.0.0.1:5000/uploadProduct', productData, {
+      await axios.post('http://127.0.0.1:5000/uploadProduct', productData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      console.log('Chiamata al Backend')
       setMessage('Product uploaded successfully!');
       setLastAdded(productData.ID);
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Failed to upload product. Please try again.');
+      setMessage(error.response?.data?.message || 'Failed to upload product.');
     }
 
     if (glbFile) uploadModel();
     else resetForm();
   }
-
   // Gestore per il caricamento del file CSV
   const handleCsvChange = (event) => {
     const file = event.target.files[0];
@@ -138,14 +149,12 @@ const AddProduct = () => {
       setCsvFile(file);
     }
   };
-
   // Funzione per gestire il caricamento del CSV e inviare le richieste POST
   const handleCsvUpload = () => {
     if (!csvFile) {
       setMessage('Please upload a CSV file first.');
       return;
     }
-
     Papa.parse(csvFile, {
       complete: async (result) => {
         for (let row of result.data) {
@@ -155,9 +164,7 @@ const AddProduct = () => {
               ID: row[0],
               Name: row[1],
               Manufacturer: manufacturer,
-              CreationDate: row[2],
               ExpiryDate: row[3],
-              Moreinfo: row[4],
               Ingredients: row[5],
               Allergens: row[6],
               Nutritional_information: row[7],
@@ -165,9 +172,10 @@ const AddProduct = () => {
               PesticideUse: row[9],
               FertilizerUse: row[10],
               CountryOfOrigin: row[11],
-              Movements: [],
-              SensorData: [],
-              Certifications: []
+              CustomObject: row[12]
+              // Movements: [],
+              // SensorData: [],
+              // Certifications: []
             };
             // Esegui la richiesta POST per ogni riga
             const token = localStorage.getItem('token');
@@ -187,15 +195,16 @@ const AddProduct = () => {
     });
   };
 
-  return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card shadow">
-            <div className="card-body">
-              <Card.Header>
-                <h4>Upload Product 📦</h4>
-                <p style={{ color: "grey" }}>
+return (
+<div className="container mt-5">
+  <div className="row justify-content-center">
+    <div className="col-md-6">          
+      <div className="card shadow">
+        <div className="card-body">
+          
+            <Card.Header>
+            <h4>Upload Product 📦</h4>
+            <p style={{ color: "grey" }}>
                   ℹ️ Add your product and complete its details to enhance traceability and transparency
                   <br />
                   🖼️ Insert and visualize your product with a 3D model
@@ -204,7 +213,7 @@ const AddProduct = () => {
               <br />
               {message && !view &&
                 <div>
-                  <p> {message} </p>
+                
                   {lastAdded &&
                     <div>
                       <QRCodeCanvas value={lastAdded} style={{ marginBottom: "2vw" }} />
@@ -220,10 +229,8 @@ const AddProduct = () => {
                   + New Product
                 </button>
               }
-
               {view === 'show' &&
                 <Card.Body>
-
                   {/* CSV File Upload */}
                   <Form.Group className="d-flex align-items-center mb-3" style={{ marginTop: "1vw" }}>
                     <Form.Label style={{ width: inputWidth }} className="me-3">Upload CSV</Form.Label>
@@ -277,27 +284,25 @@ const AddProduct = () => {
                     csvFile &&
                     <p>{message}</p>
                     }
-
                   {/* Separator */}
                   <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
                     <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
                     <span style={{ margin: '0 10px', color: '#666', fontWeight: 'bold' }}>or</span>
                     <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
                   </div>
-
+            
                   <Form onSubmit={handleUploadProduct}>
-                    {/* Display basic fields */}
+                     {/* Display basic fields */}
                     <Form.Group controlId="id" className="d-flex align-items-center mb-3">
                       <Form.Label style={{ width: inputWidth }} className="me-3">ID</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={id}
-                        onChange={(e) => setId(e.target.value)}
+                      <Form.Control 
+                        type="text" 
+                        value={id} 
+                        onChange={(e) => setId(e.target.value)} 
                         placeholder={placeholderText}
-                        required
-                      />
+                        required 
+                        />
                     </Form.Group>
-
                     {/* Name Field */}
                     <Form.Group controlId="name" className="d-flex align-items-center mb-3">
                       <Form.Label style={{ width: inputWidth }} className="me-3">Name</Form.Label>
@@ -308,19 +313,19 @@ const AddProduct = () => {
                         placeholder={placeholderText}
                         required
                       />
+      
+                    </Form.Group>
+                    {/*Harvest Date Field*/}
+                    <Form.Group controlId="harvestDate" className="d-flex align-items-center mb-3">
+                          <Form.Label style={{ width: inputWidth }} className="me-3">Harvest Date</Form.Label>
+                          <Form.Control
+                            type="date"
+                            value={harvestDate}
+                            onChange={(e) => setHarvestDate(e.target.value)}
+                          />
                     </Form.Group>
 
-                    {/* Creation and Expiry Date */}
-                    <Form.Group controlId="creationDate" className="d-flex align-items-center mb-3">
-                      <Form.Label style={{ width: inputWidth }} className="me-3">Creation Date</Form.Label>
-                      <Form.Control
-                        type="date"
-                        value={creationDate}
-                        onChange={(e) => setCreationDate(e.target.value)}
-                        required
-                      />
-                    </Form.Group>
-
+                    {/* Expire Date Field*/}
                     <Form.Group controlId="expiryDate" className="d-flex align-items-center mb-3">
                       <Form.Label style={{ width: inputWidth }} className="me-3">Expiry Date</Form.Label>
                       <Form.Control
@@ -331,146 +336,101 @@ const AddProduct = () => {
                       />
                     </Form.Group>
 
-                    <Form.Group controlId="moreInfo" className="d-flex align-items-center mb-3">
-                      <Form.Label style={{ width: inputWidth }} className="me-3">More Info</Form.Label>
+            
+                    <Form.Group controlId="nutritionalInformation" className="d-flex align-items-center mb-3">
+                      <Form.Label style={{ width: inputWidth }} className="me-3">Nutritional Information</Form.Label>
                       <Form.Control
                         type="text"
-                        value={moreInfo}
-                        onChange={(e) => setMoreInfo(e.target.value)}
+                        value={nutritionalInformation}
+                        onChange={(e) => setNutritionalInformation(e.target.value)}
                         placeholder={placeholderText}
                       />
                     </Form.Group>
 
-                    {/* Upload 3D Model */}
-
-                    <div className="mb-3">
-                      <Viewer3D onGlbUpload={setGlbFile} />
-                    </div>
-
-                    {/* Product Type Selection */}
-                    <div className="d-flex justify-content-center mb-3" style={{ gap: "2vw" }}>
-                      <Button
-                        variant="outline-primary"
-                        onClick={() => {
-                          setProductType('agricultural');
-                          // Reset all fields related to agricultural product
-                          setHarvestDate('');
-                          setPesticideUse('');
-                          setFertilizerUse('');
-                          setCountryOfOrigin('');
-                        }}
-                        style={{ color: productType === 'agricultural' && "grey", border: productType === 'agricultural' && "1.5px solid grey" }}
-                      >
-                        🥕 Agricultural Product
-                      </Button>
-                      <Button
-                        variant="outline-primary"
-                        onClick={() => {
-                          setProductType('finished');
-                          // Reset all fields related to finished product
-                          setIngredients('');
-                          setAllergens('');
-                          setNutritionalInformation('');
-                        }}
-                        style={{ color: productType === 'finished' && "grey", border: productType === 'finished' && "1.5px solid grey" }}
-                      >
-                        🍔 Finished Product
-                      </Button>
-                    </div>
-
-                    {/* Show relevant fields based on product type */}
-                    {productType === 'agricultural' && (
-                      <>
-                        <Form.Group controlId="harvestDate" className="d-flex align-items-center mb-3">
-                          <Form.Label style={{ width: inputWidth }} className="me-3">Harvest Date</Form.Label>
-                          <Form.Control
-                            type="date"
-                            value={harvestDate}
-                            onChange={(e) => setHarvestDate(e.target.value)}
-                          />
-                        </Form.Group>
-
-                        <Form.Group controlId="pesticideUse" className="d-flex align-items-center mb-3">
-                          <Form.Label style={{ width: inputWidth }} className="me-3">Pesticide Use</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={pesticideUse}
-                            onChange={(e) => setPesticideUse(e.target.value)}
-                            placeholder={placeholderText}
-                          />
-                        </Form.Group>
-
-                        <Form.Group controlId="fertilizerUse" className="d-flex align-items-center mb-3">
-                          <Form.Label style={{ width: inputWidth }} className="me-3">Fertilizer Use</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={fertilizerUse}
-                            onChange={(e) => setFertilizerUse(e.target.value)}
-                            placeholder={placeholderText}
-                          />
-                        </Form.Group>
-
-                        <Form.Group controlId="countryOfOrigin" className="d-flex align-items-center mb-3">
-                          <Form.Label style={{ width: inputWidth }} className="me-3">Country of Origin</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={countryOfOrigin}
-                            onChange={(e) => setCountryOfOrigin(e.target.value)}
-                            placeholder={placeholderText}
-                          />
-                        </Form.Group>
-                      </>
-                    )}
-
-                    {productType === 'finished' && (
-                      <>
-                        <Form.Group controlId="ingredients" className="d-flex align-items-center mb-3">
-                          <Form.Label style={{ width: inputWidth }} className="me-3">Ingredients</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={ingredients}
-                            onChange={(e) => setIngredients(e.target.value)}
-                            placeholder={placeholderText}
-                          />
-                        </Form.Group>
-
-                        <Form.Group controlId="allergens" className="d-flex align-items-center mb-3">
-                          <Form.Label style={{ width: inputWidth }} className="me-3">Allergens</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={allergens}
-                            onChange={(e) => setAllergens(e.target.value)}
-                            placeholder={placeholderText}
-                          />
-                        </Form.Group>
-
-                        <Form.Group controlId="nutritionalInformation" className="d-flex align-items-center mb-3">
-                          <Form.Label style={{ width: inputWidth }} className="me-3">Nutritional Information</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={nutritionalInformation}
-                            onChange={(e) => setNutritionalInformation(e.target.value)}
-                            placeholder={placeholderText}
-                          />
-                        </Form.Group>
-                      </>
-                    )}
-
-                    <br />
-                    <Button variant="primary" type="submit" disabled={!id || !name || !creationDate || !expiryDate || (!harvestDate && !ingredients)}>
+            
+                    <Form.Group controlId="countryOfOrigin" className="d-flex align-items-center mb-3">
+                      <Form.Label style={{ width: inputWidth }} className="me-3">Country of Origin</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={countryOfOrigin}
+                        onChange={(e) => setCountryOfOrigin(e.target.value)}
+                        placeholder={placeholderText}
+                      />
+                    </Form.Group>
+                    <Form.Group controlId="pesticideUse" className="d-flex align-items-center mb-3">
+                      <Form.Label style={{ width: inputWidth }} className="me-3">Pesticide Use</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={pesticideUse}
+                        onChange={(e) => setPesticideUse(e.target.value)}
+                        placeholder={placeholderText}
+                      />
+                    </Form.Group>
+                    <Form.Group controlId="fertilizerUse" className="d-flex align-items-center mb-3">
+                      <Form.Label style={{ width: inputWidth }} className="me-3">Fertilizer Use</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={fertilizerUse}
+                        onChange={(e) => setFertilizerUse(e.target.value)}
+                        placeholder={placeholderText}
+                      />
+                    </Form.Group>
+                    <Form.Group controlId="ingredients" className="d-flex align-items-center mb-3">
+                      <Form.Label style={{ width: inputWidth }} className="me-3">Ingredients</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={ingredients}
+                        onChange={(e) => setIngredients(e.target.value)}
+                        placeholder={placeholderText}
+                      />
+                    </Form.Group>
+                    <Form.Group controlId="allergens" className="d-flex align-items-center mb-3">
+                      <Form.Label style={{ width: inputWidth }} className="me-3">Allergens</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={allergens}
+                        onChange={(e) => setAllergens(e.target.value)}
+                        placeholder={placeholderText}
+                      />
+                    </Form.Group>
+                    {/* Separator */}
+                  <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
+                    <span style={{ margin: '0 10px', color: '#666', fontWeight: 'bold' }}></span>
+                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
+                  </div>
+                    <h5>Custom Fields</h5>
+                    {customFields.map((field, index) => (
+                      <div key={index} className="d-flex mb-2">
+                        <Form.Control type="text" placeholder="Field Name" value={field.key} onChange={(e) => updateCustomField(index, e.target.value, field.value)} className="me-2" />
+                        <Form.Control type="text" placeholder="Value" value={field.value} onChange={(e) => updateCustomField(index, field.key, e.target.value)} />
+                      </div>
+                    ))}
+                    <Button variant="primary" onClick={addCustomField} className="my-3 d-block mx-auto">+ Add Field</Button>
+                    {/* Separator */}
+                  <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
+                    <span style={{ margin: '0 10px', color: '#666', fontWeight: 'bold' }}></span>
+                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
+                  </div>
+                    <Button variant="primary" type="submit" disabled={!id || !name || !expiryDate || !harvestDate || !ingredients || !nutritionalInformation || !allergens || !pesticideUse || !countryOfOrigin || !fertilizerUse}>
                       Upload Product
                     </Button>
+
                   </Form>
                 </Card.Body>
               }
-            </div>
-          </div>
         </div>
       </div>
-      <br />
-      <br />
     </div>
+  </div>
+        
+  <br />
+  <br />
+       
+</div>
   );
 };
-
+ 
 export default AddProduct;
+ 

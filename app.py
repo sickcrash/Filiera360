@@ -192,30 +192,32 @@ def get_product_history():
 @app.route('/uploadProduct', methods=['POST'])
 @jwt_required()
 def upload_product():
+    print("Sono arrivata al backend")
     product_data = request.json
     real_manufacturer = get_jwt_identity()
     print("manufacturer authenticated: " + real_manufacturer)
     client_manufacturer = product_data.get("Manufacturer")
     print("upload request by: " + client_manufacturer)
-
     # Reject operation if the authenticated manufacturer doesn't match the one in the request
     if real_manufacturer != client_manufacturer:
         return jsonify({"message": "Unauthorized: Manufacturer mismatch."}), 403
-
     print("Uploading new product data:", product_data)
+    product_data["CustomObject"] = product_data.get("CustomObject", {})
+    print("Uploading custom object:", product_data["CustomObject"])
 
     try:
         # Send the cleaned product data to the external service
+        print("Faccio la chiamata all'AppServer")
         response = requests.post('http://localhost:3000/uploadProduct', json=product_data)
-
         if response.status_code == 200:
             return jsonify({'message': response.json().get('message', 'Product uploaded successfully!')})
         else:
             return jsonify({'message': response.json().get('message', 'Failed to upload product.')}), response.status_code
 
+        
     except Exception as e:
         print("Error uploading product:", e)
-        return jsonify({'message': 'Error uploading product.'}), 500
+        return jsonify({'message': 'Error uploading product.', 'error': str(e)}), 500
     
 # nuova aggiunta
 @app.route('/uploadModel', methods=['POST'])

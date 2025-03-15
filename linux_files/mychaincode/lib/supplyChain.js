@@ -11,9 +11,7 @@ class SupplyChainContract extends Contract {
                 "ID": "AGRI_X",
                 "Name": "Organic Carrots",
                 "Manufacturer": "Green Farm Co.",
-                "CreationDate": "2023-03-01",
                 "ExpiryDate": "2023-05-01",
-                "Moreinfo": "Fresh and organic carrots harvested locally.",
                 "Ingredients": "",
                 "Allergens": "",
                 "Nutritional_information": "",
@@ -21,41 +19,47 @@ class SupplyChainContract extends Contract {
                 "PesticideUse": "No pesticides used",
                 "FertilizerUse": "Organic",
                 "CountryOfOrigin": "Canada",
-                "Movements": [
+                // "Movements": [
+                //     {
+                //         "Location": "Farm",
+                //         "Status": "Harvested",
+                //         "Date": "2023-02-25"
+                //     },
+                //     {
+                //         "Location": "Packing Facility",
+                //         "Status": "Packed",
+                //         "Date": "2023-02-28"
+                //     },
+                //     {
+                //         "Location": "Warehouse",
+                //         "Status": "Stored",
+                //         "Date": "2023-03-01"
+                //     },
+                //     {
+                //         "Location": "Retail Outlet",
+                //         "Status": "Delivered",
+                //         "Date": "2023-03-05"
+                //     }
+                // ],
+                // "SensorData": [
+                //     {
+                //         "SensorId": "sensor_503",
+                //         "Temperature": 4,
+                //         "Humidity": 80,
+                //         "Timestamp": "2023-03-01T10:00:00Z"
+                //     }
+                // ],
+                // "Certifications": [
+                //     {
+                //         "CertificationType": "Organic",
+                //         "CertifyingBody": "Organic Certification Canada",
+                //         "IssueDate": "2023-02-15"
+                //     }
+                // ]
+                "CustomObject": [
                     {
-                        "Location": "Farm",
-                        "Status": "Harvested",
-                        "Date": "2023-02-25"
-                    },
-                    {
-                        "Location": "Packing Facility",
-                        "Status": "Packed",
-                        "Date": "2023-02-28"
-                    },
-                    {
-                        "Location": "Warehouse",
-                        "Status": "Stored",
-                        "Date": "2023-03-01"
-                    },
-                    {
-                        "Location": "Retail Outlet",
-                        "Status": "Delivered",
-                        "Date": "2023-03-05"
-                    }
-                ],
-                "SensorData": [
-                    {
-                        "SensorId": "sensor_503",
-                        "Temperature": 4,
-                        "Humidity": 80,
-                        "Timestamp": "2023-03-01T10:00:00Z"
-                    }
-                ],
-                "Certifications": [
-                    {
-                        "CertificationType": "Organic",
-                        "CertifyingBody": "Organic Certification Canada",
-                        "IssueDate": "2023-02-15"
+                        "tipo": "ortaggio",
+                        "colore": "verde"
                     }
                 ]
             },
@@ -63,9 +67,7 @@ class SupplyChainContract extends Contract {
                 "ID": "FIN_X",
                 "Name": "Almond Milk",
                 "Manufacturer": "NutraFoods Inc.",
-                "CreationDate": "2023-04-01",
                 "ExpiryDate": "2023-10-01",
-                "Moreinfo": "Fresh almond milk made from premium almonds.",
                 "Ingredients": "Almonds, Water, Sugar, Salt, Vitamin D",
                 "Allergens": "Almonds",
                 "Nutritional_information": "Calories: 60 per 240ml, Protein: 1g, Fat: 2.5g",
@@ -73,66 +75,87 @@ class SupplyChainContract extends Contract {
                 "PesticideUse": "",
                 "FertilizerUse": "",
                 "CountryOfOrigin": "",
-                "Movements": [
+                // "Movements": [
+                //     {
+                //         "Location": "Manufacturing Plant",
+                //         "Status": "Processed",
+                //         "Date": "2023-04-01"
+                //     },
+                //     {
+                //         "Location": "Cold Storage",
+                //         "Status": "Stored",
+                //         "Date": "2023-04-02"
+                //     },
+                //     {
+                //         "Location": "Retail Store",
+                //         "Status": "Delivered",
+                //         "Date": "2023-04-05"
+                //     }
+                // ],
+                // "SensorData": [
+                //     {
+                //         "SensorId": "sensor_504",
+                //         "Temperature": 4,
+                //         "Humidity": 50,
+                //         "Timestamp": "2023-04-02T12:00:00Z"
+                //     }
+                // ],
+                // "Certifications": [
+                //     {
+                //         "CertificationType": "Vegan",
+                //         "CertifyingBody": "Vegan Society",
+                //         "IssueDate": "2023-03-25"
+                //     },
+                //     {
+                //         "CertificationType": "Non-GMO",
+                //         "CertifyingBody": "Non-GMO Project",
+                //         "IssueDate": "2023-03-30"
+                //     }
+                // ]
+                "CustomObject": [
                     {
-                        "Location": "Manufacturing Plant",
-                        "Status": "Processed",
-                        "Date": "2023-04-01"
-                    },
-                    {
-                        "Location": "Cold Storage",
-                        "Status": "Stored",
-                        "Date": "2023-04-02"
-                    },
-                    {
-                        "Location": "Retail Store",
-                        "Status": "Delivered",
-                        "Date": "2023-04-05"
-                    }
-                ],
-                "SensorData": [
-                    {
-                        "SensorId": "sensor_504",
-                        "Temperature": 4,
-                        "Humidity": 50,
-                        "Timestamp": "2023-04-02T12:00:00Z"
-                    }
-                ],
-                "Certifications": [
-                    {
-                        "CertificationType": "Vegan",
-                        "CertifyingBody": "Vegan Society",
-                        "IssueDate": "2023-03-25"
-                    },
-                    {
-                        "CertificationType": "Non-GMO",
-                        "CertifyingBody": "Non-GMO Project",
-                        "IssueDate": "2023-03-30"
+                        "tipo": "frutta",
+                        "colore": "giallo"
                     }
                 ]
             }
         ]
-        
+        // const batches =[
+        //     {
+        //         "ID" : "L001"
+
+        //     },
+        //     {
+        //         "ID" : "L002"
+        //     }
+        // ]
 
         for (const product of products) {
             product.docType = 'product';
             await ctx.stub.putState(product.ID, Buffer.from(stringify(sortKeysRecursive(product))));
         }
+        
+        // for (const batch of batches) {
+        //     product.docType = 'product';
+        //     await ctx.stub.putState(product.ID, Buffer.from(stringify(sortKeysRecursive(product))));
+        // }
+
     }
 
-    async createProduct(ctx, id, name, manufacturer, creationDate, expiryDate, moreinfo, ingredients, allergens, nutritionalInformation, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, movements, sensordata, certifications) {
+    async createProduct(ctx, id, name, manufacturer, expiryDate, ingredients, allergens, nutritionalInformation, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, customObject) {
+       console.log("Sono nella supplychain")
         console.log(`Creating product ${id}`);
+        
         const exists = await this.ProductExists(ctx, id);
         if (exists) {
             throw new Error(`The product ${id} already exists`);
         }
+    
         const product = {
             ID: id,
             Name: name,
             Manufacturer: manufacturer,
-            CreationDate: creationDate,
             ExpiryDate: expiryDate,
-            Moreinfo: moreinfo,
             Ingredients: ingredients,
             Allergens: allergens,
             Nutritional_information: nutritionalInformation,
@@ -140,15 +163,20 @@ class SupplyChainContract extends Contract {
             PesticideUse: pesticideUse,
             FertilizerUse: fertilizerUse,
             CountryOfOrigin: countryOfOrigin,
-            Movements: JSON.parse(movements),
-            SensorData: JSON.parse(sensordata),
-            Certifications: JSON.parse(certifications)
+            // Movements: JSON.parse(movements),
+            // SensorData: JSON.parse(sensordata),
+            // Certifications: JSON.parse(certifications)
+            CustomObject: JSON.parse(customObject) // Convertiamo il JSON in oggetto
         };
-
-        await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(product))));
+    
+        await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
         console.log(`Product ${id} created`);
-        return JSON.stringify(product)
+        return JSON.stringify(product);
     }
+
+    
+    
+     
 
     async ReadProduct(ctx, id) {
         const productJSON = await ctx.stub.getState(id); // get the product from chaincode state
@@ -183,7 +211,7 @@ class SupplyChainContract extends Contract {
         }
     }
 
-    async UpdateProduct(ctx, id, name, manufacturer, creationDate, expiryDate, ingredients, allergens, nutritional_information, moreinfo, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, movements, sensordata, certifications) {
+    async UpdateProduct(ctx, id, name, manufacturer, expiryDate, ingredients, allergens, nutritional_information, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, customObject) {
         // Check if the product exists
         const productAsBytes = await ctx.stub.getState(id);
         if (!productAsBytes || productAsBytes.length === 0) {
@@ -198,7 +226,6 @@ class SupplyChainContract extends Contract {
             ID: id,
             Name: name || existingProduct.Name,
             Manufacturer: manufacturer || existingProduct.Manufacturer,
-            CreationDate: creationDate || existingProduct.CreationDate,
             ExpiryDate: expiryDate || existingProduct.ExpiryDate,
             Moreinfo: moreinfo || existingProduct.Moreinfo,
             Ingredients: ingredients || existingProduct.Ingredients,
@@ -208,9 +235,10 @@ class SupplyChainContract extends Contract {
             PesticideUse: pesticideUse || existingProduct.PesticideUse,
             FertilizerUse: fertilizerUse || existingProduct.FertilizerUse,
             CountryOfOrigin: countryOfOrigin || existingProduct.CountryOfOrigin,
-            Movements: movements ? JSON.parse(movements) : existingProduct.Movements,
-            SensorData: sensordata ? JSON.parse(sensordata) : existingProduct.SensorData,
-            Certifications: certifications ? JSON.parse(certifications) : existingProduct.Certifications
+            // Movements: movements ? JSON.parse(movements) : existingProduct.Movements,
+            // SensorData: sensordata ? JSON.parse(sensordata) : existingProduct.SensorData,
+            // Certifications: certifications ? JSON.parse(certifications) : existingProduct.Certifications
+            CustomObject: customobject ? JSON.parse(customObject) : existingProduct.customObject
         };
     
         // Insert the updated product into the ledger in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'

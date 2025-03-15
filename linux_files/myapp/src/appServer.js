@@ -213,32 +213,81 @@ async function createProductDefault(contract) {
     console.log('*** Transaction committed successfully');
 } */
 
-async function createProduct(contract, productData) {
-    console.log('\n--> Submit Transaction: CreateProduct, creates new product with provided arguments');
-    const { ID, Name, Manufacturer, CreationDate, ExpiryDate, Moreinfo, Ingredients, Allergens, Nutritional_information, HarvestDate, PesticideUse, FertilizerUse, CountryOfOrigin, Movements, SensorData, Certifications } = productData;
-    await contract.submitTransaction(
-        'createProduct',
-        ID,
-        Name,
-        Manufacturer,
-        CreationDate,
-        ExpiryDate,
-        Moreinfo,
-        Ingredients,
-        Allergens,
-        Nutritional_information,
-        HarvestDate,
-        PesticideUse,
-        FertilizerUse,
-        CountryOfOrigin,
-        JSON.stringify(Movements),
-        JSON.stringify(SensorData),
-        JSON.stringify(Certifications)
-    );
-
-    console.log('*** Transaction committed successfully');
-}
-
+    async function createProduct(contract, productData) {
+        console.log('\n--> Submit Transaction: CreateProduct, creates new product with provided arguments');
+        if (!productData) {
+            console.error("❌ ERRORE: productData è undefined o nullo!");
+            return;
+        }
+        console.log('productData non è undefined');
+        console.log("📌 Dati ricevuti:", productData);
+        
+        const { 
+            ID = "",
+            Name = "",
+            Manufacturer = "",
+            ExpiryDate = "",
+            Ingredients = "",
+            Allergens = "",
+            Nutritional_information = "",
+            HarvestDate = "",
+            PesticideUse = "",
+            FertilizerUse = "",
+            CountryOfOrigin = "",
+            CustomObject = {}  // Corretta destrutturazione
+        } = productData;
+    
+        console.log("📌 CustomObject ricevuto:", CustomObject);
+    
+        // Verifica la struttura di CustomObject
+        if (typeof CustomObject !== 'object') {
+            console.error("❌ ERRORE: CustomObject non è un oggetto valido!", CustomObject);
+            return;
+        }
+    
+        // Assicurati che CustomObject venga serializzato correttamente
+        try {
+            const customObjectJson = JSON.stringify(CustomObject);
+            console.log("📌 CustomObject dopo JSON.stringify:", customObjectJson);
+        } catch (error) {
+            console.error("❌ ERRORE nella serializzazione di CustomObject:", error);
+            return;
+        }
+    
+        console.log('\n--> Sto facendo partire la funzione per il submit');
+    
+        try {
+            // Aggiungi logging per verificare i parametri
+            console.log("📌 Parametri passati alla transazione:", {
+                ID, Name, Manufacturer, ExpiryDate, Ingredients, Allergens, Nutritional_information,
+                HarvestDate, PesticideUse, FertilizerUse, CountryOfOrigin, CustomObject
+            });
+    
+            // Submit della transazione
+            await contract.submitTransaction(
+                'createProduct',
+                ID,
+                Name,
+                Manufacturer,
+                ExpiryDate,
+                Ingredients,
+                Allergens,
+                Nutritional_information,
+                HarvestDate,
+                PesticideUse,
+                FertilizerUse,
+                CountryOfOrigin,
+                JSON.stringify(CustomObject)  // Corretta conversione JSON
+            );
+    
+            console.log('✅ *** Transaction committed successfully ***');
+        } catch (error) {
+            console.error('❌ Errore nella submitTransaction:', error);
+        }
+    }
+    
+    
+    
 async function readProductByIDdefault(contract) {
     console.log(
         '\n--> Evaluate Transaction: ReadProduct, function returns product attributes'
@@ -356,6 +405,44 @@ app.post('/uploadProduct', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+//NUOVA FUNZIONE UPLOAD BATCH
+// app.post('/uploadBatch', async (req, res) => {
+//     const batchData = req.body;
+//     console.log('Received batch data:', batchData);
+
+//     const { ID } = productData;
+
+//     try {
+//         const network = gateway.getNetwork(channelName);
+//         const contract = network.getContract(chaincodeName);
+
+//         // Check if product already exists
+//         try {
+//             const existingProduct = await readProductByID(contract, ID);
+//             if (existingProduct) {
+//                 res.status(400).json({ message: `Product with ID ${ID} already exists.` });
+//                 return;
+//             }
+//         } catch (error) {
+//             if (error.message.includes(`The product ${ID} does not exist`)) {
+//                 // This is expected if the product doesn't exist, so we can continue
+//                 console.log('Product not found, proceeding to create it.');
+//             } else {
+//                 // Unexpected error
+//                 console.error('Error checking for existing product:', error);
+//                 res.status(500).json({ message: 'Failed to check for existing product.' });
+//                 return;
+//             }
+//         }
+
+//         await createProduct(contract, productData);
+//         res.json({ message: 'Product created successfully' });
+//         console.log('Product created successfully');
+//     } catch (error) {
+//         console.error('Error creating product:', error);
+//         res.status(500).json({ error: error.message });
+//     }
+// });
 
 app.post('/api/product/updateProduct', async (req, res) => {
     const productData = req.body;

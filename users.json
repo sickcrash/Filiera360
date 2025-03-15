@@ -2,5 +2,9 @@
     "test@email.com": {
         "manufacturer": "alessio",
         "password": "$2b$12$1OI4Sn26sP6Yvf5aXMgeE.Zvc.jN5n7N111U3TQ1taBDKkFXReO.q"
+    },
+    "test@ciao.it": {
+        "manufacturer": "test",
+        "password": "$2b$12$ZbO6LMYWem.Xi79scFm.FuJkXqpLcU0R03iCM7gqqQ.E/Gl8TtMS."
     }
 }
