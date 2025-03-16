@@ -1,10 +1,52 @@
 {
     "test@email.com": {
         "manufacturer": "alessio",
-        "password": "$2b$12$1OI4Sn26sP6Yvf5aXMgeE.Zvc.jN5n7N111U3TQ1taBDKkFXReO.q"
+        "password": "$2b$12$1OI4Sn26sP6Yvf5aXMgeE.Zvc.jN5n7N111U3TQ1taBDKkFXReO.q",
+        "role": "user",
+        "flags": {
+            "producer": false,
+            "operator": false,
+            "user": true
+        }
     },
     "criscorrado0@gmail.com": {
         "manufacturer": "Cristian1",
-        "password": "$2b$12$ctdPU9e.l9/4UCrhl37feO657PJVY.rcMFKed0TgPjxKtIGdO4ZTm"
+        "password": "$2b$12$ctdPU9e.l9/4UCrhl37feO657PJVY.rcMFKed0TgPjxKtIGdO4ZTm",
+        "role": "user",
+        "flags": {
+            "producer": false,
+            "operator": false,
+            "user": true
+        }
+    },
+    "utente@gmail.com": {
+        "manufacturer": "manufacture name",
+        "password": "$2b$12$LgYKIVaDAyLCNgYGBQU0DOXrGG.j8FzEeb0gllSsoypVEA9M02nLe",
+        "role": "user",
+        "flags": {
+            "producer": false,
+            "operator": false,
+            "user": true
+        }
+    },
+    "operatore@gmail.com": {
+        "manufacturer": "operator name",
+        "password": "$2b$12$sf1ojZfvnCB.V5QVBXi71evg1GXkTcsFEdvOxscZuF4lVvHd.CoHy",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        }
+    },
+    "produttore@gmail.com": {
+        "manufacturer": "produttore name",
+        "password": "$2b$12$VQJjynkjPO8aCO3qh8ZN6uvHM5Y30yWkkpPX..jdGCqsxrCyXfItG",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        }
     }
 }
