@@ -42,13 +42,13 @@ function ScanProduct() {
         </>
       }
       <ProductList onProductSelect={setSelectedProduct} />
-      {selectedProduct && (
+      {/* {selectedProduct && (
         <div className="mt-4" id="customForm">
           <DataSensors productId={selectedProduct} />
           <ProductMovements productId={selectedProduct} />
           <Certifications productId={selectedProduct} />
         </div>
-      )}
+      )} */}
       <br />
       <br />
       {selectedProduct ?

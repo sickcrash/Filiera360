@@ -46,6 +46,7 @@ const AddProduct = () => {
     setView('');
     setProductType('');
     setGlbFile('');
+    setCustomFields([]); // Ensure it's an array
   };
 
 // Metodo per aggiungere un nuovo campo personalizzato con chiave-valore 
@@ -58,13 +59,21 @@ const AddProduct = () => {
     newFields[index] = { key, value };
     setCustomFields(newFields);
   };
+  // Funzione per rimuovere un campo personalizzato
+const removeCustomField = (index) => {
+  const newFields = customFields.filter((_, i) => i !== index);  // Filtra il campo da rimuovere
+  setCustomFields(newFields);
+};
+
  
   const handleUploadProduct = async (e) => {
     e.preventDefault();
-    // Creo funzione if per impostare la data di scadenza superiore a quella di raccolta
+  
+    // Verifica se la data di scadenza è maggiore della data di raccolta
     if (new Date(expiryDate) <= new Date(harvestDate)) {
-      setMessage('Expiry Date must be at least one day after Harvest Date');
-      return;
+      // Se la condizione è vera, mostra un alert con il messaggio di errore
+      alert("Expiry Date must be at least one day after Harvest Date");
+      return; // Termina la funzione
     }
   // Crea un oggetto con tutti i dati del prodotto
     const productData = {
@@ -393,19 +402,51 @@ return (
                         placeholder={placeholderText}
                       />
                     </Form.Group>
+                    {/* Upload 3D Model */}
+                    <div className="mb-3">
+                      <Viewer3D onGlbUpload={setGlbFile} />
+                    </div>
                     {/* Separator */}
                   <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
                     <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
                     <span style={{ margin: '0 10px', color: '#666', fontWeight: 'bold' }}></span>
                     <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
                   </div>
-                    <h5>Custom Fields</h5>
-                    {customFields.map((field, index) => (
-                      <div key={index} className="d-flex mb-2">
-                        <Form.Control type="text" placeholder="Field Name" value={field.key} onChange={(e) => updateCustomField(index, e.target.value, field.value)} className="me-2" />
-                        <Form.Control type="text" placeholder="Value" value={field.value} onChange={(e) => updateCustomField(index, field.key, e.target.value)} />
-                      </div>
-                    ))}
+                  <h5>Custom Fields</h5>
+                  {customFields.map((field, index) => (
+                    <div key={index} className="d-flex mb-2 align-items-center">
+                      <Form.Control 
+                        type="text" 
+                        placeholder="Field Name" 
+                        value={field.key} 
+                        onChange={(e) => updateCustomField(index, e.target.value, field.value)} 
+                        className="me-2" 
+                      />
+                      <Form.Control 
+                        type="text" 
+                        placeholder="Value" 
+                        value={field.value} 
+                        onChange={(e) => updateCustomField(index, field.key, e.target.value)} 
+                      />
+                      {/* Pulsante di rimozione con icona*/}
+                      <button 
+                        type="button" 
+                        className="btn btn-light btn-sm ms-2 p-1" 
+                        onClick={() => removeCustomField(index)} 
+                        style={{
+                          border: 'none', 
+                          background: 'transparent', 
+                          fontSize: '18px', 
+                          cursor: 'pointer', 
+                          color: '#ff4d4d'
+                        }}
+                      >
+                        ✖️
+                      </button>
+                    </div>
+                  ))}
+
+
                     <Button variant="primary" onClick={addCustomField} className="my-3 d-block mx-auto">+ Add Field</Button>
                     {/* Separator */}
                   <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>

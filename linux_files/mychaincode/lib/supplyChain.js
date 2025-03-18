@@ -19,43 +19,6 @@ class SupplyChainContract extends Contract {
                 "PesticideUse": "No pesticides used",
                 "FertilizerUse": "Organic",
                 "CountryOfOrigin": "Canada",
-                // "Movements": [
-                //     {
-                //         "Location": "Farm",
-                //         "Status": "Harvested",
-                //         "Date": "2023-02-25"
-                //     },
-                //     {
-                //         "Location": "Packing Facility",
-                //         "Status": "Packed",
-                //         "Date": "2023-02-28"
-                //     },
-                //     {
-                //         "Location": "Warehouse",
-                //         "Status": "Stored",
-                //         "Date": "2023-03-01"
-                //     },
-                //     {
-                //         "Location": "Retail Outlet",
-                //         "Status": "Delivered",
-                //         "Date": "2023-03-05"
-                //     }
-                // ],
-                // "SensorData": [
-                //     {
-                //         "SensorId": "sensor_503",
-                //         "Temperature": 4,
-                //         "Humidity": 80,
-                //         "Timestamp": "2023-03-01T10:00:00Z"
-                //     }
-                // ],
-                // "Certifications": [
-                //     {
-                //         "CertificationType": "Organic",
-                //         "CertifyingBody": "Organic Certification Canada",
-                //         "IssueDate": "2023-02-15"
-                //     }
-                // ]
                 "CustomObject": [
                     {
                         "tipo": "ortaggio",
@@ -75,43 +38,6 @@ class SupplyChainContract extends Contract {
                 "PesticideUse": "",
                 "FertilizerUse": "",
                 "CountryOfOrigin": "",
-                // "Movements": [
-                //     {
-                //         "Location": "Manufacturing Plant",
-                //         "Status": "Processed",
-                //         "Date": "2023-04-01"
-                //     },
-                //     {
-                //         "Location": "Cold Storage",
-                //         "Status": "Stored",
-                //         "Date": "2023-04-02"
-                //     },
-                //     {
-                //         "Location": "Retail Store",
-                //         "Status": "Delivered",
-                //         "Date": "2023-04-05"
-                //     }
-                // ],
-                // "SensorData": [
-                //     {
-                //         "SensorId": "sensor_504",
-                //         "Temperature": 4,
-                //         "Humidity": 50,
-                //         "Timestamp": "2023-04-02T12:00:00Z"
-                //     }
-                // ],
-                // "Certifications": [
-                //     {
-                //         "CertificationType": "Vegan",
-                //         "CertifyingBody": "Vegan Society",
-                //         "IssueDate": "2023-03-25"
-                //     },
-                //     {
-                //         "CertificationType": "Non-GMO",
-                //         "CertifyingBody": "Non-GMO Project",
-                //         "IssueDate": "2023-03-30"
-                //     }
-                // ]
                 "CustomObject": [
                     {
                         "tipo": "frutta",
@@ -163,9 +89,6 @@ class SupplyChainContract extends Contract {
             PesticideUse: pesticideUse,
             FertilizerUse: fertilizerUse,
             CountryOfOrigin: countryOfOrigin,
-            // Movements: JSON.parse(movements),
-            // SensorData: JSON.parse(sensordata),
-            // Certifications: JSON.parse(certifications)
             CustomObject: JSON.parse(customObject) // Convertiamo il JSON in oggetto
         };
     
@@ -212,22 +135,24 @@ class SupplyChainContract extends Contract {
     }
 
     async UpdateProduct(ctx, id, name, manufacturer, expiryDate, ingredients, allergens, nutritional_information, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, customObject) {
+    
+        console.log('Sono su chaincode');
         // Check if the product exists
         const productAsBytes = await ctx.stub.getState(id);
         if (!productAsBytes || productAsBytes.length === 0) {
+            console.log('ID non esiste');
             throw new Error(`The product ${id} does not exist`);
         }
     
         // Parse the existing product data
         const existingProduct = JSON.parse(productAsBytes.toString());
     
-        // Update fields only if they are provided (i.e., not blank)
+        // Update fields only if provided
         const updatedProduct = {
             ID: id,
             Name: name || existingProduct.Name,
             Manufacturer: manufacturer || existingProduct.Manufacturer,
             ExpiryDate: expiryDate || existingProduct.ExpiryDate,
-            Moreinfo: moreinfo || existingProduct.Moreinfo,
             Ingredients: ingredients || existingProduct.Ingredients,
             Allergens: allergens || existingProduct.Allergens,
             Nutritional_information: nutritional_information || existingProduct.Nutritional_information,
@@ -235,19 +160,51 @@ class SupplyChainContract extends Contract {
             PesticideUse: pesticideUse || existingProduct.PesticideUse,
             FertilizerUse: fertilizerUse || existingProduct.FertilizerUse,
             CountryOfOrigin: countryOfOrigin || existingProduct.CountryOfOrigin,
-            // Movements: movements ? JSON.parse(movements) : existingProduct.Movements,
-            // SensorData: sensordata ? JSON.parse(sensordata) : existingProduct.SensorData,
-            // Certifications: certifications ? JSON.parse(certifications) : existingProduct.Certifications
-            CustomObject: customobject ? JSON.parse(customObject) : existingProduct.customObject
+            CustomObject: customObject ? JSON.parse(customObject) : existingProduct.CustomObject
         };
     
-        // Insert the updated product into the ledger in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedProduct))));
-    
-        // Return the updated product as a JSON string
         return JSON.stringify(updatedProduct);
     }
     
+    // async UpdateProduct(ctx, productDataJson) {
+    //     console.log(`Updating product with data: ${productDataJson}`);
+     
+    //     // 1. Parsare il JSON ricevuto
+    //     const productData = JSON.parse(productDataJson);
+    //     const id = productData.ID;
+     
+    //     // 2. Verificare che il prodotto esista
+    //     const productAsBytes = await ctx.stub.getState(id);
+    //     if (!productAsBytes || productAsBytes.length === 0) {
+    //         throw new Error(`The product ${id} does not exist`);
+    //     }
+     
+    //     // 3. Dati del prodotto già presente
+    //     const existingProduct = JSON.parse(productAsBytes.toString());
+     
+    //     // 4. Creare il prodotto aggiornato
+    //     const updatedProduct = {
+    //         ID: id,
+    //         Name: productData.Name || existingProduct.Name,
+    //         Manufacturer: productData.Manufacturer || existingProduct.Manufacturer,
+    //         ExpiryDate: productData.ExpiryDate || existingProduct.ExpiryDate,
+    //         Ingredients: productData.Ingredients || existingProduct.Ingredients,
+    //         Allergens: productData.Allergens || existingProduct.Allergens,
+    //         Nutritional_information: productData.Nutritional_information || existingProduct.Nutritional_information,
+    //         HarvestDate: productData.HarvestDate || existingProduct.HarvestDate,
+    //         PesticideUse: productData.PesticideUse || existingProduct.PesticideUse,
+    //         FertilizerUse: productData.FertilizerUse || existingProduct.FertilizerUse,
+    //         CountryOfOrigin: productData.CountryOfOrigin || existingProduct.CountryOfOrigin,
+    //         CustomObject: productData.CustomObject || existingProduct.CustomObject
+    //     };
+     
+    //     // 5. Scrivere nel ledger
+    //     await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedProduct))));
+     
+    //     console.log(`Product ${id} updated successfully`);
+    //     return JSON.stringify(updatedProduct);
+    // }
 
     // DeleteProduct deletes an given product from the world state.
     async DeleteProduct(ctx, id) {
@@ -263,24 +220,24 @@ class SupplyChainContract extends Contract {
         return productJSON && productJSON.length > 0;
     }
 
-    async AddSensorData(ctx, id, sensor_id, temperature, humidity, timestamp) {
-        const productAsBytes = await ctx.stub.getState(id);
-        if (!productAsBytes || productAsBytes.length === 0) {
-            throw new Error(`Il prodotto ${id} non esiste.`);
-        }
-        const product = JSON.parse(productAsBytes.toString());
+    // async AddSensorData(ctx, id, sensor_id, temperature, humidity, timestamp) {
+    //     const productAsBytes = await ctx.stub.getState(id);
+    //     if (!productAsBytes || productAsBytes.length === 0) {
+    //         throw new Error(`Il prodotto ${id} non esiste.`);
+    //     }
+    //     const product = JSON.parse(productAsBytes.toString());
 
-        // Aggiungi i dati del sensore alla cronologia del prodotto
-        product.SensorData.push({
-            SensorId: sensor_id,
-            Temperature: temperature,
-            Humidity: humidity,
-            Timestamp: timestamp
-        });
+    //     // Aggiungi i dati del sensore alla cronologia del prodotto
+    //     product.SensorData.push({
+    //         SensorId: sensor_id,
+    //         Temperature: temperature,
+    //         Humidity: humidity,
+    //         Timestamp: timestamp
+    //     });
 
-        await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
-        console.info(`Dati del sensore aggiunti per il prodotto ${id}.`);
-    }
+    //     await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
+    //     console.info(`Dati del sensore aggiunti per il prodotto ${id}.`);
+    // }
 
     async UpdateProductLocation(ctx, id, newLocation, status, date) {
         const productAsBytes = await ctx.stub.getState(id);
@@ -302,24 +259,24 @@ class SupplyChainContract extends Contract {
         console.info(`Prodotto ${id} aggiornato con successo.`);
     }
 
-    async AddCertification(ctx, id, certificationType, certifyingBody, issueDate) {
-        // Retrieve the product data from the state
-        const productAsBytes = await ctx.stub.getState(id);
-        if (!productAsBytes || productAsBytes.length === 0) {
-            throw new Error(`Product ${id} does not exist.`);
-        }
+    // async AddCertification(ctx, id, certificationType, certifyingBody, issueDate) {
+    //     // Retrieve the product data from the state
+    //     const productAsBytes = await ctx.stub.getState(id);
+    //     if (!productAsBytes || productAsBytes.length === 0) {
+    //         throw new Error(`Product ${id} does not exist.`);
+    //     }
 
-        const product = JSON.parse(productAsBytes.toString());
+    //     const product = JSON.parse(productAsBytes.toString());
 
-        product.Certifications.push({
-            CertificationType: certificationType,
-            CertifyingBody: certifyingBody,
-            IssueDate: issueDate
-        });
+    //     product.Certifications.push({
+    //         CertificationType: certificationType,
+    //         CertifyingBody: certifyingBody,
+    //         IssueDate: issueDate
+    //     });
 
-        await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
-        console.info(`Certification added to product ${id}.`);
-    }
+    //     await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
+    //     console.info(`Certification added to product ${id}.`);
+    // }
 
     /*async VerifyCertification(ctx, id, requiredCertificationType) {
         const productAsBytes = await ctx.stub.getState(id);
@@ -346,32 +303,32 @@ class SupplyChainContract extends Contract {
         return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(res))));
     }*/
 
-    async GetAllMovements(ctx, id) {
-        const productAsBytes = await ctx.stub.getState(id);
-        if (!productAsBytes || productAsBytes.length === 0) {
-            throw new Error(`Product ${id} does not exist.`);
-        }
-        const product = JSON.parse(productAsBytes.toString());
-        return JSON.stringify(product.Movements);
-    }
+    // async GetAllMovements(ctx, id) {
+    //     const productAsBytes = await ctx.stub.getState(id);
+    //     if (!productAsBytes || productAsBytes.length === 0) {
+    //         throw new Error(`Product ${id} does not exist.`);
+    //     }
+    //     const product = JSON.parse(productAsBytes.toString());
+    //     return JSON.stringify(product.Movements);
+    // }
 
-    async GetAllSensorData(ctx, id) {
-        const productAsBytes = await ctx.stub.getState(id);
-        if (!productAsBytes || productAsBytes.length === 0) {
-            throw new Error(`Product ${id} does not exist.`);
-        }
-        const product = JSON.parse(productAsBytes.toString());
-        return JSON.stringify(product.SensorData);
-    }
+    // async GetAllSensorData(ctx, id) {
+    //     const productAsBytes = await ctx.stub.getState(id);
+    //     if (!productAsBytes || productAsBytes.length === 0) {
+    //         throw new Error(`Product ${id} does not exist.`);
+    //     }
+    //     const product = JSON.parse(productAsBytes.toString());
+    //     return JSON.stringify(product.SensorData);
+    // }
 
-    async GetAllCertifications(ctx, id) {
-        const productAsBytes = await ctx.stub.getState(id);
-        if (!productAsBytes || productAsBytes.length === 0) {
-            throw new Error(`Product ${id} does not exist.`);
-        }
-        const product = JSON.parse(productAsBytes.toString());
-        return JSON.stringify(product.Certifications);
-    }
+    // async GetAllCertifications(ctx, id) {
+    //     const productAsBytes = await ctx.stub.getState(id);
+    //     if (!productAsBytes || productAsBytes.length === 0) {
+    //         throw new Error(`Product ${id} does not exist.`);
+    //     }
+    //     const product = JSON.parse(productAsBytes.toString());
+    //     return JSON.stringify(product.Certifications);
+    // }
 }
 
 module.exports = SupplyChainContract;

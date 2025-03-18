@@ -6,5 +6,25 @@
     "test@ciao.it": {
         "manufacturer": "test",
         "password": "$2b$12$ZbO6LMYWem.Xi79scFm.FuJkXqpLcU0R03iCM7gqqQ.E/Gl8TtMS."
+    },
+    "test2@gmail.com": {
+        "manufacturer": "test2",
+        "password": "$2b$12$ZOylzWpi2GiHBinxLSIldOegEt41YTGUN8x4VsIroR1/tG2LpMlkK"
+    },
+    "test456@ciao.it": {
+        "manufacturer": "test456",
+        "password": "$2b$12$XH4qBXVF6wYmjRYbe3J76u0tJkunezn/nbNKsqGiiCROnzwjwWbNu"
+    },
+    "ciao@ciao.it": {
+        "manufacturer": "ciao",
+        "password": "$2b$12$fal5FftSclJNPDfDzRbOg.KLX8P6VO7NoJUbTPhoSfwRPj9L8z8Je"
+    },
+    "carota@ciao.it": {
+        "manufacturer": "carota",
+        "password": "$2b$12$rc7zOlku1iPb2hCefq6A3OHKBgJQyzH464nUupvKLz6arnYVFvqw6"
+    },
+    "cuoricini@ciao.it": {
+        "manufacturer": "cuoricini",
+        "password": "$2b$12$CxCxWO/fRwSA0176HqnxB.O14tPHciDnqb55E0hioy5r6LuympdOm"
     }
 }
