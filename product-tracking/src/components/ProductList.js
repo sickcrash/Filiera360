@@ -45,44 +45,44 @@ const ProductList = ({ onProductSelect }) => {
     }
 
     // Fetch the GLB model using the itemCode from the product
-    try {
-      const modelResponse = await axios.get(`http://127.0.0.1:5000/getModel?productId=${itemCode}`);
+    // try {
+    //   const modelResponse = await axios.get(`http://127.0.0.1:5000/getModel?productId=${itemCode}`);
 
-      if (modelResponse.status === 200) {
-        const base64Model = modelResponse.data.ModelBase64;
+    //   if (modelResponse.status === 200) {
+    //     const base64Model = modelResponse.data.ModelBase64;
 
-        const byteCharacters = atob(base64Model.split(',')[1]);
-        const byteArray = new Uint8Array(byteCharacters.length);
+    //     const byteCharacters = atob(base64Model.split(',')[1]);
+    //     const byteArray = new Uint8Array(byteCharacters.length);
 
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteArray[i] = byteCharacters.charCodeAt(i);
-        }
+    //     for (let i = 0; i < byteCharacters.length; i++) {
+    //       byteArray[i] = byteCharacters.charCodeAt(i);
+    //     }
 
-        const glbBlob = new Blob([byteArray], { type: 'application/octet-stream' });
-        setGlbFile(glbBlob);
+    //     const glbBlob = new Blob([byteArray], { type: 'application/octet-stream' });
+    //     setGlbFile(glbBlob);
 
-        console.log('GLB model loaded successfully!');
-      } else {
-        console.log('Failed to fetch GLB model.');
-        setGlbFile(null);
-      }
-    } catch (error) {
-      console.error("Error fetching model: ", error);
-      setGlbFile(null);
-    }
+    //     console.log('GLB model loaded successfully!');
+    //   } else {
+    //     console.log('Failed to fetch GLB model.');
+    //     setGlbFile(null);
+    //   }
+    // } catch (error) {
+    //   console.error("Error fetching model: ", error);
+    //   setGlbFile(null);
+    // }
 
     // Retrieve product movements
-    try {
-      const movementsResponse = await axios.get(`http://127.0.0.1:5000/getAllMovements?productId=${itemCode}`);
-      if (movementsResponse.status === 200) {
-        const movementsFound = movementsResponse.data;
-        setStatus(movementsFound[movementsFound.length - 1]?.Status || "");
-      } else {
-        setStatus("");
-      }
-    } catch (error) {
-      setStatus("");
-    }
+    // try {
+    //   const movementsResponse = await axios.get(`http://127.0.0.1:5000/getAllMovements?productId=${itemCode}`);
+    //   if (movementsResponse.status === 200) {
+    //     const movementsFound = movementsResponse.data;
+    //     setStatus(movementsFound[movementsFound.length - 1]?.Status || "");
+    //   } else {
+    //     setStatus("");
+    //   }
+    // } catch (error) {
+    //   setStatus("");
+    // }
   };
 
   const getLastUpdate = () => {
@@ -117,9 +117,7 @@ const ProductList = ({ onProductSelect }) => {
       logContent += `ID: ${valueData.ID}\n`;
       logContent += `Name: ${valueData.Name}\n`;
       logContent += `Manufacturer: ${valueData.Manufacturer}\n`;
-      logContent += `Creation Date: ${valueData.CreationDate}\n`;
       logContent += `Expiry Date: ${valueData.ExpiryDate}\n`;
-      logContent += `More Information: ${valueData.Moreinfo || 'No additional information'}\n\n`;
       logContent += `Ingredients: ${valueData.Ingredients}\n`;
       logContent += `Nutritional Information: ${valueData.Nutritional_information || 'N/A'}\n`;
       logContent += `Allergens: ${valueData.Allergens || 'N/A'}\n`;
@@ -127,6 +125,15 @@ const ProductList = ({ onProductSelect }) => {
       logContent += `Pesticide Use: ${valueData.PesticideUse || 'N/A'}\n`;
       logContent += `Fertilizer Use: ${valueData.FertilizerUse || 'N/A'}\n`;
       logContent += `Country Of Origin: ${valueData.CountryOfOrigin || 'N/A'}\n`;
+
+      if (valueData.CustomObject && Object.keys(valueData.CustomObject).length > 0) {
+        logContent += `Custom Fields:\n`;
+        Object.entries(valueData.CustomObject).forEach(([key, value]) => {
+          logContent += `${key}: ${value}\n`;
+        });
+      } else {
+        logContent += `Custom Fields: N/A\n`; // Se non ci sono custom fields, mostriamo N/A
+      }
     });
 
     const blob = new Blob([logContent], { type: 'text/plain' });
@@ -259,6 +266,67 @@ const ProductList = ({ onProductSelect }) => {
               {message && <p className="mt-3 text-muted">{message}</p>}
             </div>
           </div>
+
+          {/* <div className="card shadow">
+            <div className="card-body">
+              <Card.Header>
+                <h4>Scan Batch 🔎</h4>
+                <p style={{ color: "grey" }}>
+                  🔗 Insert the item code manually or either scan/upload a QR code
+                </p>
+              </Card.Header>
+              <br />
+              <div className="form-group d-flex align-items-center">
+                <input
+                  type="text"
+                  onChange={(e) => setItemCode(e.target.value)}
+                  className="form-control me-2"
+                  id="itemCode"
+                  placeholder="Enter product Item Code"
+                />
+                <input
+                  type="file"
+                  id="uploader"
+                  onChange={handleImageUpload}
+                  onError={handleError}
+                  onClick={() => setShowCamera(false)}
+                  style={{ display: 'none' }}
+                />
+                <label
+                  htmlFor="uploader"
+                  className="btn btn-secondary me-1"
+                  style={{ backgroundColor: "silver", border: 0 }}
+                >
+                  <ion-icon name="cloud-upload-outline"></ion-icon><i className="ion-ios-upload" />
+                </label>
+                <div
+                  className="btn btn-secondary"
+                  title="Scan QR Code"
+                  style={{ backgroundColor: "silver", border: 0 }}
+                  onClick={() => setShowCamera(!showCamera)}
+                >
+                  <ion-icon name="camera-outline"></ion-icon>
+                </div>
+              </div>
+              {showCamera === true ? (
+                <QrScanner
+                  style={{ width: "100%", paddingTop: "2vw" }}
+                  delay={300}
+                  onError={handleError}
+                  onScan={handleQrScan}
+                />
+              ) : null}
+              <input
+                type="submit"
+                className="btn btn-primary mt-3 w-100"
+                id="scanButton"
+                value="Scan Product"
+              />
+              {message && <p className="mt-3 text-muted">{message}</p>}
+            </div>
+          </div> */}
+
+
         </div>
       </form>
 
@@ -296,24 +364,14 @@ const ProductList = ({ onProductSelect }) => {
                         <td>{product.Manufacturer}</td>
                       </tr>
                     )}
-                    {product.CreationDate && (
-                      <tr>
-                        <th>Creation Date</th>
-                        <td>{product.CreationDate}</td>
-                      </tr>
-                    )}
+                                       
                     {product.ExpiryDate && (
                       <tr>
                         <th>Expiry Date</th>
                         <td>{product.ExpiryDate}</td>
                       </tr>
                     )}
-                    {product.Moreinfo && (
-                      <tr>
-                        <th>More Information</th>
-                        <td>{product.Moreinfo}</td>
-                      </tr>
-                    )}
+                                        
                     {product.Ingredients && (
                       <tr>
                         <th>Ingredients</th>
@@ -332,12 +390,7 @@ const ProductList = ({ onProductSelect }) => {
                         <td>{product.Allergens}</td>
                       </tr>
                     )}
-                    {product.HarvestDate && (
-                      <tr>
-                        <th>Harvest Date</th>
-                        <td>{product.HarvestDate}</td>
-                      </tr>
-                    )}
+                    
                     {product.PesticideUse && (
                       <tr>
                         <th>Pesticide Use</th>
@@ -356,6 +409,15 @@ const ProductList = ({ onProductSelect }) => {
                         <td>{product.CountryOfOrigin}</td>
                       </tr>
                     )}
+                    {product.CustomObject && Object.entries(product.CustomObject).map(([key, value]) => (
+                      <tr key={key}>
+                        <th>{key}</th>
+                        <td>{value}</td>
+                      </tr>
+                    ))}
+
+                    
+                    
                     <tr>
                       <th>Status</th>
                       <td>{status || 'No status available'}</td>
@@ -365,11 +427,11 @@ const ProductList = ({ onProductSelect }) => {
                       <td>{productHistory.length}</td>
                     </tr>
                     <tr>
-                      <th>Creation Date *</th>
+                      <th>Last Date *</th>
                       <td>{getLastUpdate() || 'No updates available'}</td>
                     </tr>
                     <tr>
-                      <th>Last Update *</th>
+                      <th>First Update *</th>
                       <td>{getFirstUpdate() || 'No updates available'}</td>
                     </tr>
                   </tbody>
