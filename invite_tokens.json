@@ -1,0 +1,26 @@
+{
+    "ABC123": {
+        "expires_at": "2025-04-01T00:00:00",
+        "used": true
+    },
+    "XYZ789": {
+        "expires_at": "2025-05-01T00:00:00",
+        "used": true
+    },
+    "FBQ789": {
+        "expires_at": "2024-05-01T00:00:00",
+        "used": true
+    },
+    "RT3445": {
+        "expires_at": "2026-03-02T00:00:00",
+        "used": false
+    },
+    "LS445": {
+        "expires_at": "2025-05-07T00:00:00",
+        "used": false
+    },
+    "JHF346": {
+        "expires_at": "2024-05-07T00:00:00",
+        "used": false
+    }
+}

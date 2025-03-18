@@ -6,19 +6,30 @@ const SignUp = () => {
   const [email, setEmail] = useState("");
   const [manufacturer, setManufacturer] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("user"); 
+  const [inviteToken, setInviteToken] = useState(""); 
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
+
+    // Se il ruolo è "producer", il token di invito è obbligatorio
+    if (role === "producer" && !inviteToken) {
+      setMessage("The invitation token is required for producers.");
+      return;
+    }
+
     try {
       const response = await axios.post("http://127.0.0.1:5000/signup", {
         manufacturer,
         email,
         password,
+        role,
+        inviteToken: role === "producer" ? inviteToken : null,
       });
       const data = response.data;
-
+  
       alert("Registration successful!");
       navigate("/login");
     } catch (error) {
@@ -93,6 +104,28 @@ const SignUp = () => {
                     required
                   />
                 </div>
+
+                <div className="form-group mt-3">
+                  <label>Role:</label>
+                  <select className="form-control" value={role} onChange={(e) => setRole(e.target.value)} required>
+                    <option value="producer">Producer</option>
+                    <option value="operator">Operator</option>
+                    <option value="user">User</option>
+                  </select>
+                </div>
+
+                {role === "producer" && (
+                  <div className="form-group mt-3">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Token di Invito"
+                      value={inviteToken}
+                      onChange={(e) => setInviteToken(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
                 <button className="btn btn-primary mt-3 w-100" type="submit">Sign Up</button>
               </form>
               {message && <p className="mt-3 text-muted">{message}</p>}
