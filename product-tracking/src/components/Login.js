@@ -48,11 +48,11 @@ const Login = ({ setIsLoggedIn }) => {
       // Verifica dell'OTP
       const response = await axios.post("http://127.0.0.1:5000/verify-otp", {
         email,
-        otp,
+        otp: parseInt(otp,10),
       });
       const data = response.data;
 
-      if (data.success) {
+      if (data.message === "OTP validated successfully.") { //prima era if (data success)
         // Se OTP è corretto, redirigiamo l'utente
         setIsLoggedIn(true);
         navigate("/");

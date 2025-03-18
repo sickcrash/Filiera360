@@ -25,7 +25,7 @@
     },
     "fpiconese6@gmail.com": {
         "manufacturer": "ddd",
-        "password": "$2b$12$mgb4jw.ORF6ZVe3QnAZBs.HebTpbUO4JuspIHt7Ez8jnAOg1cx//G"
+        "password": "$2b$12$jV7omj3CgT5DwAc/MVeBeeYiAVVwzMoj.kqQGLmst1A.WPyXP7CRq"
     },
     "feee@gmail.com": {
         "manufacturer": "aaaaaaaa",
@@ -38,5 +38,13 @@
     "criscorrado0@gmail.com": {
         "manufacturer": "Cristian1",
         "password": "$2b$12$ctdPU9e.l9/4UCrhl37feO657PJVY.rcMFKed0TgPjxKtIGdO4ZTm"
+    },
+    "sss@prova.it": {
+        "manufacturer": "ssssss",
+        "password": "$2b$12$Szhs6wr2UzkYowFJuUftcuDJ1KiCQyeP3ezKp2P5aIldnYJZ3wGyq"
+    },
+    "wwww@gmail.com": {
+        "manufacturer": "asdf",
+        "password": "$2b$12$ZpCor9/EX4MK/3Qmvwn25u6GMk3Kl3LrvEU6c.wEZbybpzYWJv1Am"
     }
 }
