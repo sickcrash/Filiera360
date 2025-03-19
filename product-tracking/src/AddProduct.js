@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { Card, Form, Button } from "react-bootstrap";
 import { QRCodeCanvas } from "qrcode.react";
 import Viewer3D from "./components/Viewer3D";
 import Papa from "papaparse"; // Assicurati di avere papaparse installato
 
 const AddProduct = () => {
+  let navigate = useNavigate();
+
   const [manufacturer, setManufacturer] = useState("");
+
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
@@ -29,6 +33,10 @@ const AddProduct = () => {
 
   useEffect(() => {
     setManufacturer(localStorage.getItem("manufacturer"));
+    const role = localStorage.getItem("role");
+    if(role !== "producer") {
+      navigate("/account");
+    }
   }, []);
 
   const resetForm = () => {

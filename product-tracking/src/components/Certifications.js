@@ -21,7 +21,11 @@ function Certifications({ productId }) {
     // fetch product manufacturer
     const getProductManufacturer = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${productId}`);
+        const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${productId}`, {
+          headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
+        });
         if (response.status === 200) {
           setProductManufacturer(response.data.Manufacturer);
         } else {

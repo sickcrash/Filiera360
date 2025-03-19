@@ -3,6 +3,38 @@
         "manufacturer": "alessio",
         "password": "$2b$12$1OI4Sn26sP6Yvf5aXMgeE.Zvc.jN5n7N111U3TQ1taBDKkFXReO.q"
     },
+    "federico@prova.it": {
+        "manufacturer": "asd",
+        "password": "$2b$12$eLOppaGhidR4NdgIp29vb.u/90QQhT6.7rhAmHKJqIm9wPWvukdle"
+    },
+    "asd@prova.it": {
+        "manufacturer": "asdd",
+        "password": "$2b$12$BYTJhkuvT69CCMqvgaC0YuexeehPTEbEwQ1mMz18F7YQm4Q63xdca"
+    },
+    "ar@prova.it": {
+        "manufacturer": "ar",
+        "password": "$2b$12$j/JbL01UUwSIbxejlsgT8eI7n378JSe/Hixe5URTjWSiPl8RRgt0C"
+    },
+    "federico.piconese.99@gmail.com": {
+        "manufacturer": "fede",
+        "password": "$2b$12$FTbiqfx5BlYqFT7i782M1e.3iMDBNE/RN6MKNxMzXgK0jUcWlvnMe"
+    },
+    "fpiconese6@gmial.com": {
+        "manufacturer": "aaa",
+        "password": "$2b$12$BcvIPl36n.Hpm00HyLyLZ.XE1pK3pwVQ5Q4f65b13CAQb.TUBBcjC"
+    },
+    "fpiconese6@gmail.com": {
+        "manufacturer": "ddd",
+        "password": "$2b$12$jV7omj3CgT5DwAc/MVeBeeYiAVVwzMoj.kqQGLmst1A.WPyXP7CRq"
+    },
+    "feee@gmail.com": {
+        "manufacturer": "aaaaaaaa",
+        "password": "$2b$12$x6P4LYtzjfHJglaN3RJqLOSNClM.6nk39Zj9gRvWhwwl61aoUM0Ge"
+    },
+    "222@prova.it": {
+        "manufacturer": "2222",
+        "password": "$2b$12$nHX22dqojiK9zfj/0uZCVeDxHfFOHQLgRGXT3lm.gYXfVZTI5rRvS"
+    },
     "test@ciao.it": {
         "manufacturer": "test",
         "password": "$2b$12$ZbO6LMYWem.Xi79scFm.FuJkXqpLcU0R03iCM7gqqQ.E/Gl8TtMS."
@@ -30,11 +62,11 @@
     "criscorrado0@gmail.com": {
         "manufacturer": "Cristian",
         "password": "$2b$12$.0iOWidpJaLNxbxACS9o5eBne4PKlLILd2gsNz1NfdJ.MfBjUdmv6",
-        "role": "user",
+        "role": "producer",
         "flags": {
-            "producer": false,
+            "producer": true,
             "operator": false,
-            "user": true
+            "user": false
         }
     }
 }

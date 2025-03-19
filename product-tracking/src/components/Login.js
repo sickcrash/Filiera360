@@ -5,35 +5,63 @@ import { useNavigate } from "react-router-dom";
 const Login = ({ setIsLoggedIn }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState(""); // Nuovo stato per OTP
   const [message, setMessage] = useState("");
-  const navigate = useNavigate()
+  const [isOtpSent, setIsOtpSent] = useState(false); // Stato per sapere se l'OTP è stato inviato
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      // Richiesta di login
       const response = await axios.post("http://127.0.0.1:5000/login", {
         email,
         password,
       });
       const data = response.data;
-
+      console.log("Response from login:", response.data); // LOG della risposta del server
+      // Salviamo i dati nel localStorage
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("manufacturer", data.manufacturer);
       localStorage.setItem("email", data.email);
-      setIsLoggedIn(true);
-      setMessage("Login successful!");
-      navigate("/");
-      window.location.reload();
+      localStorage.setItem("role", data.role);
+
+      // Se il login è riuscito, chiediamo l'OTP
+
+      const otpResponse = await axios.post("http://127.0.0.1:5000/send-otp", {
+        email,
+      });
+
+      setIsOtpSent(true); // Mostriamo il campo OTP
+      setMessage("Login successful! Please enter the OTP sent to your email.");
     } catch (error) {
       if (error.response && error.response.data) {
-        // Messaggio di errore dal backend
-        console.log(error.response.data.message);
         setMessage(error.response.data.message);
       } else {
-        // Errore generico
-        console.log(error.message);
         setMessage("An error occurred. Please try again.");
       }
+    }
+  };
+
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Verifica dell'OTP
+      const response = await axios.post("http://127.0.0.1:5000/verify-otp", {
+        email,
+        otp: parseInt(otp,10),
+      });
+      const data = response.data;
+
+      if (data.message === "OTP validated successfully.") { //prima era if (data success)
+        // Se OTP è corretto, redirigiamo l'utente
+        setIsLoggedIn(true);
+        navigate("/");
+      } else {
+        setMessage("Invalid OTP. Please try again.");
+      }
+    } catch (error) {
+      setMessage("An error occurred while verifying the OTP.");
     }
   };
 
@@ -44,9 +72,9 @@ const Login = ({ setIsLoggedIn }) => {
           {/* Logo */}
           <div
             style={{
-              textAlign: 'center',
+              textAlign: "center",
               width: "100%",
-              marginTop:"-4vw"
+              marginTop: "-4vw",
             }}
           >
             <img
@@ -61,34 +89,62 @@ const Login = ({ setIsLoggedIn }) => {
             <div className="card-body">
               <h3 className="card-title">Login</h3>
               <br />
-              <form onSubmit={handleLogin}>
-                <div className="form-group">
-                  <input
-                    type="email"
-                    className="form-control"
-                    placeholder="E-mail"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="form-group mt-3">
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <button className="btn btn-primary mt-3 w-100" type="submit">Login</button>
-              </form>
+              {/* Form per Login */}
+              {!isOtpSent ? (
+                <form onSubmit={handleLogin}>
+                  <div className="form-group">
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="E-mail"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group mt-3">
+                    <input
+                      type="password"
+                      className="form-control"
+                      id="password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button className="btn btn-primary mt-3 w-100" type="submit">
+                    Login
+                  </button>
+                </form>
+              ) : (
+                // Form per OTP
+                <form onSubmit={handleOtpSubmit}>
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button className="btn btn-primary mt-3 w-100" type="submit">
+                    Verify OTP
+                  </button>
+                </form>
+              )}
+
               {message && <p className="mt-3 text-muted">{message}</p>}
               <p className="mt-3">
                 Don’t have an account?{" "}
-                <span onClick={() => navigate("/signup")} style={{ color: "blue", cursor: "pointer" }}>Sign Up</span>
+                <span
+                  onClick={() => navigate("/signup")}
+                  style={{ color: "blue", cursor: "pointer" }}
+                >
+                  Sign Up
+                </span>
               </p>
               <p className="mt-3">
                 <span onClick={() => navigate("/forgot-password")} style={{ color: "darkgrey", cursor: "pointer", textDecoration:"underline" }}>
@@ -100,7 +156,14 @@ const Login = ({ setIsLoggedIn }) => {
         </div>
       </div>
       <p className="mt-3">
-        <span onClick={() => navigate("/scan-product")} style={{ color: "darkgrey", cursor: "pointer", textDecoration:"underline" }}>
+        <span
+          onClick={() => navigate("/scan-product")}
+          style={{
+            color: "darkgrey",
+            cursor: "pointer",
+            textDecoration: "underline",
+          }}
+        >
           Continue without logging in
         </span>
       </p>

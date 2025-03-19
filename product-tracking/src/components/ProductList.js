@@ -8,6 +8,8 @@ import jsQR from 'jsqr';
 import Viewer3D from './Viewer3D';
 
 const ProductList = ({ onProductSelect }) => {
+  const isProducer = localStorage.getItem("role") === "producer"; 
+
   const [itemCode, setItemCode] = useState('');
   const [message, setMessage] = useState('');
   const [product, setProduct] = useState(null);
@@ -24,8 +26,13 @@ const ProductList = ({ onProductSelect }) => {
       console.log("Scanning for Item Code: " + itemCode);
 
       // Fetch product details from the server
-      const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${itemCode}`);
-      const historyResponse = await axios.get(`http://127.0.0.1:5000/getProductHistory?productId=${itemCode}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${itemCode}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const historyResponse = await axios.get(`http://127.0.0.1:5000/getProductHistory?productId=${itemCode}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.status === 200) {
         setProduct(response.data); // Set product details in state
@@ -363,8 +370,7 @@ const ProductList = ({ onProductSelect }) => {
                         <th>Manufacturer</th>
                         <td>{product.Manufacturer}</td>
                       </tr>
-                    )}
-                                       
+                    )}              
                     {product.ExpiryDate && (
                       <tr>
                         <th>Expiry Date</th>
@@ -409,7 +415,7 @@ const ProductList = ({ onProductSelect }) => {
                         <td>{product.CountryOfOrigin}</td>
                       </tr>
                     )}
-                    {product.CustomObject && Object.entries(product.CustomObject).map(([key, value]) => (
+                    {product.CustomObject[0] && product.CustomObject[0] && Object.entries(product.CustomObject[0]).map(([key, value]) => (
                       <tr key={key}>
                         <th>{key}</th>
                         <td>{value}</td>
@@ -451,7 +457,7 @@ const ProductList = ({ onProductSelect }) => {
               </div>
             </div>
           </div>
-          { product.Manufacturer == localStorage.getItem("manufacturer") &&
+          { isProducer && product.Manufacturer == localStorage.getItem("manufacturer") &&
             <UpdateProduct 
           productId={itemCode} 
           productType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
