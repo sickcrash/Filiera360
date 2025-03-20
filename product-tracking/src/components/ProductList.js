@@ -27,12 +27,8 @@ const ProductList = ({ onProductSelect }) => {
 
       // Fetch product details from the server
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${itemCode}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const historyResponse = await axios.get(`http://127.0.0.1:5000/getProductHistory?productId=${itemCode}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${itemCode}`);
+      const historyResponse = await axios.get(`http://127.0.0.1:5000/getProductHistory?productId=${itemCode}`);
 
       if (response.status === 200) {
         setProduct(response.data); // Set product details in state

@@ -411,7 +411,7 @@ def verify_otp():
 
 # già usata su frontend
 @app.route('/getProduct', methods=['GET'])
-@jwt_required()
+#@jwt_required()
 def get_product():
     productId = request.args.get('productId')
     print("ATTEMPTING TO CONNECT:")
@@ -429,7 +429,7 @@ def get_product():
     
 # nuova aggiunta
 @app.route('/getProductHistory', methods=['GET'])
-@jwt_required()
+#@jwt_required()
 def get_product_history():
     productId = request.args.get('productId')
     print("ATTEMPTING TO CONNECT TO JS SERVER FOR PRODUCT HISTORY:")
@@ -561,7 +561,7 @@ def update_product():
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
     product_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = get_jwt_identity()
+    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
     print("Manufacturer authenticated:", real_manufacturer)
 
     product_id = product_data.get("ID")
