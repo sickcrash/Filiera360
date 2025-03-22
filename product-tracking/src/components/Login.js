@@ -16,10 +16,12 @@ const Login = ({ setIsLoggedIn }) => {
         password,
       });
       const data = response.data;
-
+ 
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("manufacturer", data.manufacturer);
       localStorage.setItem("email", data.email);
+      localStorage.setItem("role", data.role); 
+      
       setIsLoggedIn(true);
       setMessage("Login successful!");
       navigate("/");
