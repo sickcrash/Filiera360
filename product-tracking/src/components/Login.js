@@ -20,9 +20,13 @@ const Login = ({ setIsLoggedIn }) => {
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("manufacturer", data.manufacturer);
       localStorage.setItem("email", data.email);
+      // Store user ID for liked products
+      localStorage.setItem("userId", data.email);
+      
       setIsLoggedIn(true);
       setMessage("Login successful!");
       navigate("/");
+      // sto avendo problemi quando aggiorno provo a togliere il reload
       window.location.reload();
     } catch (error) {
       if (error.response && error.response.data) {

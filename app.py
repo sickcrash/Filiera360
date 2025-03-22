@@ -11,8 +11,12 @@ import json
 import os
 import secrets
 
+# Update the CORS configuration to allow all methods
 app = Flask(__name__, instance_relative_config=True)
-cors = CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+cors = CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"]}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 
@@ -531,5 +535,202 @@ def ask():
     bot_response = chatbot_response(user_input, item_code, productinfo)
     return jsonify({'message': bot_response})
 
+
+
+# Managing Liked Products Per User Account
+
+# Modify the liked products structure to be user-specific
+def load_liked_products():
+    try:
+        with open('liked_products.json', 'r') as f:
+            data = json.load(f)
+            # Ensure the structure is an object with user IDs as keys
+            if isinstance(data, list):
+                # Convert old format to new format if needed
+                return {"default": data}
+            return data
+    except (FileNotFoundError, json.JSONDecodeError):
+        # If file doesn't exist, create it with an empty object
+        save_liked_products({})
+        return {}
+
+# Update the likeProduct endpoint to handle user-specific likes
+@app.route('/likeProduct', methods=['POST', 'OPTIONS'])
+def like_product():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        return response
+        
+    # Handle actual POST request
+    data = request.json
+    product_data = data.get('product')
+    user_id = data.get('userId', 'default')  # Use 'default' if no user ID provided
+    
+    global liked_products
+    liked_products = load_liked_products()
+    
+    # Initialize user's liked products list if it doesn't exist
+    if user_id not in liked_products:
+        liked_products[user_id] = []
+    
+    # Check if product already exists in user's liked products
+    for product in liked_products[user_id]:
+        if product['ID'] == product_data['ID']:
+            return jsonify({"message": "Product already liked"}), 200
+    
+    # Add to user's liked products
+    liked_products[user_id].append(product_data)
+    
+    # Save to JSON file
+    save_liked_products(liked_products)
+    
+    print(f"Product {product_data['ID']} added to liked products for user {user_id}. Total: {len(liked_products[user_id])}")
+    return jsonify({"message": "Product added to liked products"}), 201
+
+# Update the unlikeProduct endpoint for user-specific unlikes
+@app.route('/unlikeProduct', methods=['DELETE', 'OPTIONS'])
+def unlike_product():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'DELETE')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response
+        
+    product_id = request.args.get('productId')
+    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
+    
+    global liked_products
+    # Reload liked products from file to ensure we have the latest data
+    liked_products = load_liked_products()
+    
+    # Check if user exists in liked products
+    if user_id not in liked_products:
+        return jsonify({"message": "User has no liked products"}), 404
+    
+    # Remove from user's liked products
+    original_length = len(liked_products[user_id])
+    liked_products[user_id] = [p for p in liked_products[user_id] if p['ID'] != product_id]
+    
+    # Check if any product was actually removed
+    if len(liked_products[user_id]) == original_length:
+        print(f"Product {product_id} not found in user {user_id}'s liked products")
+    else:
+        print(f"Product {product_id} removed from liked products for user {user_id}. Remaining: {len(liked_products[user_id])}")
+    
+    # Save to JSON file
+    save_liked_products(liked_products)
+    
+    # Set CORS headers manually for this response
+    response = jsonify({"message": "Product removed from liked products"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Methods', 'DELETE')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    return response, 200
+
+# Update the getLikedProducts endpoint for user-specific retrieval
+@app.route('/getLikedProducts', methods=['GET'])
+def get_liked_products():
+    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
+    
+    global liked_products
+    liked_products = load_liked_products()
+    
+    # Return empty list if user has no liked products
+    if user_id not in liked_products:
+        return jsonify([])
+    
+    return jsonify(liked_products[user_id])
+
+# Add this function to save liked products to JSON file
+def save_liked_products(products):
+    with open('liked_products.json', 'w') as f:
+        json.dump(products, f, indent=4)
+
+# Initialize the liked_products variable
+liked_products = load_liked_products()
+
+
+
+# Add these new routes for recently searched products
+
+@app.route('/addRecentlySearched', methods=['POST', 'OPTIONS'])
+def add_recently_searched():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response
+    
+    data = request.json
+    product = data.get('product')
+    user_id = data.get('userId', 'default')  # Use 'default' if no user ID provided
+    
+    # Add timestamp if not present
+    if 'timestamp' not in product:
+        product['timestamp'] = datetime.now().isoformat()
+    
+    # Load recently searched products
+    recently_searched = load_recently_searched()
+    
+    # Initialize user's list if it doesn't exist
+    if user_id not in recently_searched:
+        recently_searched[user_id] = []
+    
+    # Remove the product if it already exists in the list
+    recently_searched[user_id] = [p for p in recently_searched[user_id] if p['ID'] != product['ID']]
+    
+    # Add the product to the beginning of the list
+    recently_searched[user_id].insert(0, product)
+    
+    # Keep only the 5 most recent products
+    recently_searched[user_id] = recently_searched[user_id][:5]
+    
+    # Save to JSON file
+    save_recently_searched(recently_searched)
+    
+    response = jsonify({"message": "Product added to recently searched"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+@app.route('/getRecentlySearched', methods=['GET'])
+def get_recently_searched():
+    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
+    
+    recently_searched = load_recently_searched()
+    
+    # Return empty list if user has no recently searched products
+    if user_id not in recently_searched:
+        return jsonify([])
+    
+    return jsonify(recently_searched[user_id])
+
+def load_recently_searched():
+    try:
+        with open('recently_searched.json', 'r') as f:
+            data = json.load(f)
+            # Ensure the structure is an object with user IDs as keys
+            if isinstance(data, list):
+                # Convert old format to new format if needed
+                return {"default": data}
+            return data
+    except (FileNotFoundError, json.JSONDecodeError):
+        # If file doesn't exist, create it with an empty object
+        save_recently_searched({})
+        return {}
+
+def save_recently_searched(products):
+    with open('recently_searched.json', 'w') as f:
+        json.dump(products, f, indent=4)
+
+
+# Make sure the if __name__ block is inside the code
 if __name__ == "__main__":
     app.run(debug=True)

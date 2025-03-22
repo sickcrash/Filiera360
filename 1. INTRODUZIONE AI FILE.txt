@@ -11,7 +11,7 @@ Si noti che il progetto originale prevede un'interfaccia html per questo server,
 
 [ appServer.js ] -> questo è un server Node presente in Linux (WSL) che permette la comunicazione con il chaincode.
 Si avvia con: avvio dei containers Docker (anche da Docker Desktop),
-poi nella WSL: cd go/src/github.com/filiera360/fabric-samples/myapp && npm start
+poi nella WSL: cd go/src/github.com/Filiera360/fabric-samples/myapp && npm start
 Una volta avviato, questo server si collega automaticamente alla blockchain e carica i prodotti prova AGRI_X e FIN_X.
 Espone al server Flask tutte le operazioni di lettura e scrittura dei prodotti su blockchain e dei relativi sensor/movement/certification data.
 
