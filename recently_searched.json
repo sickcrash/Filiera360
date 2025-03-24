@@ -1,0 +1,42 @@
+{
+    "default": [],
+    "sandro2@gmail.com": [
+        {
+            "ID": "12",
+            "Name": "mela",
+            "Manufacturer": "ale",
+            "CreationDate": "2025-03-04",
+            "timestamp": "2025-03-20T18:20:08.011Z"
+        },
+        {
+            "ID": "1",
+            "Name": "bisceglie",
+            "Manufacturer": "sandro",
+            "CreationDate": "2025-03-17",
+            "timestamp": "2025-03-20T18:19:14.043Z"
+        },
+        {
+            "ID": "133",
+            "Name": "uova",
+            "Manufacturer": "ale",
+            "CreationDate": "2025-03-12",
+            "timestamp": "2025-03-20T18:18:44.844Z"
+        },
+        {
+            "ID": "2",
+            "Name": "olio",
+            "Manufacturer": "ale",
+            "CreationDate": "2025-03-11",
+            "timestamp": "2025-03-20T18:18:34.410Z"
+        }
+    ],
+    "abc@gmail.com": [
+        {
+            "ID": "4",
+            "Name": "fagioli",
+            "Manufacturer": "abc",
+            "CreationDate": "2025-03-21",
+            "timestamp": "2025-03-20T18:21:17.066Z"
+        }
+    ]
+}

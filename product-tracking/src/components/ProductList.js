@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Card, Table } from 'react-bootstrap';
+import { Card, Table, Row, Col } from 'react-bootstrap';
 import UpdateProduct from './update_prod/UpdateProduct';
 import { QRCodeCanvas } from 'qrcode.react';
 import QrScanner from 'react-qr-scanner';
@@ -18,10 +18,29 @@ const ProductList = ({ onProductSelect }) => {
   const [showCamera, setShowCamera] = useState('false');
   const [scan, setScan] = useState(0);
   const [glbFile, setGlbFile] = useState(null);
+  
+  // variabili useState per la gestione dei prodotti preferiti
+  const [liked, setLiked] = useState(false); // controllo se il prodotto é stato preferito o meno 
+  const [likedProducts, setLikedProducts] = useState(() => {
+    // Load liked products from localStorage when component mounts
+    const savedProducts = localStorage.getItem('likedProducts');
+    return savedProducts ? JSON.parse(savedProducts) : [];
+  });
+  
+  // Nuovo stato per la cronologia dei prodotti scansionati
+  const [recentlyScanned, setRecentlyScanned] = useState(() => {
+    // Load recently scanned products from localStorage
+    const savedScanned = localStorage.getItem('recentlyScannedProducts');
+    return savedScanned ? JSON.parse(savedScanned) : [];
+  });
 
   // Handle scanning the product and fetching its details
   const handleScan = async (e) => {
     e?.preventDefault();
+    
+    // controllo il prodotto scannerizzato è gia stato preferito
+    setLiked(likedProducts.some(p => p.ID === itemCode)); // Check if product is already liked
+    
     try {
       console.log("Scanning for Item Code: " + itemCode);
 
@@ -31,11 +50,15 @@ const ProductList = ({ onProductSelect }) => {
       const historyResponse = await axios.get(`http://127.0.0.1:5000/getProductHistory?productId=${itemCode}`);
 
       if (response.status === 200) {
-        setProduct(response.data); // Set product details in state
+        const productData = response.data;
+        setProduct(productData); // Set product details in state
         setMessage(`Product ${itemCode} found!`);
         console.log(`Product ${itemCode} found!`);
         onProductSelect(itemCode);
         setProductHistory(historyResponse.data || "");
+        
+        // Aggiungi il prodotto alla cronologia dei prodotti scansionati
+        addToRecentlyScanned(productData);
       } else {
         setMessage('Product not found.');
         setProduct(null);
@@ -202,6 +225,121 @@ const ProductList = ({ onProductSelect }) => {
     console.error("QR code scan error:", err);
   };
 
+  // Funzione per aggiungere un prodotto alla cronologia dei prodotti scansionati
+  const addToRecentlyScanned = async (productData) => {
+    try {
+      // Get user ID from localStorage (set during login)
+      const userId = localStorage.getItem('email') || 'default';
+      
+      // Crea un oggetto con solo le informazioni essenziali
+      const scannedProduct = {
+        ID: productData.ID,
+        Name: productData.Name,
+        Manufacturer: productData.Manufacturer,
+        CreationDate: productData.CreationDate,
+        timestamp: new Date().toISOString() // Aggiungi timestamp per ordinare per data di scansione
+      };
+      
+      // Send to backend
+      await axios.post('http://127.0.0.1:5000/addRecentlySearched', {
+        product: scannedProduct,
+        userId: userId
+      });
+      
+      // Update local state
+      // Rimuovi il prodotto se già presente nella lista
+      const filteredHistory = recentlyScanned.filter(p => p.ID !== scannedProduct.ID);
+      // Aggiungi il prodotto all'inizio della lista
+      const updatedHistory = [scannedProduct, ...filteredHistory].slice(0, 5); // Mantieni solo gli ultimi 5 prodotti
+      setRecentlyScanned(updatedHistory);
+    } catch (error) {
+      console.error("Error updating recently searched products:", error);
+    }
+  };
+
+  // Add useEffect to fetch recently searched products
+  useEffect(() => {
+    const fetchRecentlySearched = async () => {
+      try {
+        // Get user ID from localStorage (set during login)
+        const userId = localStorage.getItem('email') || 'default';
+        const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`);
+        setRecentlyScanned(response.data);
+      } catch (error) {
+        console.error("Error fetching recently searched products:", error);
+      }
+    };
+    
+    fetchRecentlySearched();
+    
+    // Also fetch liked products in the same useEffect
+    const fetchLikedProducts = async () => {
+      try {
+        // Get user ID from localStorage (set during login)
+        const userId = localStorage.getItem('email') || 'default';
+        const response = await axios.get(`http://127.0.0.1:5000/getLikedProducts?userId=${userId}`);
+        setLikedProducts(response.data);
+      } catch (error) {
+        console.error("Error fetching liked products:", error);
+      }
+    };
+    
+    fetchLikedProducts();
+  }, []);
+
+  // Update the handleLikeToggle function to include user ID
+  const handleLikeToggle = async () => {
+    try {
+      // Get user ID from localStorage (set during login)
+      const userId = localStorage.getItem('email') || 'default';
+      
+      // In the handleLikeToggle function, modify the axios.delete call
+      if (liked) {
+        // If already liked, remove from favorites
+        try {
+          const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${product.ID}&userId=${userId}`, {
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          console.log(`Product ${product.ID} removed from favorites`, response.data);
+          
+          // Update the list of liked products
+          const updatedProducts = likedProducts.filter(p => p.ID !== product.ID);
+          setLikedProducts(updatedProducts);
+          setLiked(false);
+        } catch (error) {
+          console.error("Error removing product from favorites:", error);
+        }
+      }
+      else {
+        // If not liked, add to favorites
+        const productToLike = { 
+          ID: product.ID, 
+          Name: product.Name,
+          Manufacturer: product.Manufacturer,
+          CreationDate: product.CreationDate,
+          timestamp: new Date().toISOString()
+        };
+        
+        await axios.post('http://127.0.0.1:5000/likeProduct', {
+          product: productToLike,
+          userId: userId
+        });
+        
+        console.log(`Product ${product.ID} added to favorites`);
+        
+        // Update the list of liked products
+        setLikedProducts([...likedProducts, productToLike]);
+        setLiked(true);
+      }
+    } catch (error) {
+      console.error("Error updating liked products:", error);
+      setMessage("Failed to update liked products");
+    }
+  };
+
   return (
     <div className="container mt-5">
       {/* Form di inserimento Item Code */}
@@ -333,6 +471,115 @@ const ProductList = ({ onProductSelect }) => {
         </div>
       </form>
 
+      {/* Recently Scanned Products Section */}
+      {recentlyScanned.length > 0 && (
+        <div className="row mt-4 mb-4">
+          <div className="col-12">
+            <h4>Recently Scanned Products 🕒</h4>
+            <Row xs={1} md={2} lg={3} className="g-4">
+              {recentlyScanned.map((scannedProduct) => (
+                <Col key={scannedProduct.ID}>
+                  <Card className="h-100 shadow-sm">
+                    <Card.Body>
+                      <Card.Title>{scannedProduct.Name}</Card.Title>
+                      <Card.Text>
+                        <small className="text-muted">ID: {scannedProduct.ID}</small><br />
+                        <small className="text-muted">Manufacturer: {scannedProduct.Manufacturer}</small><br />
+                        <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
+                      </Card.Text>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <button 
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => {
+                            setItemCode(scannedProduct.ID);
+                            document.getElementById("itemCode").value = scannedProduct.ID;
+                            const syntheticEvent = { preventDefault: () => {} };
+                            handleScan(syntheticEvent);
+                          }}
+                        >
+                          View Details
+                        </button>
+                        <small className="text-muted">
+                          {new Date(scannedProduct.timestamp).toLocaleDateString()}
+                        </small>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        </div>
+      )}
+
+      {/* Liked Products Section */}
+      {likedProducts.length > 0 && (
+        <div className="row mt-4 mb-4">
+          <div className="col-12">
+            <h4>Your Liked Products ❤️</h4>
+            {/* Griglia responsive - 1 column on small screens, 3 on large */}
+            <Row xs={1} md={2} lg={3} className="g-4">
+              {likedProducts.map((likedProduct) => (
+                <Col key={likedProduct.ID}>
+                  {/* Card per ogni prodotto preferito */}
+                  <Card className="h-100 shadow-sm">
+                    <Card.Body>
+                      <Card.Title>{likedProduct.Name}</Card.Title>
+                      <Card.Text>
+                        <small className="text-muted">ID: {likedProduct.ID}</small><br />
+                        <small className="text-muted">Manufacturer: {likedProduct.Manufacturer}</small><br />
+                        <small className="text-muted">Created: {likedProduct.CreationDate}</small>
+                      </Card.Text>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <button 
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => {
+                            setItemCode(likedProduct.ID);
+                            document.getElementById("itemCode").value = likedProduct.ID;
+                            handleScan();
+                          }}
+                        >
+                          View Details
+                        </button>
+                        <button 
+                          className="btn btn-sm btn-danger"
+                          onClick={async () => {
+                            // Get user ID from localStorage
+                            const userId = localStorage.getItem('email') || 'default';
+                            
+                            try {
+                              // Call the backend to unlike the product
+                              const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                }
+                              });
+                              
+                              console.log(`Product ${likedProduct.ID} removed from favorites`, response.data);
+                              
+                              // Update the list of liked products in state
+                              const updatedProducts = likedProducts.filter(p => p.ID !== likedProduct.ID);
+                              setLikedProducts(updatedProducts);
+                              
+                              // If this is the currently displayed product, update its liked status
+                              if (product && product.ID === likedProduct.ID) setLiked(false);
+                            } catch (error) {
+                              console.error("Error removing product from favorites:", error);
+                            }
+                          }}
+                        >
+                          <ion-icon name="heart-dislike-outline"></ion-icon>
+                        </button>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        </div>
+      )}
+
       {/* Display product details if the product is found */}
       {product && (
         <div className="row justify-content-center mt-5">
@@ -340,6 +587,17 @@ const ProductList = ({ onProductSelect }) => {
             <div className="card shadow">
               <div className="card-body">
                 <h4 className="card-title">General Information ℹ️</h4>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div></div> {/* Empty div for flex spacing */}
+                  <button 
+                    className={`btn ${liked ? 'btn-danger' : 'btn-outline-danger'}`}
+                    onClick={handleLikeToggle}
+                    title={liked ? "Unlike this product" : "Like this product"}
+                  >
+                    <ion-icon name={liked ? "heart" : "heart-outline"}></ion-icon>
+                    {liked ? ' Liked' : ' Like'}
+                  </button>
+                </div>
                 {glbFile ? (
                   <div style={{ marginBlock: "2vw" }}>
                     <Viewer3D externalGlbFile={glbFile} />
@@ -466,3 +724,5 @@ const ProductList = ({ onProductSelect }) => {
 };
 
 export default ProductList;
+
+

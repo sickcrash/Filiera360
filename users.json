@@ -68,5 +68,21 @@
             "operator": false,
             "user": false
         }
+    },
+    "ale@gmail.com": {
+        "manufacturer": "ale",
+        "password": "$2b$12$4h7LcDLVAAIDNMJoofMSdODuVUuCIlfvf0KWFtM.sXE6K4YcKQaZG"
+    },
+    "sandro@gmail.com": {
+        "manufacturer": "sandro",
+        "password": "$2b$12$8L6mI4IYbvffiS9yjcXYG.tBY9b2NebpadLUmjUvDQqzwRajreNaK"
+    },
+    "sandro2@gmail.com": {
+        "manufacturer": "sandro2",
+        "password": "$2b$12$QT3Qzw.I4w8GJWX6muHGTepi3DhWl7/kSRhsSQ8RUCnVNkDisbWAe"
+    },
+    "abc@gmail.com": {
+        "manufacturer": "abc",
+        "password": "$2b$12$OZ2TyXCtRAR85R3C4S5F0uiFCeIlceB6fx4bgJEaegBUZivQGXbrO"
     }
 }

@@ -24,6 +24,8 @@ const Login = ({ setIsLoggedIn }) => {
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("manufacturer", data.manufacturer);
       localStorage.setItem("email", data.email);
+      // Store user ID for liked products
+      localStorage.setItem("userId", data.email);
       localStorage.setItem("role", data.role);
 
       // Se il login è riuscito, chiediamo l'OTP
