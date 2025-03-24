@@ -457,7 +457,19 @@ app.get('/productHistory', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
+// nuova aggiunta
+app.get('/batchHistory', async (req, res) => {
+    const { batchId } = req.query;
+    try {
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
+        const result = await getBatchHistoryByID(contract, batchId);
+        res.json(result);
+    } catch (error) {
+        console.error('Error reading batchId history by ID:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 app.post('/uploadProduct', async (req, res) => {
     const productData = req.body;
     console.log('Received product data:', productData);

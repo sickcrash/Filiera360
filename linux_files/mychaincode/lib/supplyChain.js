@@ -53,11 +53,10 @@ class SupplyChainContract extends Contract {
                 "ProductId":"AGRI_X",
                 "ProductionDate": "2023-05-01",
                 "Quantity": "6",
-                "Batch Number":"3",
+                "BatchNumber":"3",
                 "CustomObject": [
                     {
-                        "spedizione": "poste.it",
-                        "codice spedizione": "1234"
+                        "codiceSpedizione": "1234"
                     }
                 ]
             },
@@ -67,10 +66,10 @@ class SupplyChainContract extends Contract {
                 "ProductId":"FIN_X",
                 "ProductionDate": "2025-01-01",
                 "Quantity": "16",
-                "Batch Number":"13",
+                "BatchNumber":"13",
                 "CustomObject": [
                     {
-                        "codice spedizione": "4567"
+                        "codiceSpedizione": "4567"
                     }
                 ]
             },
@@ -81,10 +80,10 @@ class SupplyChainContract extends Contract {
             await ctx.stub.putState(product.ID, Buffer.from(stringify(sortKeysRecursive(product))));
         }
         
-        // for (const batch of batches) {
-        //     product.docType = 'product';
-        //     await ctx.stub.putState(product.ID, Buffer.from(stringify(sortKeysRecursive(product))));
-        // }
+        for (const batch of batches) {
+            batch.docType = 'batch';
+            await ctx.stub.putState(batch.ID, Buffer.from(stringify(sortKeysRecursive(batch))));
+        }
 
     }
 
@@ -152,10 +151,12 @@ class SupplyChainContract extends Contract {
         return productJSON.toString();
     }
     async ReadBatch(ctx, idBatch) {
+        console.log("Sono nella supplychain")
         const batchJSON = await ctx.stub.getState(idBatch); // get the batch from chaincode state
         if (!batchJSON || batchJSON.length === 0) {
             throw new Error(`The batch ${idBatch} does not exist`);
         }
+        console.log(batchJSON.toString())
         return batchJSON.toString();
     }
 
