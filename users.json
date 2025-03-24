@@ -62,6 +62,17 @@
     "criscorrado0@gmail.com": {
         "manufacturer": "Cristian",
         "password": "$2b$12$.0iOWidpJaLNxbxACS9o5eBne4PKlLILd2gsNz1NfdJ.MfBjUdmv6",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "associated_producer": "cri@gmail.com"
+    },
+    "cri@gmail.com": {
+        "manufacturer": "Cris",
+        "password": "$2b$12$.0iOWidpJaLNxbxACS9o5eBne4PKlLILd2gsNz1NfdJ.MfBjUdmv6",
         "role": "producer",
         "flags": {
             "producer": true,

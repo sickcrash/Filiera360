@@ -8,7 +8,7 @@ function Navbar() {
     useEffect(() => {
         setRole(localStorage.getItem("role"));
         console.log(localStorage.getItem("role"));
-        if (localStorage.getItem("role") === "producer") {
+        if (localStorage.getItem("role") === "producer" || localStorage.getItem("role") === "operator") {
             setIsProducer(true);
         }
     }, []);

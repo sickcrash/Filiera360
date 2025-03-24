@@ -362,6 +362,11 @@ const getLastUpdate = () => {
       await axios.post('http://127.0.0.1:5000/addRecentlySearched', {
         product: scannedProduct,
         userId: userId
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
       });
       
       // Update local state
@@ -381,7 +386,11 @@ const getLastUpdate = () => {
       try {
         // Get user ID from localStorage (set during login)
         const userId = localStorage.getItem('email') || 'default';
-        const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`);
+        const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+          }}
+        );
         setRecentlyScanned(response.data);
       } catch (error) {
         console.error("Error fetching recently searched products:", error);
@@ -395,7 +404,10 @@ const getLastUpdate = () => {
       try {
         // Get user ID from localStorage (set during login)
         const userId = localStorage.getItem('email') || 'default';
-        const response = await axios.get(`http://127.0.0.1:5000/getLikedProducts?userId=${userId}`);
+        const response = await axios.get(`http://127.0.0.1:5000/getLikedProducts?userId=${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+          }});
         setLikedProducts(response.data);
       } catch (error) {
         console.error("Error fetching liked products:", error);
@@ -489,14 +501,6 @@ const getLastUpdate = () => {
                   id="uploader"
                   onChange={handleImageUpload}
                   onError={handleError}
-                  onClick={(e) => {
-                    const userRole = localStorage.getItem("role"); 
-
-                    if (userRole !== "producer") {
-                      e.preventDefault();
-                      window.location.href = "/access-denied"; 
-                    }
-                  }}
                   style={{ display: 'none' }}
                 />
                 <label
@@ -800,7 +804,7 @@ const getLastUpdate = () => {
                         <td>{product.CountryOfOrigin}</td>
                       </tr>
                     )}
-                    {product.CustomObject[0] && product.CustomObject[0] && Object.entries(product.CustomObject[0]).map(([key, value]) => (
+                    {product.CustomObject && product.CustomObject && Object.entries(product.CustomObject).map(([key, value]) => (
                       <tr key={key}>
                         <th>{key}</th>
                         <td>{value}</td>

@@ -30,6 +30,7 @@ const AddProduct = () => {
   const [productType, setProductType] = useState("");
   const [csvFile, setCsvFile] = useState(null);
   const [viewProduct, setViewProduct] = useState(false);
+  const [customFields, setCustomFields] = useState([]);
   // Batch fields
   const [operator, setOperator] = useState("");
   const [idBatch, setIdBatch] = useState("");
@@ -46,17 +47,19 @@ const AddProduct = () => {
   const [messageBatch, setMessageBatch] = useState("");
   const [lastAddedProduct, setLastAddedProduct] = useState("");
   const [lastAddedBatch, setLastAddedBatch] = useState("");
+  const [role, setRole] = useState("");
   // ----------------- LOAD LOCALSTORAGE -----------------
   useEffect(() => {
     setManufacturer(localStorage.getItem("manufacturer") || "");
     const role = localStorage.getItem("role");
-    if (role !== "producer") {
-      navigate("/account");
+    if (role !== "producer" && role !== "operator") {
+      navigate("/access-denied");
     }
+    setRole(role || "");
     setOperator(localStorage.getItem("manufacturer") || ""); // Da sostituire con altro gruppo in futuro
   }, []);
 
-  const resetForm = () => {
+  const resetProductForm = () => {
     setId("");
     setName("");
     setExpiryDate("");
@@ -175,7 +178,7 @@ const AddProduct = () => {
         });
     };
     // Funzione per fare POST del modello 3D
-    const uploadModel = async () => {
+    /* const uploadModel = async () => {
       try {
         const base64File = await convertFileToBase64(glbFile);
         const postData = {
@@ -195,7 +198,7 @@ const AddProduct = () => {
       } catch (error) {
         console.log("Failed to upload model.");
       }
-    };
+    }; */
     // POST del nuovo prodotto + POST modello 3D
     try {
       const token = localStorage.getItem("token");
@@ -411,788 +414,587 @@ const AddProduct = () => {
     <div className="container mt-5">
       <div className="row justify-content-center">
         <div className="col-md-6">
-          <div className="card shadow">
-            <div className="card-body">
-              <Card.Header>
-                <h4>Upload Product 🌱</h4>
-                <p style={{ color: "grey" }}>
-                  ℹ️ Add your product and complete its details to enhance
-                  traceability and transparency
-                  <br />
-                  🖼️ Insert and visualize your product with a 3D model
-                </p>
-              </Card.Header>
-              <br />
-              {messageProduct && !viewProduct && (
-                <div>
-                  {lastAddedProduct && (
-                    <div>
-                      <QRCodeCanvas
-                        value={lastAddedProduct}
-                        style={{ marginBottom: "2vw" }}
-                      />
-                      <p>
-                        Product ID: <b>{lastAddedProduct}</b>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {!viewProduct && (
-                <button
-                  className="btn btn-primary mt-3 w-100"
-                  onClick={() => {
-                    setViewProduct(true);
-                    setViewBatch(false);
-                    setMessageProduct("");
-                  }}
-                >
-                  + New Product
-                </button>
-              )}
-              {viewProduct && (
-                <Card.Body>
-                  {/* CSV File Upload */}
-                  <Form.Group
-                    className="d-flex align-items-center mb-3"
-                    style={{ marginTop: "1vw" }}
-                  >
-                    <Form.Label style={{ width: inputWidth }} className="me-3">
-                      Upload CSV
-                    </Form.Label>
-                    <Form
-                      style={{
-                        display: "flex",
-                        width: "100%",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "2vw",
-                        border: "1px dashed silver",
-                        borderRadius: "1vw",
-                        padding: "1vw",
-                      }}
-                    >
-                      {csvFile ? (
-                        <ion-icon
-                          name="trash-outline"
-                          style={{ cursor: "pointer", color: "grey" }}
-                          onClick={() => {
-                            document.getElementById("csvFile").value = "";
-                            setCsvFile("");
-                          }}
+          {role === "producer" && (
+            <div className="card shadow">
+              <div className="card-body">
+                <Card.Header>
+                  <h4>Upload Product 🌱</h4>
+                  <p style={{ color: "grey" }}>
+                    ℹ️ Add your product and complete its details to enhance
+                    traceability and transparency
+                    <br />
+                    🖼️ Insert and visualize your product with a 3D model
+                  </p>
+                </Card.Header>
+                <br />
+                {messageProduct && !viewProduct && (
+                  <div>
+                    {lastAddedProduct && (
+                      <div>
+                        <QRCodeCanvas
+                          value={lastAddedProduct}
+                          style={{ marginBottom: "2vw" }}
                         />
-                      ) : (
-                        <ion-icon
-                          name="folder-outline"
-                          style={{ color: "grey" }}
-                        ></ion-icon>
-                      )}
-                      <label
-                        htmlFor="csvFile"
-                        style={{
-                          color: "grey",
-                          textDecoration: "underline",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {csvFile
-                          ? JSON.stringify(csvFile.name)
-                          : "upload data Batch from CSV file"}
-                      </label>
-                      <input
-                        style={{ display: "none" }}
-                        id="csvFile"
-                        type="file"
-                        accept=".csv"
-                        onChange={handleCsvChange}
-                      />
-                      {csvFile && (
-                        <Button
-                          variant="primary"
-                          style={{ borderRadius: "2vw", paddingBlock: "0" }}
-                          onClick={handleCsvUpload}
-                          disabled={!csvFile}
-                        >
-                          Submit
-                        </Button>
-                      )}
-                    </Form>
-                  </Form.Group>
-                  {csvFile && <p>{messageProduct}</p>}
-                  {/* Separator */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      margin: "20px 0",
+                        <p>
+                          Product ID: <b>{lastAddedProduct}</b>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!viewProduct && (
+                  <button
+                    className="btn btn-primary mt-3 w-100"
+                    onClick={() => {
+                      setViewProduct(true);
+                      setViewBatch(false);
+                      setMessageProduct("");
                     }}
                   >
-                    <hr
+                    + New Product
+                  </button>
+                )}
+                {viewProduct && (
+                  <Card.Body>
+                    {/* CSV File Upload */}
+                    <Form.Group
+                      className="d-flex align-items-center mb-3"
+                      style={{ marginTop: "1vw" }}
+                    >
+                      <Form.Label
+                        style={{ width: inputWidth }}
+                        className="me-3"
+                      >
+                        Upload CSV
+                      </Form.Label>
+                      <Form
+                        style={{
+                          display: "flex",
+                          width: "100%",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "2vw",
+                          border: "1px dashed silver",
+                          borderRadius: "1vw",
+                          padding: "1vw",
+                        }}
+                      >
+                        {csvFile ? (
+                          <ion-icon
+                            name="trash-outline"
+                            style={{ cursor: "pointer", color: "grey" }}
+                            onClick={() => {
+                              document.getElementById("csvFile").value = "";
+                              setCsvFile("");
+                            }}
+                          />
+                        ) : (
+                          <ion-icon
+                            name="folder-outline"
+                            style={{ color: "grey" }}
+                          ></ion-icon>
+                        )}
+                        <label
+                          htmlFor="csvFile"
+                          style={{
+                            color: "grey",
+                            textDecoration: "underline",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {csvFile
+                            ? JSON.stringify(csvFile.name)
+                            : "upload data Batch from CSV file"}
+                        </label>
+                        <input
+                          style={{ display: "none" }}
+                          id="csvFile"
+                          type="file"
+                          accept=".csv"
+                          onChange={handleCsvChange}
+                        />
+                        {csvFile && (
+                          <Button
+                            variant="primary"
+                            style={{ borderRadius: "2vw", paddingBlock: "0" }}
+                            onClick={handleCsvUpload}
+                            disabled={!csvFile}
+                          >
+                            Submit
+                          </Button>
+                        )}
+                      </Form>
+                    </Form.Group>
+                    {csvFile && <p>{messageProduct}</p>}
+                    {/* Separator */}
+                    <div
                       style={{
-                        flex: 1,
-                        border: "none",
-                        borderTop: "1px solid #666",
-                      }}
-                    />
-                    <span
-                      style={{
-                        margin: "0 10px",
-                        color: "#666",
-                        fontWeight: "bold",
+                        display: "flex",
+                        alignItems: "center",
+                        margin: "20px 0",
                       }}
                     >
-                      or
-                    </span>
-                    <hr
-                      style={{
-                        flex: 1,
-                        border: "none",
-                        borderTop: "1px solid #666",
-                      }}
-                    />
-                  </div>
+                      <hr
+                        style={{
+                          flex: 1,
+                          border: "none",
+                          borderTop: "1px solid #666",
+                        }}
+                      />
+                      <span
+                        style={{
+                          margin: "0 10px",
+                          color: "#666",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        or
+                      </span>
+                      <hr
+                        style={{
+                          flex: 1,
+                          border: "none",
+                          borderTop: "1px solid #666",
+                        }}
+                      />
+                    </div>
 
-                  <Form onSubmit={handleUploadProduct}>
-                    {/* Display basic fields */}
-                    <Form.Group
-                      controlId="id"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
+                    <Form onSubmit={handleUploadProduct}>
+                      {/* Display basic fields */}
+                      <Form.Group
+                        controlId="id"
+                        className="d-flex align-items-center mb-3"
                       >
-                        ID
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={id}
-                        onChange={(e) => setId(e.target.value)}
-                        placeholder={placeholderText}
-                        required
-                      />
-                    </Form.Group>
-                    {/* Name Field */}
-                    <Form.Group
-                      controlId="name"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          ID
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={id}
+                          onChange={(e) => setId(e.target.value)}
+                          placeholder={placeholderText}
+                          required
+                        />
+                      </Form.Group>
+                      {/* Name Field */}
+                      <Form.Group
+                        controlId="name"
+                        className="d-flex align-items-center mb-3"
                       >
-                        Name
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder={placeholderText}
-                        required
-                      />
-                    </Form.Group>
-                    {/*Harvest Date Field*/}
-                    <Form.Group
-                      controlId="harvestDate"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Name
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder={placeholderText}
+                          required
+                        />
+                      </Form.Group>
+                      {/*Harvest Date Field*/}
+                      <Form.Group
+                        controlId="harvestDate"
+                        className="d-flex align-items-center mb-3"
                       >
-                        Harvest Date
-                      </Form.Label>
-                      <Form.Control
-                        type="date"
-                        value={harvestDate}
-                        onChange={(e) => setHarvestDate(e.target.value)}
-                      />
-                    </Form.Group>
-                    {/* Expire Date Field*/}
-                    <Form.Group
-                      controlId="expiryDate"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Harvest Date
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          value={harvestDate}
+                          onChange={(e) => setHarvestDate(e.target.value)}
+                        />
+                      </Form.Group>
+                      {/* Expire Date Field*/}
+                      <Form.Group
+                        controlId="expiryDate"
+                        className="d-flex align-items-center mb-3"
                       >
-                        Expiry Date
-                      </Form.Label>
-                      <Form.Control
-                        type="date"
-                        value={expiryDate}
-                        onChange={(e) => setExpiryDate(e.target.value)}
-                        required
-                      />
-                    </Form.Group>
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Expiry Date
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          value={expiryDate}
+                          onChange={(e) => setExpiryDate(e.target.value)}
+                          required
+                        />
+                      </Form.Group>
 
-                    <Form.Group
-                      controlId="nutritionalInformation"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
+                      <Form.Group
+                        controlId="nutritionalInformation"
+                        className="d-flex align-items-center mb-3"
                       >
-                        Nutritional Information
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={nutritionalInformation}
-                        onChange={(e) =>
-                          setNutritionalInformation(e.target.value)
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Nutritional Information
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={nutritionalInformation}
+                          onChange={(e) =>
+                            setNutritionalInformation(e.target.value)
+                          }
+                          placeholder={placeholderText}
+                        />
+                      </Form.Group>
+
+                      <Form.Group
+                        controlId="countryOfOrigin"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Country of Origin
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={countryOfOrigin}
+                          onChange={(e) => setCountryOfOrigin(e.target.value)}
+                          placeholder={placeholderText}
+                        />
+                      </Form.Group>
+                      <Form.Group
+                        controlId="pesticideUse"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Pesticide Use
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={pesticideUse}
+                          onChange={(e) => setPesticideUse(e.target.value)}
+                          placeholder={placeholderText}
+                        />
+                      </Form.Group>
+                      <Form.Group
+                        controlId="fertilizerUse"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Fertilizer Use
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={fertilizerUse}
+                          onChange={(e) => setFertilizerUse(e.target.value)}
+                          placeholder={placeholderText}
+                        />
+                      </Form.Group>
+                      <Form.Group
+                        controlId="ingredients"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Ingredients
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={ingredients}
+                          onChange={(e) => setIngredients(e.target.value)}
+                          placeholder={placeholderText}
+                        />
+                      </Form.Group>
+                      <Form.Group
+                        controlId="allergens"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Allergens
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={allergens}
+                          onChange={(e) => setAllergens(e.target.value)}
+                          placeholder={placeholderText}
+                        />
+                      </Form.Group>
+                      {/* Upload 3D Model */}
+                      <div className="mb-3">
+                        <Viewer3D onGlbUpload={setGlbFile} />
+                      </div>
+                      {/* Separator */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          margin: "20px 0",
+                        }}
+                      >
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                        <span
+                          style={{
+                            margin: "0 10px",
+                            color: "#666",
+                            fontWeight: "bold",
+                          }}
+                        ></span>
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                      </div>
+                      <h5>Custom Fields</h5>
+                      {customFields.map((field, index) => (
+                        <div
+                          key={index}
+                          className="d-flex mb-2 align-items-center"
+                        >
+                          <Form.Control
+                            type="text"
+                            placeholder="Field Name"
+                            value={field.key}
+                            onChange={(e) =>
+                              updateCustomField(
+                                index,
+                                e.target.value,
+                                field.value
+                              )
+                            }
+                            className="me-2"
+                          />
+                          <Form.Control
+                            type="text"
+                            placeholder="Value"
+                            value={field.value}
+                            onChange={(e) =>
+                              updateCustomField(
+                                index,
+                                field.key,
+                                e.target.value
+                              )
+                            }
+                          />
+                          {/* Pulsante di rimozione con icona*/}
+                          <button
+                            type="button"
+                            className="btn btn-light btn-sm ms-2 p-1"
+                            onClick={() => removeCustomField(index)}
+                            style={{
+                              border: "none",
+                              background: "transparent",
+                              fontSize: "18px",
+                              cursor: "pointer",
+                              color: "#ff4d4d",
+                            }}
+                          >
+                            ✖️
+                          </button>
+                        </div>
+                      ))}
+
+                      <Button
+                        variant="primary"
+                        onClick={addCustomField}
+                        className="my-3 d-block mx-auto"
+                      >
+                        + Add Field
+                      </Button>
+                      {/* Separator */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          margin: "20px 0",
+                        }}
+                      >
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                        <span
+                          style={{
+                            margin: "0 10px",
+                            color: "#666",
+                            fontWeight: "bold",
+                          }}
+                        ></span>
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="primary"
+                        type="submit"
+                        disabled={
+                          !id ||
+                          !name ||
+                          !expiryDate ||
+                          !harvestDate ||
+                          !ingredients ||
+                          !nutritionalInformation ||
+                          !allergens ||
+                          !pesticideUse ||
+                          !countryOfOrigin ||
+                          !fertilizerUse
                         }
-                        placeholder={placeholderText}
-                      />
-                    </Form.Group>
-
-                    <Form.Group
-                      controlId="countryOfOrigin"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
                       >
-                        Country of Origin
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={countryOfOrigin}
-                        onChange={(e) => setCountryOfOrigin(e.target.value)}
-                        placeholder={placeholderText}
-                      />
-                    </Form.Group>
-                    <Form.Group
-                      controlId="pesticideUse"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
-                      >
-                        Pesticide Use
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={pesticideUse}
-                        onChange={(e) => setPesticideUse(e.target.value)}
-                        placeholder={placeholderText}
-                      />
-                    </Form.Group>
-                    <Form.Group
-                      controlId="fertilizerUse"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
-                      >
-                        Fertilizer Use
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={fertilizerUse}
-                        onChange={(e) => setFertilizerUse(e.target.value)}
-                        placeholder={placeholderText}
-                      />
-                    </Form.Group>
-                    <Form.Group
-                      controlId="ingredients"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
-                      >
-                        Ingredients
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={ingredients}
-                        onChange={(e) => setIngredients(e.target.value)}
-                        placeholder={placeholderText}
-                      />
-                    </Form.Group>
-                    <Form.Group
-                      controlId="allergens"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
-                      >
-                        Allergens
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={allergens}
-                        onChange={(e) => setAllergens(e.target.value)}
-                        placeholder={placeholderText}
-                      />
-                    </Form.Group>
-                    {/* Upload 3D Model */}
-                    <div className="mb-3">
-                      <Viewer3D onGlbUpload={setGlbFile} />
-                    </div>
-                    {/* Separator */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        margin: "20px 0",
-                      }}
-                    >
-                      <hr
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          borderTop: "1px solid #666",
-                        }}
-                      />
-                      <span
-                        style={{
-                          margin: "0 10px",
-                          color: "#666",
-                          fontWeight: "bold",
-                        }}
-                      ></span>
-                      <hr
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          borderTop: "1px solid #666",
-                        }}
-                      />
-                    </div>
-                    <h5>Custom Fields</h5>
-                    {customFields.map((field, index) => (
-                      <div
-                        key={index}
-                        className="d-flex mb-2 align-items-center"
-                      >
-                        <Form.Control
-                          type="text"
-                          placeholder="Field Name"
-                          value={field.key}
-                          onChange={(e) =>
-                            updateCustomField(
-                              index,
-                              e.target.value,
-                              field.value
-                            )
-                          }
-                          className="me-2"
-                        />
-                        <Form.Control
-                          type="text"
-                          placeholder="Value"
-                          value={field.value}
-                          onChange={(e) =>
-                            updateCustomField(index, field.key, e.target.value)
-                          }
-                        />
-                        {/* Pulsante di rimozione con icona*/}
-                        <button
-                          type="button"
-                          className="btn btn-light btn-sm ms-2 p-1"
-                          onClick={() => removeCustomField(index)}
-                          style={{
-                            border: "none",
-                            background: "transparent",
-                            fontSize: "18px",
-                            cursor: "pointer",
-                            color: "#ff4d4d",
-                          }}
-                        >
-                          ✖️
-                        </button>
-                      </div>
-                    ))}
-
-                    <Button
-                      variant="primary"
-                      onClick={addCustomField}
-                      className="my-3 d-block mx-auto"
-                    >
-                      + Add Field
-                    </Button>
-                    {/* Separator */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        margin: "20px 0",
-                      }}
-                    >
-                      <hr
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          borderTop: "1px solid #666",
-                        }}
-                      />
-                      <span
-                        style={{
-                          margin: "0 10px",
-                          color: "#666",
-                          fontWeight: "bold",
-                        }}
-                      ></span>
-                      <hr
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          borderTop: "1px solid #666",
-                        }}
-                      />
-                    </div>
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      disabled={
-                        !id ||
-                        !name ||
-                        !expiryDate ||
-                        !harvestDate ||
-                        !ingredients ||
-                        !nutritionalInformation ||
-                        !allergens ||
-                        !pesticideUse ||
-                        !countryOfOrigin ||
-                        !fertilizerUse
-                      }
-                    >
-                      Upload Product
-                    </Button>
-                  </Form>
-                </Card.Body>
-              )}
-            </div>
-          </div>
-          <div className="card shadow">
-            <div className="card-body">
-              <Card.Header>
-                <h4>Upload Batch 📦</h4>
-                <p style={{ color: "grey" }}>
-                  ℹ️ Add your batch and complete its details to enhance
-                  traceability and transparency
-                  <br />
-                </p>
-              </Card.Header>
-              <br />
-              {messageBatch && !viewBatch && (
-                <div>
-                  {lastAddedBatch && (
-                    <div>
-                      <QRCodeCanvas
-                        value={lastAddedBatch}
-                        style={{ marginBottom: "2vw" }}
-                      />
-                      <p>
-                        Batch ID: <b>{lastAddedBatch}</b>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {!viewBatch && (
-                <button
-                  className="btn btn-primary mt-3 w-100"
-                  onClick={() => {
-                    setViewBatch(true);
-                    setViewProduct(false);
-                    setMessageBatch("");
-                  }}
-                >
-                  + New Batch
-                </button>
-              )}
-              {viewBatch && (
-                <Card.Body>
-                  {/* CSV File Upload */}
-                  <Form.Group
-                    className="d-flex align-items-center mb-3"
-                    style={{ marginTop: "1vw" }}
-                  >
-                    <Form.Label style={{ width: inputWidth }} className="me-3">
-                      Upload CSV Batch
-                    </Form.Label>
-                    <Form
-                      style={{
-                        display: "flex",
-                        width: "100%",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "2vw",
-                        border: "1px dashed silver",
-                        borderRadius: "1vw",
-                        padding: "1vw",
-                      }}
-                    >
-                      {csvBatchFile ? (
-                        <ion-icon
-                          name="trash-outline"
-                          style={{ cursor: "pointer", color: "grey" }}
-                          onClick={() => {
-                            document.getElementById("csvBatchFile").value = "";
-                            setCsvBatchFile("");
-                          }}
-                        />
-                      ) : (
-                        <ion-icon
-                          name="folder-outline"
-                          style={{ color: "grey" }}
-                        ></ion-icon>
-                      )}
-                      <label
-                        htmlFor="csvBatchFile"
-                        style={{
-                          color: "grey",
-                          textDecoration: "underline",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {csvBatchFile
-                          ? JSON.stringify(csvBatchFile.name)
-                          : "upload data Batch from CSV file"}
-                      </label>
-                      <input
-                        style={{ display: "none" }}
-                        id="csvBatchFile"
-                        type="file"
-                        accept=".csv"
-                        onChange={handleCsvBatchChange}
-                      />
-                      {csvBatchFile && (
-                        <Button
-                          variant="primary"
-                          style={{ borderRadius: "2vw", paddingBlock: "0" }}
-                          onClick={handleCsvUploadBatch}
-                          disabled={!csvBatchFile}
-                        >
-                          Submit
-                        </Button>
-                      )}
+                        Upload Product
+                      </Button>
                     </Form>
-                  </Form.Group>
-                  {csvBatchFile && <p>{messageBatch}</p>}
-                  {/* Separator */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      margin: "20px 0",
+                  </Card.Body>
+                )}
+              </div>
+            </div>
+          )}
+          {(role === "producer" || role === "operator") && (
+            <div className="card shadow">
+              <div className="card-body">
+                <Card.Header>
+                  <h4>Upload Batch 📦</h4>
+                  <p style={{ color: "grey" }}>
+                    ℹ️ Add your batch and complete its details to enhance
+                    traceability and transparency
+                    <br />
+                  </p>
+                </Card.Header>
+                <br />
+                {messageBatch && !viewBatch && (
+                  <div>
+                    {lastAddedBatch && (
+                      <div>
+                        <QRCodeCanvas
+                          value={lastAddedBatch}
+                          style={{ marginBottom: "2vw" }}
+                        />
+                        <p>
+                          Batch ID: <b>{lastAddedBatch}</b>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!viewBatch && (
+                  <button
+                    className="btn btn-primary mt-3 w-100"
+                    onClick={() => {
+                      setViewBatch(true);
+                      setViewProduct(false);
+                      setMessageBatch("");
                     }}
                   >
-                    <hr
-                      style={{
-                        flex: 1,
-                        border: "none",
-                        borderTop: "1px solid #666",
-                      }}
-                    />
-                    <span
-                      style={{
-                        margin: "0 10px",
-                        color: "#666",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      or
-                    </span>
-                    <hr
-                      style={{
-                        flex: 1,
-                        border: "none",
-                        borderTop: "1px solid #666",
-                      }}
-                    />
-                  </div>
-
-                  <Form onSubmit={handleUploadBatch}>
-                    {/* Display basic fields */}
+                    + New Batch
+                  </button>
+                )}
+                {viewBatch && (
+                  <Card.Body>
+                    {/* CSV File Upload */}
                     <Form.Group
-                      controlId="id"
                       className="d-flex align-items-center mb-3"
+                      style={{ marginTop: "1vw" }}
                     >
                       <Form.Label
                         style={{ width: inputWidth }}
                         className="me-3"
                       >
-                        ID
+                        Upload CSV Batch
                       </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={idBatch}
-                        onChange={(e) => setIdBatch(e.target.value)}
-                        placeholder={"LXXX"}
-                        required
-                      />
-                    </Form.Group>
-                    {/* Product Id */}
-                    <Form.Group
-                      controlId="productId"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
-                      >
-                        Product Id
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={productId}
-                        onChange={(e) => setProductId(e.target.value)}
-                        placeholder={placeholderText}
-                        required
-                      />
-                    </Form.Group>
-                    {/*Batch Number*/}
-                    <Form.Group
-                      controlId="batchNumber"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
-                      >
-                        Batch Number
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={batchNumber}
-                        onChange={(e) => setBatchNumber(e.target.value)}
-                      />
-                    </Form.Group>
-                    {/* Quantity*/}
-                    <Form.Group
-                      controlId="quantity"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
-                      >
-                        Quantity
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                        required
-                      />
-                    </Form.Group>
-
-                    <Form.Group
-                      controlId="productionDate"
-                      className="d-flex align-items-center mb-3"
-                    >
-                      <Form.Label
-                        style={{ width: inputWidth }}
-                        className="me-3"
-                      >
-                        Production Date
-                      </Form.Label>
-                      <Form.Control
-                        type="date"
-                        value={productionDate}
-                        onChange={(e) => setProductionDate(e.target.value)}
-                        placeholder={placeholderText}
-                      />
-                    </Form.Group>
-                    {/* Separator */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        margin: "20px 0",
-                      }}
-                    >
-                      <hr
+                      <Form
                         style={{
-                          flex: 1,
-                          border: "none",
-                          borderTop: "1px solid #666",
+                          display: "flex",
+                          width: "100%",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "2vw",
+                          border: "1px dashed silver",
+                          borderRadius: "1vw",
+                          padding: "1vw",
                         }}
-                      />
-                      <span
-                        style={{
-                          margin: "0 10px",
-                          color: "#666",
-                          fontWeight: "bold",
-                        }}
-                      ></span>
-                      <hr
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          borderTop: "1px solid #666",
-                        }}
-                      />
-                    </div>
-                    <h5>Custom Batch Fields</h5>
-                    <p style={{ color: "gray" }}>
-                      edit existing custom fields or add new ones
-                    </p>
-                    {customBatchFields.map((field, index) => (
-                      <div
-                        key={index}
-                        className="d-flex mb-2 align-items-center"
                       >
-                        <Form.Control
-                          type="text"
-                          placeholder="Batch Field Name"
-                          value={field.key}
-                          onChange={(e) =>
-                            updateCustomBatchField(
-                              index,
-                              e.target.value,
-                              field.value
-                            )
-                          }
-                          className="me-2"
-                        />
-                        <Form.Control
-                          type="text"
-                          placeholder="Value"
-                          value={field.value}
-                          onChange={(e) =>
-                            updateCustomBatchField(
-                              index,
-                              field.key,
-                              e.target.value
-                            )
-                          }
-                        />
-                        {/* Pulsante di rimozione con icona*/}
-                        <button
-                          type="button"
-                          className="btn btn-light btn-sm ms-2 p-1"
-                          onClick={() => removeCustomBatchField(index)}
+                        {csvBatchFile ? (
+                          <ion-icon
+                            name="trash-outline"
+                            style={{ cursor: "pointer", color: "grey" }}
+                            onClick={() => {
+                              document.getElementById("csvBatchFile").value =
+                                "";
+                              setCsvBatchFile("");
+                            }}
+                          />
+                        ) : (
+                          <ion-icon
+                            name="folder-outline"
+                            style={{ color: "grey" }}
+                          ></ion-icon>
+                        )}
+                        <label
+                          htmlFor="csvBatchFile"
                           style={{
-                            border: "none",
-                            background: "transparent",
-                            fontSize: "18px",
+                            color: "grey",
+                            textDecoration: "underline",
                             cursor: "pointer",
-                            color: "#ff4d4d",
                           }}
                         >
-                          ✖️
-                        </button>
-                      </div>
-                    ))}
-
-                    <Button
-                      variant="primary"
-                      onClick={addCustomBatchField}
-                      className="my-3 d-block mx-auto"
-                    >
-                      + Add Batch Field
-                    </Button>
-
+                          {csvBatchFile
+                            ? JSON.stringify(csvBatchFile.name)
+                            : "upload data Batch from CSV file"}
+                        </label>
+                        <input
+                          style={{ display: "none" }}
+                          id="csvBatchFile"
+                          type="file"
+                          accept=".csv"
+                          onChange={handleCsvBatchChange}
+                        />
+                        {csvBatchFile && (
+                          <Button
+                            variant="primary"
+                            style={{ borderRadius: "2vw", paddingBlock: "0" }}
+                            onClick={handleCsvUploadBatch}
+                            disabled={!csvBatchFile}
+                          >
+                            Submit
+                          </Button>
+                        )}
+                      </Form>
+                    </Form.Group>
+                    {csvBatchFile && <p>{messageBatch}</p>}
                     {/* Separator */}
                     <div
                       style={{
@@ -1214,7 +1016,9 @@ const AddProduct = () => {
                           color: "#666",
                           fontWeight: "bold",
                         }}
-                      ></span>
+                      >
+                        or
+                      </span>
                       <hr
                         style={{
                           flex: 1,
@@ -1223,24 +1027,238 @@ const AddProduct = () => {
                         }}
                       />
                     </div>
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      disabled={
-                        !idBatch ||
-                        !productId ||
-                        !batchNumber ||
-                        !quantity ||
-                        !productionDate
-                      }
-                    >
-                      Upload Batch
-                    </Button>
-                  </Form>
-                </Card.Body>
-              )}
+
+                    <Form onSubmit={handleUploadBatch}>
+                      {/* Display basic fields */}
+                      <Form.Group
+                        controlId="id"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          ID
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={idBatch}
+                          onChange={(e) => setIdBatch(e.target.value)}
+                          placeholder={"LXXX"}
+                          required
+                        />
+                      </Form.Group>
+                      {/* Product Id */}
+                      <Form.Group
+                        controlId="productId"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Product Id
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={productId}
+                          onChange={(e) => setProductId(e.target.value)}
+                          placeholder={placeholderText}
+                          required
+                        />
+                      </Form.Group>
+                      {/*Batch Number*/}
+                      <Form.Group
+                        controlId="batchNumber"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Batch Number
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={batchNumber}
+                          onChange={(e) => setBatchNumber(e.target.value)}
+                        />
+                      </Form.Group>
+                      {/* Quantity*/}
+                      <Form.Group
+                        controlId="quantity"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Quantity
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={quantity}
+                          onChange={(e) => setQuantity(e.target.value)}
+                          required
+                        />
+                      </Form.Group>
+
+                      <Form.Group
+                        controlId="productionDate"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Production Date
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          value={productionDate}
+                          onChange={(e) => setProductionDate(e.target.value)}
+                          placeholder={placeholderText}
+                        />
+                      </Form.Group>
+                      {/* Separator */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          margin: "20px 0",
+                        }}
+                      >
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                        <span
+                          style={{
+                            margin: "0 10px",
+                            color: "#666",
+                            fontWeight: "bold",
+                          }}
+                        ></span>
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                      </div>
+                      <h5>Custom Batch Fields</h5>
+                      <p style={{ color: "gray" }}>
+                        edit existing custom fields or add new ones
+                      </p>
+                      {customBatchFields.map((field, index) => (
+                        <div
+                          key={index}
+                          className="d-flex mb-2 align-items-center"
+                        >
+                          <Form.Control
+                            type="text"
+                            placeholder="Batch Field Name"
+                            value={field.key}
+                            onChange={(e) =>
+                              updateCustomBatchField(
+                                index,
+                                e.target.value,
+                                field.value
+                              )
+                            }
+                            className="me-2"
+                          />
+                          <Form.Control
+                            type="text"
+                            placeholder="Value"
+                            value={field.value}
+                            onChange={(e) =>
+                              updateCustomBatchField(
+                                index,
+                                field.key,
+                                e.target.value
+                              )
+                            }
+                          />
+                          {/* Pulsante di rimozione con icona*/}
+                          <button
+                            type="button"
+                            className="btn btn-light btn-sm ms-2 p-1"
+                            onClick={() => removeCustomBatchField(index)}
+                            style={{
+                              border: "none",
+                              background: "transparent",
+                              fontSize: "18px",
+                              cursor: "pointer",
+                              color: "#ff4d4d",
+                            }}
+                          >
+                            ✖️
+                          </button>
+                        </div>
+                      ))}
+
+                      <Button
+                        variant="primary"
+                        onClick={addCustomBatchField}
+                        className="my-3 d-block mx-auto"
+                      >
+                        + Add Batch Field
+                      </Button>
+
+                      {/* Separator */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          margin: "20px 0",
+                        }}
+                      >
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                        <span
+                          style={{
+                            margin: "0 10px",
+                            color: "#666",
+                            fontWeight: "bold",
+                          }}
+                        ></span>
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="primary"
+                        type="submit"
+                        disabled={
+                          !idBatch ||
+                          !productId ||
+                          !batchNumber ||
+                          !quantity ||
+                          !productionDate
+                        }
+                      >
+                        Upload Batch
+                      </Button>
+                    </Form>
+                  </Card.Body>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

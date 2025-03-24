@@ -414,7 +414,7 @@ def verify_otp():
 
 # già usata su frontend
 @app.route('/getProduct', methods=['GET'])
-#@jwt_required()
+# @jwt_required()
 def get_product():
     productId = request.args.get('productId')
     print("ATTEMPTING TO CONNECT:")
@@ -432,7 +432,7 @@ def get_product():
     
 # nuova aggiunta
 @app.route('/getProductHistory', methods=['GET'])
-#@jwt_required()
+# @jwt_required()
 def get_product_history():
 
 
@@ -498,6 +498,27 @@ def required_permissions(manufacturer, roles):
 
     return False
 
+def verify_product_authorization(email, product_id):
+    user = users.get(email)
+    if not user or not product_id:
+        return False
+
+    if user["flags"].get("operator", False):
+        user = user.get("associated_producer", None)
+        if not user:
+            return False # NOTE: succede se l'operatore non è associato a un produttore
+
+    try: 
+        response = requests.get(f'http://localhost:3000/readProduct?productId={product_id}')
+        if response.status_code != 200:
+            return jsonify({'message': 'Failed to get product.'}), 500
+            
+        product = response.json()
+        return product.get("Manufacturer") == user["manufacturer"]
+    except Exception as e:
+        print("Failed to get product:", e)
+        return jsonify({'message': 'Failed to get product.'}), 500
+
 # ora in uso + autenticazione jwt
 @app.route('/uploadProduct', methods=['POST'])
 @jwt_required()
@@ -536,13 +557,19 @@ def upload_product():
 @app.route('/uploadBatch', methods=['POST'])
 @jwt_required()
 def uploadBatch():
+    if not required_permissions(get_jwt_identity(), ['producer', 'operator']):
+        return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
+
     print("Sono arrivata al backend")
 
     print("Dati ricevuti dal fe:",request.json)
     batch_data = request.json
     print("Dati:",batch_data)
 
-    real_operator = get_jwt_identity()
+    # if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductID")):
+    #     return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
+
+    real_operator = users.get(get_jwt_identity())["manufacturer"]
     print("operator authenticated: " + real_operator)
     client_operator = batch_data.get("Operator")
     print("upload request by: " + client_operator)
@@ -580,7 +607,7 @@ def upload_model():
     try:
         product_data = request.json
         # log del manufacturer che effettua la richiesta di upload
-        real_manufacturer = get_jwt_identity()
+        real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
         print("Manufacturer authenticated: ", real_manufacturer)
 
         # prendo l'id del prodotto dalla richiesta POST
@@ -673,7 +700,7 @@ def update_product():
 def add_sensor_data():
     sensor_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = get_jwt_identity()
+    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
     print("Manufacturer authenticated:", real_manufacturer)
 
     product_id = sensor_data.get("id")
@@ -703,7 +730,7 @@ def add_sensor_data():
 def add_movement_data():
     movement_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = get_jwt_identity()
+    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
     print("Manufacturer authenticated:", real_manufacturer)
 
     product_id = movement_data.get("id")
@@ -733,7 +760,7 @@ def add_movement_data():
 def add_certification_data():
     certification_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = get_jwt_identity()
+    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
     print("Manufacturer authenticated:", real_manufacturer)
 
     product_id = certification_data.get("id")
@@ -910,6 +937,7 @@ def load_liked_products():
 
 # Update the likeProduct endpoint to handle user-specific likes
 @app.route('/likeProduct', methods=['POST', 'OPTIONS'])
+@jwt_required()
 def like_product():
     # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
@@ -947,6 +975,7 @@ def like_product():
 
 # Update the unlikeProduct endpoint for user-specific unlikes
 @app.route('/unlikeProduct', methods=['DELETE', 'OPTIONS'])
+@jwt_required()
 def unlike_product():
     # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
@@ -989,6 +1018,7 @@ def unlike_product():
 
 # Update the getLikedProducts endpoint for user-specific retrieval
 @app.route('/getLikedProducts', methods=['GET'])
+@jwt_required()
 def get_liked_products():
     user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
     
@@ -1014,6 +1044,7 @@ liked_products = load_liked_products()
 # Add these new routes for recently searched products
 
 @app.route('/addRecentlySearched', methods=['POST', 'OPTIONS'])
+@jwt_required()
 def add_recently_searched():
     # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
@@ -1055,6 +1086,7 @@ def add_recently_searched():
     return response
 
 @app.route('/getRecentlySearched', methods=['GET'])
+@jwt_required()
 def get_recently_searched():
     user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
     
