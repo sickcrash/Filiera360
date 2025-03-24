@@ -6,10 +6,12 @@ const Account = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
   const [manufacturer, setManufacturer] = useState('');
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState('');
 
   useEffect(() => {
     setManufacturer(localStorage.getItem("manufacturer"));
     setEmail(localStorage.getItem("email"));
+    setRole(localStorage.getItem("role"));
   }, []);
 
   const handleLogout = () => {
@@ -38,6 +40,9 @@ const Account = ({ setIsLoggedIn }) => {
                 </h4>
                 <h4 style={{ textAlign: "center", fontWeight: "lighter" }}>
                   email: <b>{email}</b>
+                </h4>
+                <h4 style={{ textAlign: "center", fontWeight: "lighter" }}>
+                  role: <b>{role}</b>
                 </h4>
                 <hr/>
                 <Button onClick={handleForgotPassword} className="btn btn-secondary w-100" >
