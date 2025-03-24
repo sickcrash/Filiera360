@@ -434,6 +434,8 @@ def get_product():
 @app.route('/getProductHistory', methods=['GET'])
 #@jwt_required()
 def get_product_history():
+
+
     productId = request.args.get('productId')
     print("ATTEMPTING TO CONNECT TO JS SERVER FOR PRODUCT HISTORY:")
     
@@ -448,6 +450,40 @@ def get_product_history():
     except Exception as e:
         print("Failed to get product history:", e)
         return jsonify({'message': 'Failed to get product history.'}), 500
+
+# già usata su frontend
+@app.route('/getBatch', methods=['GET'])
+def get_batch():
+    batchId = request.args.get('batchId')
+    print("ATTEMPTING TO CONNECT:")
+     # Send request to JavaScript server to get product details
+    try: 
+        response = requests.get(f'http://localhost:3000/readBatch?idBatch={batchId}')
+        if response.status_code == 200:
+            batchinfo = response.json()
+            return jsonify(response.json())
+        else:
+            return jsonify({'message': 'Failed to get batch.'}), 500
+    except Exception as e:
+        print("Failed to get batch:", e)
+        return jsonify({'message': 'Failed to get batch.'}), 500
+    
+# nuova aggiunta
+@app.route('/getBatchHistory', methods=['GET'])
+def get_batch_history():
+    batch_id = request.args.get('batchId')
+    if not batch_id:
+        return jsonify({'message': 'Batch ID is required'}), 400
+    
+    try:
+        response = requests.get(f'http://localhost:3000/batchHistory?batchId={batch_id}')
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({'message': 'Failed to get batch history'}), 500
+    except Exception as e:
+        print("Failed to get batch history:", e)
+        return jsonify({'message': 'Failed to get batch history.'}), 500
 
 def required_permissions(manufacturer, roles):
     user = [user for user in users.items() if user[0] == manufacturer]
@@ -495,6 +531,44 @@ def upload_product():
     except Exception as e:
         print("Error uploading product:", e)
         return jsonify({'message': 'Error uploading product.', 'error': str(e)}), 500
+    # uploadBatch
+
+@app.route('/uploadBatch', methods=['POST'])
+@jwt_required()
+def uploadBatch():
+    print("Sono arrivata al backend")
+
+    print("Dati ricevuti dal fe:",request.json)
+    batch_data = request.json
+    print("Dati:",batch_data)
+
+    real_operator = get_jwt_identity()
+    print("operator authenticated: " + real_operator)
+    client_operator = batch_data.get("Operator")
+    print("upload request by: " + client_operator)
+    # Reject operation if the authenticated manufacturer doesn't match the one in the request
+    if real_operator != client_operator:
+        return jsonify({"message": "Unauthorized: Operator mismatch."}), 403
+    print("Uploading new batch data:", batch_data)
+    batch_data["CustomObject"] = batch_data.get("CustomObject", {})
+    print("Uploading custom object:", batch_data["CustomObject"])
+
+    try:
+        # Send the cleaned product data to the external service
+        print("Faccio la chiamata all'AppServer")
+        response = requests.post('http://localhost:3000/uploadBatch', json=batch_data)
+        if response.status_code == 200:
+            print('Risposta dalla blockchain: ',response.status_code)
+            return jsonify({'message': response.json().get('message', 'Batch uploaded successfully!')})
+        else:
+            print('Risposta dalla blockchain: ',response.status_code)
+
+            return jsonify({'message': response.json().get('message', 'Failed to upload batch.')}), response.status_code
+
+        
+    except Exception as e:
+        print("Error uploading batch:", e)
+        return jsonify({'message': 'Error uploading batch.', 'error': str(e)}), 500
     
 # nuova aggiunta
 @app.route('/uploadModel', methods=['POST'])

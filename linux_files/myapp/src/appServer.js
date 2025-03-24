@@ -286,7 +286,67 @@ async function createProductDefault(contract) {
         }
     }
     
+    async function createBatch(contract, batchData) {
+        console.log('\n--> Submit Transaction: CreateBatch, creates new batch with provided arguments');
+        if (!batchData) {
+            console.error("❌ ERRORE: batchData è undefined o nullo!");
+            return;
+        }
+        console.log('batchData non è undefined');
+        console.log("📌 Dati ricevuti:", batchData);
+        
+        const { 
+            ID = "",
+            ProductId = "",
+            Operator = "",
+            BatchNumber = "",
+            Quantity = "",
+            ProductionDate = "",
+            CustomObject = {}  // Corretta destrutturazione
+        } = batchData;
     
+        console.log("📌 CustomObject ricevuto:", CustomObject);
+    
+        // Verifica la struttura di CustomObject
+        if (typeof CustomObject !== 'object') {
+            console.error("❌ ERRORE: CustomObject non è un oggetto valido!", CustomObject);
+            return;
+        }
+    
+        // Assicurati che CustomObject venga serializzato correttamente
+        try {
+            const customObjectJson = JSON.stringify(CustomObject);
+            console.log("📌 CustomObject dopo JSON.stringify:", customObjectJson);
+        } catch (error) {
+            console.error("❌ ERRORE nella serializzazione di CustomObject:", error);
+            return;
+        }
+    
+        console.log('\n--> Sto facendo partire la funzione per il submit');
+    
+        try {
+            // Aggiungi logging per verificare i parametri
+            console.log("📌 Parametri passati alla transazione:", {
+                ID, ProductId, Operator, BatchNumber, Quantity, ProductionDate, CustomObject
+            });
+    
+            // Submit della transazione
+            await contract.submitTransaction(
+                'createBatch',
+                ID,
+                ProductId,
+                Operator,
+                BatchNumber,
+                Quantity,
+                ProductionDate,
+                JSON.stringify(CustomObject)  // Corretta conversione JSON
+            );
+    
+            console.log('✅ *** Transaction committed successfully ***');
+        } catch (error) {
+            console.error('❌ Errore nella submitTransaction:', error);
+        }
+    }   
     
 async function readProductByIDdefault(contract) {
     console.log(
@@ -330,11 +390,26 @@ async function readProductByID(contract, productId) {
     console.log('*** Result:', result);
     return result;
 }
-
+async function readBatchByID(contract, idBatch) {
+    console.log('\n--> Evaluate Transaction: ReadBatch, function returns product attributes!');
+    const resultBytes = await contract.evaluateTransaction('ReadBatch', idBatch);
+    const resultJson = utf8Decoder.decode(resultBytes);
+    const result = JSON.parse(resultJson);
+    console.log('*** Result:', result);
+    return result;
+}
 // nuova aggiunta
 async function getProductHistoryByID(contract, productId) {
     console.log('\n--> Evaluate Transaction: GetProductHistory, function returns product history');
     const resultBytes = await contract.evaluateTransaction('GetProductHistory', productId);
+    const resultJson = utf8Decoder.decode(resultBytes);
+    const result = JSON.parse(resultJson);
+    console.log('*** Result:', result);
+    return result;
+}
+async function getBatchHistoryByID(contract, batchId) {
+    console.log('\n--> Evaluate Transaction: GetBatchHistory, function returns batch history');
+    const resultBytes = await contract.evaluateTransaction('GetBatchHistory', batchId);
     const resultJson = utf8Decoder.decode(resultBytes);
     const result = JSON.parse(resultJson);
     console.log('*** Result:', result);
@@ -354,6 +429,21 @@ app.get('/readProduct', async (req, res) => {
     }
 });
 
+app.get('/readBatch', async (req, res) => {
+    console.log('sono in readBatch');
+    const { idBatch } = req.query;
+    try {
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
+        const result = await readBatchByID(contract, idBatch);
+        res.json(result);
+        console.log('Batch read successfully');
+    } catch (error) {
+        console.error('Error reading product by ID:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // nuova aggiunta
 app.get('/productHistory', async (req, res) => {
     const { productId } = req.query;
@@ -367,7 +457,19 @@ app.get('/productHistory', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
+// nuova aggiunta
+app.get('/batchHistory', async (req, res) => {
+    const { batchId } = req.query;
+    try {
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
+        const result = await getBatchHistoryByID(contract, batchId);
+        res.json(result);
+    } catch (error) {
+        console.error('Error reading batchId history by ID:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 app.post('/uploadProduct', async (req, res) => {
     const productData = req.body;
     console.log('Received product data:', productData);
@@ -406,43 +508,43 @@ app.post('/uploadProduct', async (req, res) => {
     }
 });
 //NUOVA FUNZIONE UPLOAD BATCH
-// app.post('/uploadBatch', async (req, res) => {
-//     const batchData = req.body;
-//     console.log('Received batch data:', batchData);
+app.post('/uploadBatch', async (req, res) => {
+    const batchData = req.body;
+    console.log('Received batch data:', batchData);
 
-//     const { ID } = productData;
+    const { ID } = batchData;
 
-//     try {
-//         const network = gateway.getNetwork(channelName);
-//         const contract = network.getContract(chaincodeName);
+    try {
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
 
-//         // Check if product already exists
-//         try {
-//             const existingProduct = await readProductByID(contract, ID);
-//             if (existingProduct) {
-//                 res.status(400).json({ message: `Product with ID ${ID} already exists.` });
-//                 return;
-//             }
-//         } catch (error) {
-//             if (error.message.includes(`The product ${ID} does not exist`)) {
-//                 // This is expected if the product doesn't exist, so we can continue
-//                 console.log('Product not found, proceeding to create it.');
-//             } else {
-//                 // Unexpected error
-//                 console.error('Error checking for existing product:', error);
-//                 res.status(500).json({ message: 'Failed to check for existing product.' });
-//                 return;
-//             }
-//         }
+        // Check if batch already exists
+        try {
+            const existingBatch = await readBatchByID(contract, ID);
+            if (existingBatch) {
+                res.status(400).json({ message: `Batch with ID ${ID} already exists.` });
+                return;
+            }
+        } catch (error) {
+            if (error.message.includes(`The batch ${ID} does not exist`)) {
+                // This is expected if the batch doesn't exist, so we can continue
+                console.log('Batch not found, proceeding to create it.');
+            } else {
+                // Unexpected error
+                console.error('Error checking for existing batch:', error);
+                res.status(500).json({ message: 'Failed to check for existing batch.' });
+                return;
+            }
+        }
 
-//         await createProduct(contract, productData);
-//         res.json({ message: 'Product created successfully' });
-//         console.log('Product created successfully');
-//     } catch (error) {
-//         console.error('Error creating product:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
+        await createBatch(contract, batchData);
+        res.json({ message: 'Batch created successfully' });
+        console.log('Batch created successfully');
+    } catch (error) {
+        console.error('Error creating batch:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 app.post('/api/product/updateProduct', async (req, res) => {
     console.log('questa è la request', req.body);

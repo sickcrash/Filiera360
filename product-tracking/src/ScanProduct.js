@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 
 function ScanProduct() {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedBatch, setSelectedBatch] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
@@ -41,7 +42,9 @@ function ScanProduct() {
           </p>
         </>
       }
-      <ProductList onProductSelect={setSelectedProduct} />
+      <ProductList 
+        onProductSelect={setSelectedProduct} 
+        onBatchSelect={setSelectedBatch}/>
       {/* {selectedProduct && (
         <div className="mt-4" id="customForm">
           <DataSensors productId={selectedProduct} />

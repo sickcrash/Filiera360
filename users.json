@@ -84,5 +84,21 @@
     "abc@gmail.com": {
         "manufacturer": "abc",
         "password": "$2b$12$OZ2TyXCtRAR85R3C4S5F0uiFCeIlceB6fx4bgJEaegBUZivQGXbrO"
+    },
+    "carota123@ciao.it": {
+        "manufacturer": "carota123",
+        "password": "$2b$12$zY6.OhiLe54E3B6lUb.nAOTRm9bLMtJe8LbQqjRVeesdOgzaN7Zim"
+    },
+    "casetta@gmail.com": {
+        "manufacturer": "casetta",
+        "password": "$2b$12$8tyQ6N5rZXkw3Ys4WzhZ0uZ2qHWtpq5/MX.O/6ChpPWxm8OXJIIoS"
+    },
+    "casa123@gmail.com": {
+        "manufacturer": "casa",
+        "password": "$2b$12$sEzWR84mdlN/1GY3EmtQ0O5ehmeRUWxx.Uk2Q2W.Wz7uV10yJ46HC"
+    },
+    "cavolo@ciao.it": {
+        "manufacturer": "cavolo",
+        "password": "$2b$12$KoVlqSbSY3e6dElhKhKyMO5Uof22nhubaogzk7nHciEzvDfPqy6w2"
     }
 }

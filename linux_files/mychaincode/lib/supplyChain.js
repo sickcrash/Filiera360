@@ -46,25 +46,44 @@ class SupplyChainContract extends Contract {
                 ]
             }
         ]
-        // const batches =[
-        //     {
-        //         "ID" : "L001"
-
-        //     },
-        //     {
-        //         "ID" : "L002"
-        //     }
-        // ]
+        const batches =[
+            {
+                "ID" : "L001",
+                "Operator":"cuoricini",
+                "ProductId":"AGRI_X",
+                "ProductionDate": "2023-05-01",
+                "Quantity": "6",
+                "BatchNumber":"3",
+                "CustomObject": [
+                    {
+                        "codiceSpedizione": "1234"
+                    }
+                ]
+            },
+            {
+                "ID" : "L002",
+                "Operator":"cuoricini",
+                "ProductId":"FIN_X",
+                "ProductionDate": "2025-01-01",
+                "Quantity": "16",
+                "BatchNumber":"13",
+                "CustomObject": [
+                    {
+                        "codiceSpedizione": "4567"
+                    }
+                ]
+            },
+        ]
 
         for (const product of products) {
             product.docType = 'product';
             await ctx.stub.putState(product.ID, Buffer.from(stringify(sortKeysRecursive(product))));
         }
         
-        // for (const batch of batches) {
-        //     product.docType = 'product';
-        //     await ctx.stub.putState(product.ID, Buffer.from(stringify(sortKeysRecursive(product))));
-        // }
+        for (const batch of batches) {
+            batch.docType = 'batch';
+            await ctx.stub.putState(batch.ID, Buffer.from(stringify(sortKeysRecursive(batch))));
+        }
 
     }
 
@@ -96,11 +115,34 @@ class SupplyChainContract extends Contract {
         console.log(`Product ${id} created`);
         return JSON.stringify(product);
     }
-
-    
-    
+    async createBatch(ctx, idBatch, productId, operator, batchNumber, quantity,  productionDate, customObject) {
+        console.log("Sono nella supplychain")
+         console.log(`Creating Batch ${idBatch}`);
+         
+         const exists = await this.BatchExists(ctx, idBatch);
+         if (exists) {
+             throw new Error(`The batch ${idBatch} already exists`);
+         }
+         const existsProduct = await this.ProductExists(ctx, productId);
+         if (!existsProduct) {
+             throw new Error(`The product ${productId} not exists`);
+         }
      
-
+         const batch = {
+             ID: idBatch,
+             ProductId: productId,
+             Operator: operator,
+             BatchNumber: batchNumber,
+             Quantity: quantity,
+             ProductionDate:productionDate,
+             CustomObject: JSON.parse(customObject) // Convertiamo il JSON in oggetto
+         };
+     
+         await ctx.stub.putState(idBatch, Buffer.from(JSON.stringify(batch)));
+         console.log(`Batch ${idBatch} created`);
+         return JSON.stringify(batch);
+     }
+ 
     async ReadProduct(ctx, id) {
         const productJSON = await ctx.stub.getState(id); // get the product from chaincode state
         if (!productJSON || productJSON.length === 0) {
@@ -108,9 +150,42 @@ class SupplyChainContract extends Contract {
         }
         return productJSON.toString();
     }
+    async ReadBatch(ctx, idBatch) {
+        console.log("Sono nella supplychain")
+        const batchJSON = await ctx.stub.getState(idBatch); // get the batch from chaincode state
+        if (!batchJSON || batchJSON.length === 0) {
+            throw new Error(`The batch ${idBatch} does not exist`);
+        }
+        console.log(batchJSON.toString())
+        return batchJSON.toString();
+    }
 
     // nuova aggiunta
     async GetProductHistory(ctx, id) {
+        const iterator = await ctx.stub.getHistoryForKey(id); // Ottieni la cronologia per l'asset
+
+        const allResults = [];
+        while (true) {
+            const res = await iterator.next();
+            if (res.value) {
+                // Res contiene le informazioni sulla transazione
+                const tx = res.value;
+                const record = {
+                    TxId: tx.tx_id,                // ID della transazione
+                    Timestamp: tx.timestamp,       // Timestamp della transazione
+                    IsDeleted: tx.is_delete,       // Se l'asset è stato eliminato
+                    Value: tx.value.toString('utf8') // Stato del prodotto in quella transazione
+                };
+                allResults.push(record);
+            }
+            if (res.done) {
+                await iterator.close();
+                return JSON.stringify(allResults);
+            }
+        }
+    }
+      // nuova aggiunta Batch
+      async GetBatchHistory(ctx, id) {
         const iterator = await ctx.stub.getHistoryForKey(id); // Ottieni la cronologia per l'asset
 
         const allResults = [];
@@ -166,46 +241,7 @@ class SupplyChainContract extends Contract {
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedProduct))));
         return JSON.stringify(updatedProduct);
     }
-    
-    // async UpdateProduct(ctx, productDataJson) {
-    //     console.log(`Updating product with data: ${productDataJson}`);
-     
-    //     // 1. Parsare il JSON ricevuto
-    //     const productData = JSON.parse(productDataJson);
-    //     const id = productData.ID;
-     
-    //     // 2. Verificare che il prodotto esista
-    //     const productAsBytes = await ctx.stub.getState(id);
-    //     if (!productAsBytes || productAsBytes.length === 0) {
-    //         throw new Error(`The product ${id} does not exist`);
-    //     }
-     
-    //     // 3. Dati del prodotto già presente
-    //     const existingProduct = JSON.parse(productAsBytes.toString());
-     
-    //     // 4. Creare il prodotto aggiornato
-    //     const updatedProduct = {
-    //         ID: id,
-    //         Name: productData.Name || existingProduct.Name,
-    //         Manufacturer: productData.Manufacturer || existingProduct.Manufacturer,
-    //         ExpiryDate: productData.ExpiryDate || existingProduct.ExpiryDate,
-    //         Ingredients: productData.Ingredients || existingProduct.Ingredients,
-    //         Allergens: productData.Allergens || existingProduct.Allergens,
-    //         Nutritional_information: productData.Nutritional_information || existingProduct.Nutritional_information,
-    //         HarvestDate: productData.HarvestDate || existingProduct.HarvestDate,
-    //         PesticideUse: productData.PesticideUse || existingProduct.PesticideUse,
-    //         FertilizerUse: productData.FertilizerUse || existingProduct.FertilizerUse,
-    //         CountryOfOrigin: productData.CountryOfOrigin || existingProduct.CountryOfOrigin,
-    //         CustomObject: productData.CustomObject || existingProduct.CustomObject
-    //     };
-     
-    //     // 5. Scrivere nel ledger
-    //     await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedProduct))));
-     
-    //     console.log(`Product ${id} updated successfully`);
-    //     return JSON.stringify(updatedProduct);
-    // }
-
+       
     // DeleteProduct deletes an given product from the world state.
     async DeleteProduct(ctx, id) {
         const exists = await this.ProductExists(ctx, id);
@@ -218,6 +254,25 @@ class SupplyChainContract extends Contract {
     async ProductExists(ctx, id) {
         const productJSON = await ctx.stub.getState(id);
         return productJSON && productJSON.length > 0;
+    }
+
+
+
+    // DeleteBatch deletes an given Batch from the world state.
+
+    async DeleteBatch(ctx, id) {
+        const exists = await this.BatchExists(ctx, id);
+        if (!exists) {
+            throw new Error(`The batch ${id} does not exist`);
+        }
+        return ctx.stub.deleteState(id);
+    }
+    
+// BatchExists verifies the existence of a given Batch.
+
+    async BatchExists(ctx, idBatch) {
+        const batchJSON = await ctx.stub.getState(idBatch);
+        return batchJSON && batchJSON.length > 0;
     }
 
     // async AddSensorData(ctx, id, sensor_id, temperature, humidity, timestamp) {
