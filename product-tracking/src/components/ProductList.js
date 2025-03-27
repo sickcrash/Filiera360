@@ -89,8 +89,7 @@ import Viewer3D from './Viewer3D';
       console.error("Error fetching model: ", error);
       setGlbFile(null);
     }
-    setItemCode('');
-    setItemCodeBatch('');
+    
 
 
     // Retrieve product movements
@@ -168,8 +167,7 @@ import Viewer3D from './Viewer3D';
       setBatch(null);
       onBatchSelect(null);
     }    
-    setItemCode('');
-    setItemCodeBatch('');
+    
 
   };
 
