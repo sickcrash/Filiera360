@@ -248,6 +248,9 @@ class SupplyChainContract extends Contract {
         }
         const existingBatch = JSON.parse(batchAsBytes.toString());
 
+        console.log('Existing Batch:', existingBatch);
+        console.log('Batch ID:', batchId);
+        // Update fields only if provided
         const updatedBatch = {
             ID: batchId,
             ProductId: productId || existingBatch.ProductId,

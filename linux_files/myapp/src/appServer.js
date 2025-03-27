@@ -390,9 +390,9 @@ async function readProductByID(contract, productId) {
     console.log('*** Result:', result);
     return result;
 }
-async function readBatchByID(contract, idBatch) {
+async function readBatchByID(contract, batchId) {
     console.log('\n--> Evaluate Transaction: ReadBatch, function returns product attributes!');
-    const resultBytes = await contract.evaluateTransaction('ReadBatch', idBatch);
+    const resultBytes = await contract.evaluateTransaction('ReadBatch', batchId);
     const resultJson = utf8Decoder.decode(resultBytes);
     const result = JSON.parse(resultJson);
     console.log('*** Result:', result);
@@ -431,15 +431,15 @@ app.get('/readProduct', async (req, res) => {
 
 app.get('/readBatch', async (req, res) => {
     console.log('sono in readBatch');
-    const { idBatch } = req.query;
+    const { batchId } = req.query;
     try {
         const network = gateway.getNetwork(channelName);
         const contract = network.getContract(chaincodeName);
-        const result = await readBatchByID(contract, idBatch);
+        const result = await readBatchByID(contract, batchId);
         res.json(result);
         console.log('Batch read successfully');
     } catch (error) {
-        console.error('Error reading product by ID:', error);
+        console.error('Error reading batch by ID:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -593,7 +593,7 @@ app.post('/api/batch/updateBatch', async (req, res) => {
         console.log("Dati inviati al chaincode:", batchData);
 
         await contract.submitTransaction('UpdateBatch',
-            batchtData.ID, 
+            batchData.ID, 
             batchData.ProductId, 
             batchData.Operator,  
             batchData.BatchNumber, 
