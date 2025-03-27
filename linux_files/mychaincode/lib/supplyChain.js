@@ -150,15 +150,14 @@ class SupplyChainContract extends Contract {
         }
         return productJSON.toString();
     }
-    async ReadBatch(ctx, idBatch) {
-        console.log("Sono nella supplychain")
-        const batchJSON = await ctx.stub.getState(idBatch); // get the batch from chaincode state
+    async ReadBatch(ctx, batchId) {
+        const batchJSON = await ctx.stub.getState(batchId);
         if (!batchJSON || batchJSON.length === 0) {
-            throw new Error(`The batch ${idBatch} does not exist`);
+            throw new Error(`The batch ${batchId} does not exist`);
         }
-        console.log(batchJSON.toString())
         return batchJSON.toString();
     }
+    
 
     // nuova aggiunta
     async GetProductHistory(ctx, id) {
@@ -241,6 +240,28 @@ class SupplyChainContract extends Contract {
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedProduct))));
         return JSON.stringify(updatedProduct);
     }
+
+    async UpdateBatch(ctx, batchId, productId, operator, batchNumber, quantity, productionDate, customObject) {
+        const batchAsBytes = await ctx.stub.getState(batchId);
+        if (!batchAsBytes || batchAsBytes.length === 0) {
+            throw new Error(`The batch ${batchId} does not exist`);
+        }
+        const existingBatch = JSON.parse(batchAsBytes.toString());
+
+        const updatedBatch = {
+            ID: batchId,
+            ProductId: productId || existingBatch.ProductId,
+            Operator: operator || existingBatch.Operator,
+            BatchNumber: batchNumber || existingBatch.BatchNumber,
+            Quantity: quantity || existingBatch.Quantity,
+            ProductionDate: productionDate || existingBatch.ProductionDate,
+            CustomObject: customObject ? JSON.parse(customObject) : existingBatch.CustomObject
+        };
+        
+        await ctx.stub.putState(batchId, Buffer.from(JSON.stringify(updatedBatch)));
+        return JSON.stringify(updatedBatch);
+    }
+    
        
     // DeleteProduct deletes an given product from the world state.
     async DeleteProduct(ctx, id) {

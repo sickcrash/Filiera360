@@ -4,7 +4,7 @@ import { Card, Form, Button } from 'react-bootstrap';
 import '../../App.css'
 import Viewer3D from '../Viewer3D';
 
-const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
+const UpdateProduct = ({ productId, onProductUpdate }) => {
   const [name, setName] = useState('');
   const [manufacturer, setManufacturer] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
@@ -287,6 +287,8 @@ const removeCustomField = (index) => {
                       </div>
                      {/* Custom Fields */}
                         <h5>Custom Fields</h5>
+                        <p style={{ color: 'gray' }}>edit existing custom fields or add new ones</p>
+
                         {customFields.map((field, index) => (
                           <div key={index} className="d-flex mb-2 align-items-center">
                             <Form.Control 

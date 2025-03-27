@@ -34,6 +34,32 @@ def verify_manufacturer(product_id, real_manufacturer):
         print("Error connecting to blockchain:", e)
         return jsonify({"message": "Error retrieving product from blockchain."}), 500
 
+# Verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
+def verify_operator(batch_id, real_operator):
+    try:
+        blockchain_response = requests.get(f'http://localhost:3000/readBatch?batchId={batch_id}')
+        print("📢 Risposta dalla blockchain:", blockchain_response)
+        if blockchain_response.status_code != 200:
+            print(f"Errore: impossibile recuperare batch {batch_id}")
+            return jsonify({"message": "Failed to retrieve batch from blockchain."}), 500  # Restituisce solo il codice di errore
+
+        blockchain_data = blockchain_response.json()
+        registered_operator = blockchain_data.get("Operator")
+
+        if not registered_operator:
+            print("Errore: Operatore non trovato sulla blockchain")
+            return jsonify({"message": "Operator not found on blockchain."}), 404  #  Operatore non trovato
+        if real_operator != registered_operator:
+            print("Errore: Operatore non autorizzato")
+            return jsonify({"message": "Unauthorized: Operator mismatch."}), 403  #  Operatore non autorizzato
+
+        return None  # ✅ Verifica OK
+
+    except Exception as e:
+        print("Error connecting to blockchain:", e)
+        return  jsonify({"message": "Error retrieving batch from blockchain.", "error": str(e)}), 500   # Errore generico
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -197,7 +223,7 @@ def get_batch():
     print("ATTEMPTING TO CONNECT:")
      # Send request to JavaScript server to get product details
     try: 
-        response = requests.get(f'http://localhost:3000/readBatch?idBatch={batchId}')
+        response = requests.get(f'http://localhost:3000/readBatch?batchId={batchId}')
         if response.status_code == 200:
             batchinfo = response.json()
             return jsonify(response.json())
@@ -384,148 +410,199 @@ def update_product():
     except Exception as e:
         print("Error uploading product:", e)
         return jsonify({'message': 'Error uploading product.'}), 500
-
-# ora in uso + autenticazione jwt
-@app.route('/addSensorData', methods=['POST'])
-@jwt_required()
-def add_sensor_data():
-    sensor_data  = request.json
-    # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = get_jwt_identity()
-    print("Manufacturer authenticated:", real_manufacturer)
-
-    product_id = sensor_data.get("id")
-    if not product_id:
-        return jsonify({"message": "Product ID is required."}), 400
-
-    # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
-    verification_result = verify_manufacturer(product_id, real_manufacturer)
-    if verification_result:
-        return verification_result  # Restituisce l'errore se la verifica non è passata
-
-    # in caso di corrispondenza manufacturer
-    print("Uploading sensor data:", sensor_data)
-    try:
-        response = requests.post('http://localhost:3000/api/product/sensor', json=sensor_data)
-        if response.status_code == 200:
-            return jsonify({'message': 'Product uploaded successfully!'})
-        else:
-            return jsonify({'message': 'Failed to upload product.'}), 500
-    except Exception as e:
-        print("Error uploading product:", e)
-        return jsonify({'message': 'Error uploading product.'}), 500
-
-# già usata su frontend + autenticazione jwt
-@app.route('/addMovementsData', methods=['POST'])
-@jwt_required()
-def add_movement_data():
-    movement_data  = request.json
-    # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = get_jwt_identity()
-    print("Manufacturer authenticated:", real_manufacturer)
-
-    product_id = movement_data.get("id")
-    if not product_id:
-        return jsonify({"message": "Product ID is required."}), 400
-
-    # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
-    verification_result = verify_manufacturer(product_id, real_manufacturer)
-    if verification_result:
-        return verification_result  # Restituisce l'errore se la verifica non è passata
-
-    # in caso di corrispondenza manufacturer
-    print("Add movement data:", movement_data)
-    try:
-        response = requests.post('http://localhost:3000/api/product/movement', json=movement_data)
-        if response.status_code == 200:
-            return jsonify({'message': 'Product uploaded successfully!'})
-        else:
-            return jsonify({'message': 'Failed to upload product.'}), 500
-    except Exception as e:
-        print("Error uploading product:", e)
-        return jsonify({'message': 'Error uploading product.'}), 500
-
-# già usata su frontend + autenticazione jwt 
-@app.route('/addCertification', methods=['POST'])
-@jwt_required()
-def add_certification_data():
-    certification_data  = request.json
-    # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = get_jwt_identity()
-    print("Manufacturer authenticated:", real_manufacturer)
-
-    product_id = certification_data.get("id")
-    if not product_id:
-        return jsonify({"message": "Product ID is required."}), 400
-
-    # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
-    verification_result = verify_manufacturer(product_id, real_manufacturer)
-    if verification_result:
-        return verification_result  # Restituisce l'errore se la verifica non è passata
     
-    # in caso di corrispondenza manufacturer
-    print("Add certification data:", certification_data)
+# già usata su frontend + autenticazione jwt
+@app.route('/updateBatch', methods=['POST'])
+@jwt_required()
+def update_batch():
     try:
-        response = requests.post('http://localhost:3000/api/product/certification', json=certification_data)
-        if response.status_code == 200:
-            return jsonify({'message': 'Product uploaded successfully!'})
-        else:
-            return jsonify({'message': 'Failed to upload product.'}), 500
-    except Exception as e:
-        print("Error uploading product:", e)
-        return jsonify({'message': 'Error uploading product.'}), 500
+        batch_data = request.get_json()
+        print("📢 JSON ricevuto nel backend:", batch_data)
 
-# NON UTILIZZATA
-@app.route('/verifyProductCompliance', methods=['POST'])
-def verify_product_compliance():
-    compliance_data  = request.json
-    print("Check if product is complaint:", compliance_data)
-    try:
-        response = requests.post('http://localhost:3000/api/product/verifyProductCompliance', json=compliance_data)
-        print(response.json())
-        if response.status_code == 200:
-            return jsonify({'message': 'Product is compliant!'})
-        else:
-            return jsonify({'message': 'Product is not compliant'}), 500
-    except Exception as e:
-        print("Error while checking product:", e)
-        return jsonify({'message': 'Error while checking product.'}), 500
+        if not batch_data:
+            print("❌ ERRORE: Nessun JSON ricevuto!")
+            return jsonify({"message": "Invalid JSON data"}), 422
+        
+        print("📢 Dati ricevuti:", batch_data)
 
-# già usata su frontend
-@app.route('/getAllMovements', methods=['GET'])
-def get_all_movements():
-    productId = request.args.get('productId')
-    print("get all movements:", productId)
-    try:
-        response = requests.get(f'http://localhost:3000/api/product/getMovements?productId={productId}')
-        print(response.json())
-        if response.status_code == 200:
-            return jsonify(response.json())
-        else:
-            return jsonify({'message': 'Failed to get movements'}), 500
-    except Exception as e:
-        print("EFailed to get movements:", e)
-        return jsonify({'message': 'Failed to get movements.'}), 500
+        real_operator = get_jwt_identity()
+        print("📢 Operatore autenticato:", real_operator)
 
-# già usata su frontend
-@app.route('/getAllSensorData', methods=['GET'])
-def get_all_sensor_data():
-    productId = request.args.get('productId')
-    print("get all sensor:", productId)
-    try:
-        response = requests.get(f'http://localhost:3000/api/product/getSensorData?productId={productId}')
-        print(response.json())
-        if response.status_code == 200:
-            return jsonify(response.json())
-        else:
-            return jsonify({'message': 'Failed to get sensor data'}), 500
-    except Exception as e:
-        print("EFailed to get movements:", e)
-        return jsonify({'message': 'Failed to get sensor data.'}), 500
+        batch_id = batch_data.get("ID")
+        if not batch_id:
+            print("❌ ERRORE: Batch ID mancante!")
+            return jsonify({"message": "Batch ID is required."}), 422
 
-# già usata su frontend
-@app.route('/getAllCertifications', methods=['GET'])
-def get_all_certifications():
+        # Verifica dell'operatore
+        verification_result = verify_operator(batch_id, real_operator)
+        if verification_result is not None:  # Verifica se ha restituito un errore JSON
+            return verification_result  # Restituisce l'errore HTTP se la verifica fallisce
+
+        # Annullo se l'operatore autenticato non corrisponde a quello nel batch
+        client_operator = batch_data.get("Operator")
+        if real_operator != client_operator:
+            print("❌ ERRORE: Operatore non autorizzato!")
+            return jsonify({"message": "Unauthorized: Operator mismatch."}), 403
+
+        print("✅ Operatore verificato, aggiornamento batch in corso...")
+        
+        # Invio dei dati aggiornati alla blockchain
+        response = requests.post('http://localhost:3000/api/batch/updateBatch', json=batch_data)
+        print("📢 Dati inviati a AppServer:", batch_data)
+
+        
+        print(f"📢 Risposta dalla blockchain: {response.status_code}, {response.text}")
+        if response.status_code == 200:
+            return jsonify({'message': 'Batch updated successfully!'})
+        else:
+            return jsonify({'message': 'Failed to update batch.'}), 500
+
+    except Exception as e:
+        print(f"❌ ERRORE nel backend: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
+
+
+# # ora in uso + autenticazione jwt
+# @app.route('/addSensorData', methods=['POST'])
+# @jwt_required()
+# def add_sensor_data():
+#     sensor_data  = request.json
+#     # log del manufacturer che effettua la richiesta di update
+#     real_manufacturer = get_jwt_identity()
+#     print("Manufacturer authenticated:", real_manufacturer)
+
+#     product_id = sensor_data.get("id")
+#     if not product_id:
+#         return jsonify({"message": "Product ID is required."}), 400
+
+#     # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
+#     verification_result = verify_manufacturer(product_id, real_manufacturer)
+#     if verification_result:
+#         return verification_result  # Restituisce l'errore se la verifica non è passata
+
+#     # in caso di corrispondenza manufacturer
+#     print("Uploading sensor data:", sensor_data)
+#     try:
+#         response = requests.post('http://localhost:3000/api/product/sensor', json=sensor_data)
+#         if response.status_code == 200:
+#             return jsonify({'message': 'Product uploaded successfully!'})
+#         else:
+#             return jsonify({'message': 'Failed to upload product.'}), 500
+#     except Exception as e:
+#         print("Error uploading product:", e)
+#         return jsonify({'message': 'Error uploading product.'}), 500
+
+# # già usata su frontend + autenticazione jwt
+# @app.route('/addMovementsData', methods=['POST'])
+# @jwt_required()
+# def add_movement_data():
+#     movement_data  = request.json
+#     # log del manufacturer che effettua la richiesta di update
+#     real_manufacturer = get_jwt_identity()
+#     print("Manufacturer authenticated:", real_manufacturer)
+
+#     product_id = movement_data.get("id")
+#     if not product_id:
+#         return jsonify({"message": "Product ID is required."}), 400
+
+#     # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
+#     verification_result = verify_manufacturer(product_id, real_manufacturer)
+#     if verification_result:
+#         return verification_result  # Restituisce l'errore se la verifica non è passata
+
+#     # in caso di corrispondenza manufacturer
+#     print("Add movement data:", movement_data)
+#     try:
+#         response = requests.post('http://localhost:3000/api/product/movement', json=movement_data)
+#         if response.status_code == 200:
+#             return jsonify({'message': 'Product uploaded successfully!'})
+#         else:
+#             return jsonify({'message': 'Failed to upload product.'}), 500
+#     except Exception as e:
+#         print("Error uploading product:", e)
+#         return jsonify({'message': 'Error uploading product.'}), 500
+
+# # già usata su frontend + autenticazione jwt 
+# @app.route('/addCertification', methods=['POST'])
+# @jwt_required()
+# def add_certification_data():
+#     certification_data  = request.json
+#     # log del manufacturer che effettua la richiesta di update
+#     real_manufacturer = get_jwt_identity()
+#     print("Manufacturer authenticated:", real_manufacturer)
+
+#     product_id = certification_data.get("id")
+#     if not product_id:
+#         return jsonify({"message": "Product ID is required."}), 400
+
+#     # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
+#     verification_result = verify_manufacturer(product_id, real_manufacturer)
+#     if verification_result:
+#         return verification_result  # Restituisce l'errore se la verifica non è passata
+    
+#     # in caso di corrispondenza manufacturer
+#     print("Add certification data:", certification_data)
+#     try:
+#         response = requests.post('http://localhost:3000/api/product/certification', json=certification_data)
+#         if response.status_code == 200:
+#             return jsonify({'message': 'Product uploaded successfully!'})
+#         else:
+#             return jsonify({'message': 'Failed to upload product.'}), 500
+#     except Exception as e:
+#         print("Error uploading product:", e)
+#         return jsonify({'message': 'Error uploading product.'}), 500
+
+# # NON UTILIZZATA
+# @app.route('/verifyProductCompliance', methods=['POST'])
+# def verify_product_compliance():
+#     compliance_data  = request.json
+#     print("Check if product is complaint:", compliance_data)
+#     try:
+#         response = requests.post('http://localhost:3000/api/product/verifyProductCompliance', json=compliance_data)
+#         print(response.json())
+#         if response.status_code == 200:
+#             return jsonify({'message': 'Product is compliant!'})
+#         else:
+#             return jsonify({'message': 'Product is not compliant'}), 500
+#     except Exception as e:
+#         print("Error while checking product:", e)
+#         return jsonify({'message': 'Error while checking product.'}), 500
+
+# # già usata su frontend
+# @app.route('/getAllMovements', methods=['GET'])
+# def get_all_movements():
+#     productId = request.args.get('productId')
+#     print("get all movements:", productId)
+#     try:
+#         response = requests.get(f'http://localhost:3000/api/product/getMovements?productId={productId}')
+#         print(response.json())
+#         if response.status_code == 200:
+#             return jsonify(response.json())
+#         else:
+#             return jsonify({'message': 'Failed to get movements'}), 500
+#     except Exception as e:
+#         print("EFailed to get movements:", e)
+#         return jsonify({'message': 'Failed to get movements.'}), 500
+
+# # già usata su frontend
+# @app.route('/getAllSensorData', methods=['GET'])
+# def get_all_sensor_data():
+#     productId = request.args.get('productId')
+#     print("get all sensor:", productId)
+#     try:
+#         response = requests.get(f'http://localhost:3000/api/product/getSensorData?productId={productId}')
+#         print(response.json())
+#         if response.status_code == 200:
+#             return jsonify(response.json())
+#         else:
+#             return jsonify({'message': 'Failed to get sensor data'}), 500
+#     except Exception as e:
+#         print("EFailed to get movements:", e)
+#         return jsonify({'message': 'Failed to get sensor data.'}), 500
+
+# # già usata su frontend
+# @app.route('/getAllCertifications', methods=['GET'])
+# def get_all_certifications():
     productId = request.args.get('productId')
     print("get all certifications:", productId)
     try:

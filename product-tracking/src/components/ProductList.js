@@ -29,6 +29,16 @@ import Viewer3D from './Viewer3D';
   // Handle scanning the product and fetching its details
   const handleScan = async (e) => {
     e?.preventDefault();
+
+    // Reset product-related data when scanning a batch
+    setProduct(null);
+    setBatch(null);
+    setbatchProduct(null);
+    setProductHistory([]);
+    setMessage('');
+    setGlbFile(null);
+    setStatus('');
+
     try {
       console.log("Scanning for Item Code: " + itemCode);
 
@@ -79,6 +89,9 @@ import Viewer3D from './Viewer3D';
       console.error("Error fetching model: ", error);
       setGlbFile(null);
     }
+    setItemCode('');
+    setItemCodeBatch('');
+
 
     // Retrieve product movements
     // try {
@@ -96,6 +109,15 @@ import Viewer3D from './Viewer3D';
 
   const handleScanBatch = async (e) => {
     e?.preventDefault();
+    // Reset batch-related data when scanning a product
+
+    setBatch(null);
+    setProduct(null);
+    setBatchHistory([]);
+    setMessageBatch('');
+    setbatchProduct(null);
+
+ 
     try {
       console.log("Scanning for Item Code: " + itemCodeBatch);
 
@@ -104,6 +126,14 @@ import Viewer3D from './Viewer3D';
       console.log("responseBatch",responseBatch);
       const historyResponseBatch = await axios.get(`http://127.0.0.1:5000/getBatchHistory?batchId=${itemCodeBatch}`);
       console.log(historyResponseBatch);
+      if (Array.isArray(responseBatch.data.CustomObject)) {
+        const simplifiedCustom = {};
+        responseBatch.data.CustomObject.forEach(entry => {
+          const [key] = Object.keys(entry);
+          simplifiedCustom[key] = entry[key];
+        });
+        responseBatch.data.CustomObject = simplifiedCustom;
+      }
 
       //Se la chiamata alla getBatch mi ritorna 200 stato OK
       if (responseBatch.status === 200) {
@@ -138,6 +168,9 @@ import Viewer3D from './Viewer3D';
       setBatch(null);
       onBatchSelect(null);
     }    
+    setItemCode('');
+    setItemCodeBatch('');
+
   };
 
 const getLastUpdate = () => {
@@ -250,8 +283,6 @@ const getLastUpdate = () => {
 
     link.click();
   };
-  
-
   // Funzione per decodificare immagini caricate
   const handleImageUpload = (event) => {
     console.log("starting QR code processing...");
@@ -336,13 +367,15 @@ const getLastUpdate = () => {
               </Card.Header>
               <br />
               <div className="form-group d-flex align-items-center">
-                <input
-                  type="text"
-                  onChange={(e) => setItemCode(e.target.value)}
-                  className="form-control me-2"
-                  id="itemCode"
-                  placeholder="Enter product Item Code"
-                />
+              <input
+                type="text"
+                value={itemCode}
+                onChange={(e) => setItemCode(e.target.value)}
+                className="form-control me-2"
+                id="itemCode"
+                placeholder="Enter product Item Code"
+              />
+
                 <input
                   type="file"
                   id="uploader"
@@ -386,6 +419,7 @@ const getLastUpdate = () => {
           </div>
         </div>
         </form>
+        <br></br>
         {/* Form di inserimento Item Code */}
         <form
           id="scanningForm"
@@ -403,13 +437,15 @@ const getLastUpdate = () => {
               </Card.Header>
               <br />
               <div className="form-group d-flex align-items-center">
-                <input
-                  type="text"
-                  onChange={(e) => setItemCodeBatch(e.target.value)}
-                  className="form-control me-2"
-                  id="itemCodeBatch"
-                  placeholder="Enter batch Item Code"
-                />
+              <input
+                type="text"
+                value={itemCodeBatch}
+                onChange={(e) => setItemCodeBatch(e.target.value)}
+                className="form-control me-2"
+                id="itemCodeBatch"
+                placeholder="Enter batch Item Code - LXXX"
+              />
+
                 <input
                   type="file"
                   id="uploader"

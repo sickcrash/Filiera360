@@ -580,6 +580,35 @@ app.post('/api/product/updateProduct', async (req, res) => {
     }
 });
 
+app.post('/api/batch/updateBatch', async (req, res) => {
+    console.log('Sono su Appserver e questa è la request', req.body);
+    const batchData = req.body;
+    console.log('Received batch data:', batchData);
+
+    try {
+        console.log('test 1');
+
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
+        console.log("Dati inviati al chaincode:", batchData);
+
+        await contract.submitTransaction('UpdateBatch',
+            batchtData.ID, 
+            batchData.ProductId, 
+            batchData.Operator,  
+            batchData.BatchNumber, 
+            batchData.Quantity, 
+            batchData.ProductionDate, 
+            JSON.stringify(batchData.CustomObject));
+        res.status(200).json({ message: `batch updated` });
+    }
+
+    catch (error) {
+        console.error(`Failed to update batch: ${error}`);
+        res.status(500).json({ error: `Failed to update batch: ${error.message}` });
+    }
+});
+
 // app.post('/api/product/sensor', async (req, res) => {
 //     try {
 //         const { id, SensorId, Temperature, Humidity, Timestamp } = req.body;
