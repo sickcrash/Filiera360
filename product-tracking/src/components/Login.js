@@ -19,6 +19,13 @@ const Login = ({ setIsLoggedIn }) => {
         password,
       });
       const data = response.data;
+
+      if (response.status == 200 && !data.access_token) {
+        setIsOtpSent(true);
+        setMessage("Login successful! Please enter the OTP sent to your email.");
+        return;
+      }
+
       console.log("Response from login:", response.data); // LOG della risposta del server
       // Salviamo i dati nel localStorage
       localStorage.setItem("token", data.access_token);
@@ -28,14 +35,8 @@ const Login = ({ setIsLoggedIn }) => {
       localStorage.setItem("userId", data.email);
       localStorage.setItem("role", data.role);
 
-      // Se il login è riuscito, chiediamo l'OTP
-
-      const otpResponse = await axios.post("http://127.0.0.1:5000/send-otp", {
-        email,
-      });
-
-      setIsOtpSent(true); // Mostriamo il campo OTP
-      setMessage("Login successful! Please enter the OTP sent to your email.");
+      setIsLoggedIn(true);
+      navigate("/account");
     } catch (error) {
       if (error.response && error.response.data) {
         setMessage(error.response.data.message);
@@ -57,8 +58,15 @@ const Login = ({ setIsLoggedIn }) => {
 
       if (data.message === "OTP validated successfully.") { //prima era if (data success)
         // Se OTP è corretto, redirigiamo l'utente
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("manufacturer", data.manufacturer);
+        localStorage.setItem("email", data.email);
+        // Store user ID for liked products
+        localStorage.setItem("userId", data.email);
+        localStorage.setItem("role", data.role);
+
         setIsLoggedIn(true);
-        navigate("/");
+        navigate("/account");
       } else {
         setMessage("Invalid OTP. Please try again.");
       }

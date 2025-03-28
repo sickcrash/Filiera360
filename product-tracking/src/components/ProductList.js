@@ -10,6 +10,7 @@ import Viewer3D from './Viewer3D';
 
   const ProductList = ({ onProductSelect, onBatchSelect }) => {
   const isProducer = localStorage.getItem("role") === "producer"; 
+  const isUser = localStorage.getItem("role") === "user"; 
 
   const [itemCode, setItemCode] = useState('');
   const [message, setMessage] = useState('');
@@ -430,6 +431,7 @@ const getLastUpdate = () => {
           const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${product.ID}&userId=${userId}`, {
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
           });
           
@@ -455,7 +457,12 @@ const getLastUpdate = () => {
         
         await axios.post('http://127.0.0.1:5000/likeProduct', {
           product: productToLike,
-          userId: userId
+          userId: userId,
+        }, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
         });
         
         console.log(`Product ${product.ID} added to favorites`);
@@ -473,7 +480,7 @@ const getLastUpdate = () => {
   return (
     <div className="container mt-5">
       {/* Form di inserimento Item Code */}
-      <form
+      {!isUser && (<form
         id="scanningForm"
         onSubmit={(e) => handleScan(e)}
         className="row justify-content-center"
@@ -537,7 +544,7 @@ const getLastUpdate = () => {
             </div>
           </div>
         </div>
-        </form>
+        </form>)}
         {/* Form di inserimento Item Code */}
         <form
           id="scanningForm"
@@ -686,6 +693,7 @@ const getLastUpdate = () => {
                               // Call the backend to unlike the product
                               const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
                                 headers: {
+                                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
                                   'Content-Type': 'application/json',
                                 }
                               });

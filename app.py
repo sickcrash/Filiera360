@@ -65,9 +65,9 @@ otp_store_file = "users-otp.json"
 otp_lifetime = timedelta(minutes=5)
 
 
-@app.route('/send-otp', methods=['POST'])
-def send_otp():
-    email = request.json.get('email')
+# @app.route('/send-otp', methods=['POST'])
+def send_otp(email):
+    # email = request.json.get('email')
 
     # Verifica che l'email sia registrata nel sistema
     if email not in users:
@@ -99,10 +99,13 @@ def send_otp():
         return jsonify({"message": "Error saving OTP."}), 500
 
     # Invia l'OTP via email
-    if send_otp_email(email, otp):
+
+    return send_otp_email(email, otp)
+
+"""     if send_otp_email(email, otp):
         return jsonify({"message": "OTP sent to your email."})
     else:
-        return jsonify({"message": "Failed to send OTP."}), 500
+        return jsonify({"message": "Failed to send OTP."}), 500 """
 
 
 
@@ -330,7 +333,8 @@ def signup():
             "producer": role == "producer",
             "operator": role == "operator",
             "user": role == "user" 
-        }
+        },
+        "operators": []
     }
 
     save_users(users)
@@ -359,7 +363,7 @@ def login():
     if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
         return jsonify({"message": "Invalid email or password"}), 401
 
-    # Se la 2FA è abilitata, invia il codice OTP
+    """ # Se la 2FA è abilitata, invia il codice OTP
     if user.get('two_factor_enabled', False):
         secret = user.get('2fa_secret', None)
         if not secret:
@@ -369,11 +373,19 @@ def login():
 
         otp = pyotp.TOTP(secret).now()  # Genera il codice OTP
         # In un'app reale, invieresti l'OTP via email o SMS, ma per ora lo restituiamo nel corpo della risposta
-        return jsonify({"message": "2FA required", "otp": otp})  # Solo per scopi di sviluppo
+        return jsonify({"message": "2FA required", "otp": otp})  # Solo per scopi di sviluppo """
+
+    if user["flags"]["user"]:
+        token = create_access_token(email)
+        return jsonify({"message": "Login successful", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
+    else:
+        if send_otp(email):
+            return jsonify({"message": "OTP sent to your email."})
+        else:
+            return jsonify({"message": "Failed to send OTP."}), 500
 
     # Se la 2FA non è necessaria, crea un token JWT
-    token = create_access_token(email)
-    return jsonify({"message": "Login successful", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
+    
 
 
 # Endpoint per la verifica dell'OTP
@@ -400,8 +412,11 @@ def verify_otp():
         otp_expired = expiration_time < datetime.now()
 
         if otp_present and stored_otp == otp and not otp_expired:
-            print("OTP validato con successo")  
-            return jsonify({"message": "OTP validated successfully.", "token": "JWT_Token"})
+            print("OTP validato con successo")
+            user = users.get(email)
+            token = create_access_token(email)
+            return jsonify({"message": "OTP validated successfully.", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
+            # return jsonify({"message": "OTP validated successfully.", "token": "JWT_Token"})
         else:
             print("OTP non valido o scaduto")  
             return jsonify({"message": "Invalid OTP."}), 400
@@ -411,6 +426,64 @@ def verify_otp():
         return jsonify({"message": "Errore nella verifica dell'OTP."}), 500 
 
 
+@app.route('/operators', methods=['GET'])
+@jwt_required()
+def get_operators():
+    if not required_permissions(get_jwt_identity(), ['producer']):
+        return jsonify({"operators": None})
+
+    user = users.get(get_jwt_identity())
+    operators = user.get("operators", [])
+
+    return jsonify({"operators": operators})
+
+@app.route('/operators/add', methods=['POST'])
+@jwt_required()
+def add_operator():
+    if not required_permissions(get_jwt_identity(), ['producer']):
+        return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
+
+    data = request.json
+    operator_email = data.get("email")
+    if not operator_email:
+        return jsonify({"message": "Email is required."}), 400
+    
+    operator = users.get(operator_email)
+    if not operator:
+        return jsonify({"message": "Operator not found."}), 404
+
+    if not operator.get("flags", {}).get("operator"):
+        return jsonify({"message": "User is not an operator and cannot be added."}), 400
+
+    user = users.get(get_jwt_identity())
+    if operator_email in user.get("operators", []):
+        return jsonify({"message": "Operator already added."}), 409
+
+    user["operators"].append(operator_email)
+    save_users(users)
+
+    return jsonify({"message": "Operator added successfully."}), 201
+
+@app.route('/operators/delete', methods=['POST'])
+@jwt_required()
+def remove_operator():
+    if not required_permissions(get_jwt_identity(), ['producer']):
+        return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
+
+    data = request.json
+    operator_email = data.get("email")
+
+    if not operator_email:
+        return jsonify({"message": "Email is required."}), 400
+
+    user = users.get(get_jwt_identity())
+    if operator_email not in user.get("operators", []):
+        return jsonify({"message": "Operator not found."}), 404
+
+    user["operators"].remove(operator_email)
+    save_users(users)
+
+    return jsonify({"message": "Operator removed successfully."})
 
 # già usata su frontend
 @app.route('/getProduct', methods=['GET'])
@@ -485,6 +558,13 @@ def get_batch_history():
         print("Failed to get batch history:", e)
         return jsonify({'message': 'Failed to get batch history.'}), 500
 
+def find_producer_by_operator(operator):
+    for email, user in users.items():
+        if operator in user.get("operators", []):
+            return user
+    
+    return None
+
 def required_permissions(manufacturer, roles):
     user = [user for user in users.items() if user[0] == manufacturer]
     user = user[0] if user else None
@@ -504,9 +584,9 @@ def verify_product_authorization(email, product_id):
         return False
 
     if user["flags"].get("operator", False):
-        user = user.get("associated_producer", None)
+        user = find_producer_by_operator(email)
         if not user:
-            return False # NOTE: succede se l'operatore non è associato a un produttore
+            return False
 
     try: 
         response = requests.get(f'http://localhost:3000/readProduct?productId={product_id}')
@@ -566,8 +646,8 @@ def uploadBatch():
     batch_data = request.json
     print("Dati:",batch_data)
 
-    # if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductID")):
-    #     return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
+    if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductId")):
+        return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
 
     real_operator = users.get(get_jwt_identity())["manufacturer"]
     print("operator authenticated: " + real_operator)
@@ -974,16 +1054,16 @@ def like_product():
     return jsonify({"message": "Product added to liked products"}), 201
 
 # Update the unlikeProduct endpoint for user-specific unlikes
-@app.route('/unlikeProduct', methods=['DELETE', 'OPTIONS'])
+@app.route('/unlikeProduct', methods=['DELETE'])
 @jwt_required()
 def unlike_product():
     # Handle preflight OPTIONS request
-    if request.method == 'OPTIONS':
+    """ if request.method == 'OPTIONS':
         response = jsonify({'message': 'OK'})
         response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Methods', 'DELETE')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response
+        return response """
         
     product_id = request.args.get('productId')
     user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
@@ -1043,16 +1123,16 @@ liked_products = load_liked_products()
 
 # Add these new routes for recently searched products
 
-@app.route('/addRecentlySearched', methods=['POST', 'OPTIONS'])
+@app.route('/addRecentlySearched', methods=['POST'])
 @jwt_required()
 def add_recently_searched():
     # Handle preflight OPTIONS request
-    if request.method == 'OPTIONS':
+    """ if request.method == 'OPTIONS':
         response = jsonify({'message': 'OK'})
         response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Methods', 'POST')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response
+        return response """
     
     data = request.json
     product = data.get('product')

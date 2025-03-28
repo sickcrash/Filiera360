@@ -60,6 +60,17 @@
         "password": "$2b$12$CxCxWO/fRwSA0176HqnxB.O14tPHciDnqb55E0hioy5r6LuympdOm"
     },
     "criscorrado0@gmail.com": {
+        "manufacturer": "Cris",
+        "password": "$2b$12$.0iOWidpJaLNxbxACS9o5eBne4PKlLILd2gsNz1NfdJ.MfBjUdmv6",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
+    },
+    "cri@gmail.com": {
         "manufacturer": "Cristian",
         "password": "$2b$12$.0iOWidpJaLNxbxACS9o5eBne4PKlLILd2gsNz1NfdJ.MfBjUdmv6",
         "role": "operator",
@@ -68,17 +79,9 @@
             "operator": true,
             "user": false
         },
-        "associated_producer": "cri@gmail.com"
-    },
-    "cri@gmail.com": {
-        "manufacturer": "Cris",
-        "password": "$2b$12$.0iOWidpJaLNxbxACS9o5eBne4PKlLILd2gsNz1NfdJ.MfBjUdmv6",
-        "role": "producer",
-        "flags": {
-            "producer": true,
-            "operator": false,
-            "user": false
-        }
+        "operators": [
+            "criscorrado0@gmail.com"
+        ]
     },
     "ale@gmail.com": {
         "manufacturer": "ale",
