@@ -6,15 +6,26 @@ const SignUp = () => {
   const [email, setEmail] = useState("");
   const [manufacturer, setManufacturer] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user"); 
-  const [inviteToken, setInviteToken] = useState(""); 
+  const [role, setRole] = useState("user");
+  const [inviteToken, setInviteToken] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+
+
+  const getPlaceholder = () => {
+    switch (role) {
+      case "producer":
+        return "Manufacturer Name";
+      case "operator":
+        return "Operator Name";
+      default:
+        return "User Name";
+    }
+  };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
 
-    // Se il ruolo è "producer", il token di invito è obbligatorio
     if (role === "producer" && !inviteToken) {
       setMessage("The invitation token is required for producers.");
       return;
@@ -29,7 +40,7 @@ const SignUp = () => {
         inviteToken: role === "producer" ? inviteToken : null,
       });
       const data = response.data;
-  
+
       alert("Registration successful!");
       navigate("/login");
     } catch (error) {
@@ -78,7 +89,7 @@ const SignUp = () => {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Manufacturer Name"
+                    placeholder={getPlaceholder()} 
                     value={manufacturer}
                     onChange={(e) => setManufacturer(e.target.value)}
                     required
@@ -119,7 +130,7 @@ const SignUp = () => {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Token di Invito"
+                      placeholder="Invitation Token"
                       value={inviteToken}
                       onChange={(e) => setInviteToken(e.target.value)}
                       required

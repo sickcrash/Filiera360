@@ -1,6 +1,22 @@
 import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 function Navbar() {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 960);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 960);
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    return isMobile ? <MobileNavbar /> : <DesktopNavbar />;
+}
+
+function DesktopNavbar() {
     return (
         <nav
             style={{
@@ -22,14 +38,15 @@ function Navbar() {
                 }}
             >
                 <img 
-                src={require("../logo_filiera360.png")}
-                style={{
-                    width:"8vw",
-                }}
+                    src={require("../logo_filiera360.png")}
+                    style={{
+                        width:"6vw",
+                    }}
+                    alt="Logo"
                 />
             </div>
 
-            {/* Icune di navigazione */}
+            {/* Icone di navigazione */}
             <div
                 style={{
                     display: 'flex',
@@ -38,54 +55,90 @@ function Navbar() {
                     width:"100%"
                 }}
             >
-                <NavLink
-                    to="/add-product"
-                    style={({ isActive }) => ({
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        textDecoration: 'none',
-                        color: isActive ? '#007bff' : '#6c757d',
-                        transition: 'color 0.3s ease',
-                    })}
-                >
-                    <ion-icon name="add-circle-outline" style={{ fontSize: '24px', marginBottom: '4px' }}></ion-icon>
-                    <span>Add Product</span>
-                </NavLink>
-
-                <NavLink
-                    to="/scan-product"
-                    style={({ isActive }) => ({
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        textDecoration: 'none',
-                        color: isActive ? '#007bff' : '#6c757d',
-                        transition: 'color 0.3s ease',
-                    })}
-                >
-                    <ion-icon name="scan-outline" style={{ fontSize: '24px', marginBottom: '4px' }}></ion-icon>
-                    <span>Scan Product</span>
-                </NavLink>
-
-                <NavLink
-                    to="/account"
-                    style={({ isActive }) => ({
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        textDecoration: 'none',
-                        color: isActive ? '#007bff' : '#6c757d',
-                        transition: 'color 0.3s ease',
-                    })}
-                >
-                    <ion-icon name="person-circle-outline" style={{ fontSize: '24px', marginBottom: '4px' }}></ion-icon>
-                    <span>Account</span>
-                </NavLink>
+                <NavItem to="/add-product" icon="add-circle-outline" label="Add Product" />
+                <NavItem to="/scan-product" icon="scan-outline" label="Scan Product" />
+                <NavItem to="/account" icon="person-circle-outline" label="Account" />
             </div>
         </nav>
+    );
+}
 
-    )
+
+function MobileNavbar() {
+    return (
+        <>
+            {/* Logo in alto */}
+            <div
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '100%',
+                    textAlign: 'center',
+                    backgroundColor: '#ffffff',
+                    padding: '0.5rem 0',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000,
+                }}
+            >
+                <img 
+                    src={require("../logo_filiera360.png")}
+                    style={{ width: "25%", maxWidth: "120px" }}
+                    alt="Logo"
+                />
+            </div>
+
+            {/* Contenuto che si sposta in basso per evitare sovrapposizione con la navbar mobile */}
+            <div
+                style={{
+                    marginTop: "75px",  
+                    paddingBottom: "10px", 
+                }}
+            >
+                {}
+            </div>
+
+            {/* Navbar in basso */}
+            <nav
+                style={{
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-around',
+                    alignItems: 'center',
+                    backgroundColor: '#f8f9fa',
+                    boxShadow: '0 -4px 8px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000,
+                }}
+            >
+                <NavItem to="/add-product" icon="add-circle-outline" label="Add" />
+                <NavItem to="/scan-product" icon="scan-outline" label="Scan" />
+                <NavItem to="/account" icon="person-circle-outline" label="Account" />
+            </nav>
+        </>
+    );
+}
+
+function NavItem({ to, icon, label }) {
+    return (
+        <NavLink
+            to={to}
+            style={({ isActive }) => ({
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textDecoration: 'none',
+                color: isActive ? '#007bff' : '#6c757d',
+                transition: 'color 0.3s ease',
+            })}
+        >
+            <ion-icon name={icon} style={{ fontSize: '24px', marginBottom: '4px' }}></ion-icon>
+            <span style={{ fontSize: '12px' }}>{label}</span>
+        </NavLink>
+    );
 }
 
 export default Navbar;
