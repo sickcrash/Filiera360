@@ -9,6 +9,9 @@ import jsQR from 'jsqr';
 import Viewer3D from './Viewer3D';
 
   const ProductList = ({ onProductSelect, onBatchSelect }) => {
+  const isProducer = localStorage.getItem("role") === "producer"; 
+  const isUser = localStorage.getItem("role") === "user"; 
+
   const [itemCode, setItemCode] = useState('');
   const [message, setMessage] = useState('');
   const [product, setProduct] = useState(null);
@@ -25,6 +28,7 @@ import Viewer3D from './Viewer3D';
   const [scanBatch, setScanBatch] = useState('');
 
   
+  
   // variabili useState per la gestione dei prodotti preferiti
   const [liked, setLiked] = useState(false); // controllo se il prodotto é stato preferito o meno 
   const [likedProducts, setLikedProducts] = useState(() => {
@@ -39,8 +43,6 @@ import Viewer3D from './Viewer3D';
     const savedScanned = localStorage.getItem('recentlyScannedProducts');
     return savedScanned ? JSON.parse(savedScanned) : [];
   });
- 
-  
 
   // Handle scanning the product and fetching its details
   const handleScan = async (e) => {
@@ -63,6 +65,7 @@ import Viewer3D from './Viewer3D';
       console.log("Scanning for Item Code: " + itemCode);
 
       // Fetch product details from the server
+      const token = localStorage.getItem('token');
       const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${itemCode}`);
       const historyResponse = await axios.get(`http://127.0.0.1:5000/getProductHistory?productId=${itemCode}`);
 
@@ -389,6 +392,11 @@ const getLastUpdate = () => {
       await axios.post('http://127.0.0.1:5000/addRecentlySearched', {
         product: scannedProduct,
         userId: userId
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
       });
       
       // Update local state
@@ -408,7 +416,11 @@ const getLastUpdate = () => {
       try {
         // Get user ID from localStorage (set during login)
         const userId = localStorage.getItem('email') || 'default';
-        const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`);
+        const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+          }}
+        );
         setRecentlyScanned(response.data);
       } catch (error) {
         console.error("Error fetching recently searched products:", error);
@@ -422,7 +434,10 @@ const getLastUpdate = () => {
       try {
         // Get user ID from localStorage (set during login)
         const userId = localStorage.getItem('email') || 'default';
-        const response = await axios.get(`http://127.0.0.1:5000/getLikedProducts?userId=${userId}`);
+        const response = await axios.get(`http://127.0.0.1:5000/getLikedProducts?userId=${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+          }});
         setLikedProducts(response.data);
       } catch (error) {
         console.error("Error fetching liked products:", error);
@@ -445,6 +460,7 @@ const getLastUpdate = () => {
           const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${product.ID}&userId=${userId}`, {
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
           });
           
@@ -470,7 +486,12 @@ const getLastUpdate = () => {
         
         await axios.post('http://127.0.0.1:5000/likeProduct', {
           product: productToLike,
-          userId: userId
+          userId: userId,
+        }, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
         });
         
         console.log(`Product ${product.ID} added to favorites`);
@@ -488,7 +509,7 @@ const getLastUpdate = () => {
   return (
     <div className="container mt-5">
       {/* Form di inserimento Item Code */}
-      <form
+      {!isUser && (<form
         id="scanningForm"
         onSubmit={(e) => handleScan(e)}
         className="row justify-content-center"
@@ -516,14 +537,6 @@ const getLastUpdate = () => {
                   id="uploader"
                   onChange={handleImageUpload}
                   onError={handleError}
-                  onClick={(e) => {
-                    const userRole = localStorage.getItem("role"); 
-
-                    if (userRole !== "producer") {
-                      e.preventDefault();
-                      window.location.href = "/access-denied"; 
-                    }
-                  }}
                   style={{ display: 'none' }}
                 />
                 <label
@@ -560,8 +573,7 @@ const getLastUpdate = () => {
             </div>
           </div>
         </div>
-        </form>
-        <br></br>
+        </form>)}
         {/* Form di inserimento Item Code */}
         <form
           id="scanningForm"
@@ -712,6 +724,7 @@ const getLastUpdate = () => {
                               // Call the backend to unlike the product
                               const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
                                 headers: {
+                                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
                                   'Content-Type': 'application/json',
                                 }
                               });
@@ -785,8 +798,7 @@ const getLastUpdate = () => {
                         <th>Manufacturer</th>
                         <td>{product.Manufacturer}</td>
                       </tr>
-                    )}
-                                       
+                    )}              
                     {product.ExpiryDate && (
                       <tr>
                         <th>Expiry Date</th>
@@ -831,7 +843,7 @@ const getLastUpdate = () => {
                         <td>{product.CountryOfOrigin}</td>
                       </tr>
                     )}
-                    {product.CustomObject && Object.entries(product.CustomObject).map(([key, value]) => (
+                    {product.CustomObject && product.CustomObject && Object.entries(product.CustomObject).map(([key, value]) => (
                       <tr key={key}>
                         <th>{key}</th>
                         <td>{value}</td>
@@ -873,7 +885,12 @@ const getLastUpdate = () => {
               </div>
             </div>
           </div>
-          {/* Rest of your component */}
+          { isProducer && product.Manufacturer == localStorage.getItem("manufacturer") &&
+            <UpdateProduct 
+          productId={itemCode} 
+          productType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
+          onProductUpdate={handleScan} 
+          />}
         </div>
       )}
       
@@ -1095,5 +1112,4 @@ const getLastUpdate = () => {
 };
 
 export default ProductList;
-
 

@@ -1,6 +1,18 @@
 import { NavLink } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 
 function Navbar() {
+    const [role, setRole] = useState(undefined);
+    const [isProducer, setIsProducer] = useState(false);
+
+    useEffect(() => {
+        setRole(localStorage.getItem("role"));
+        console.log(localStorage.getItem("role"));
+        if (localStorage.getItem("role") === "producer" || localStorage.getItem("role") === "operator") {
+            setIsProducer(true);
+        }
+    }, []);
+
     return (
         <nav
             style={{
@@ -38,7 +50,7 @@ function Navbar() {
                     width:"100%"
                 }}
             >
-                <NavLink
+                {isProducer && <NavLink
                     to="/add-product"
                     style={({ isActive }) => ({
                         display: 'flex',
@@ -51,7 +63,7 @@ function Navbar() {
                 >
                     <ion-icon name="add-circle-outline" style={{ fontSize: '24px', marginBottom: '4px' }}></ion-icon>
                     <span>Add Product</span>
-                </NavLink>
+                </NavLink>}
 
                 <NavLink
                     to="/scan-product"

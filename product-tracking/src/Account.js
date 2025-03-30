@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Button } from "react-bootstrap";
 import { Navigate, useNavigate } from "react-router-dom";
+import {ManageOperators} from "./components/ManageOperators";
 
 const Account = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
@@ -16,6 +17,12 @@ const Account = ({ setIsLoggedIn }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+      localStorage.removeItem("manufacturer");
+      localStorage.removeItem("email");
+      // Store user ID for liked products
+      localStorage.removeItem("userId");
+      localStorage.removeItem("role");
+
     setIsLoggedIn(false);
     navigate("/login");
   };
@@ -56,6 +63,14 @@ const Account = ({ setIsLoggedIn }) => {
           </div>
         </div>
       </div>
+
+
+      {role === 'producer'&& <div className="row justify-content-center">
+        <div className="col-md-6">
+          <ManageOperators />
+        </div>
+      </div>}
+
     </div>
   );
 };
