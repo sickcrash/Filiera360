@@ -356,12 +356,19 @@ const ProductList = ({ onProductSelect }) => {
                   id="itemCode"
                   placeholder="Enter product Item Code"
                 />
-                <input
+               <input
                   type="file"
                   id="uploader"
                   onChange={handleImageUpload}
                   onError={handleError}
-                  onClick={() => setShowCamera(false)}
+                  onClick={(e) => {
+                    const userRole = localStorage.getItem("role"); 
+
+                    if (userRole !== "producer") {
+                      e.preventDefault();
+                      window.location.href = "/access-denied"; 
+                    }
+                  }}
                   style={{ display: 'none' }}
                 />
                 <label

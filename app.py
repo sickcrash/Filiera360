@@ -180,13 +180,50 @@ def init_ledger():
     else:
         return jsonify({"message": "Ledger initialized successfully with sample data."})
 
-# nuova aggiunta
+# Caricamento token
+def load_invite_tokens():
+    try:
+        with open("invite_tokens.json", "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {}
+
+# Salvataggio token aggiornati
+def save_invite_tokens(tokens):
+    with open("invite_tokens.json", "w") as file:
+        json.dump(tokens, file, indent=4)
+
+# Salvataggio degli utenti in un file JSON
+def save_users(users):
+    with open("users.json", "w") as file:
+        json.dump(users, file, indent=4)
+
+# Verifichiamo se un token è valido e non scaduto
+def is_valid_invite_token(token):
+    tokens = load_invite_tokens()
+    if token not in tokens:
+        return False, "Invalid invitation token."
+
+    token_data = tokens[token]
+    expiration_date = datetime.fromisoformat(token_data["expires_at"])
+
+    if datetime.now() > expiration_date:
+        return False, "Expired invitation token."
+        
+    # Se il token è già usato
+    if token_data.get("used", False): 
+        return False, "Invitation token already used."
+
+    return True, "Valid token."
+
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
     email = data.get('email')
     manufacturer = data.get('manufacturer')
     password = data.get('password')
+    role = data.get('role', 'user') 
+    invite_token = data.get('inviteToken', None) 
     
     # Verifica che tutti i campi siano forniti
     if not email or not manufacturer or not password:
@@ -199,18 +236,39 @@ def signup():
     # Controlla se il manufacturer è già registrato
     if any(user["manufacturer"] == manufacturer for user in users.values()):
         return jsonify({"message": "Manufacturer already exists"}), 409
-    
+
+    # Controlla il token di invito per i produttori
+    if role == "producer":
+        if not invite_token:
+            return jsonify({"message": "The invite token is required for producers."}), 400
+
+        is_valid, message = is_valid_invite_token(invite_token)
+        if not is_valid:
+            return jsonify({"message": message}), 403
+
     # Crea un hash della password con bcrypt
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # Aggiungi l'utente al dizionario degli utenti
     users[email] = {
         "manufacturer": manufacturer,
-        "password": hashed_password
+        "password": hashed_password,
+        "role": role,
+        "flags": {
+            "producer": role == "producer",
+            "operator": role == "operator",
+            "user": role == "user" 
+        }
     }
-    
-    # Salva gli utenti nel file JSON
+
     save_users(users)
+
+    # Se il token è stato usato, viene segnato come utilizzato
+    if role == "producer" and invite_token:
+        tokens = load_invite_tokens()
+        tokens[invite_token]["used"] = True
+        save_invite_tokens(tokens)
+
     return jsonify({"message": "User registered successfully"}), 201
 
 # nuova aggiunta
