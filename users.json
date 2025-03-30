@@ -114,5 +114,51 @@
     "cavolo@ciao.it": {
         "manufacturer": "cavolo",
         "password": "$2b$12$KoVlqSbSY3e6dElhKhKyMO5Uof22nhubaogzk7nHciEzvDfPqy6w2"
+    },
+    "ale@ssio.it": {
+        "manufacturer": "dijdfjdfs",
+        "password": "$2b$12$TVCOY2z7Zu0prdbeQPYPx.Y9hYB1VI0sM0HsliCSbS5mZH1julcLS",
+        "role": "user",
+        "flags": {
+            "producer": false,
+            "operator": false,
+            "user": true
+        },
+        "operators": []
+    },
+    "a@le.it": {
+        "manufacturer": "sdkmfd",
+        "password": "$2b$12$33PFEpZk0jNiiLIPLxUzr.FywxdS7vAO9/.7X4ngKb5tD.I0y.kM2",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": []
+    },
+    "a@a.a": {
+        "manufacturer": "aaaaaa",
+        "password": "$2b$12$eNJNeBNa.glG3A9ZcCVRrOm85UkPbk51xVACYmOdfF2V2OKLEug5S",
+        "role": "user",
+        "flags": {
+            "producer": false,
+            "operator": false,
+            "user": true
+        },
+        "operators": []
+    },
+    "azienda@mail.com": {
+        "manufacturer": "Azienda",
+        "password": "$2b$12$nUkRhFEq0XGylEYtn11U0uusSxEB2FUd6h8pBaR79T2xDKYUaM6G2",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": [
+            "a@le.it"
+        ]
     }
 }

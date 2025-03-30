@@ -8,9 +8,10 @@ import QrScanner from 'react-qr-scanner';
 import jsQR from 'jsqr';
 import Viewer3D from './Viewer3D';
 
-  const ProductList = ({ onProductSelect, onBatchSelect }) => {
-  const isProducer = localStorage.getItem("role") === "producer"; 
-  const isUser = localStorage.getItem("role") === "user"; 
+const ProductList = ({ onProductSelect, onBatchSelect }) => {
+  const isProducer = localStorage.getItem("role") === "producer";
+  const isOperator = localStorage.getItem("role") === "operator";
+  const isUser = localStorage.getItem("role") === "user";
 
   const [itemCode, setItemCode] = useState('');
   const [message, setMessage] = useState('');
@@ -27,8 +28,8 @@ import Viewer3D from './Viewer3D';
   const [messageBatch, setMessageBatch] = useState('');
   const [scanBatch, setScanBatch] = useState('');
 
-  
-  
+
+
   // variabili useState per la gestione dei prodotti preferiti
   const [liked, setLiked] = useState(false); // controllo se il prodotto é stato preferito o meno 
   const [likedProducts, setLikedProducts] = useState(() => {
@@ -36,7 +37,7 @@ import Viewer3D from './Viewer3D';
     const savedProducts = localStorage.getItem('likedProducts');
     return savedProducts ? JSON.parse(savedProducts) : [];
   });
-  
+
   // Nuovo stato per la cronologia dei prodotti scansionati
   const [recentlyScanned, setRecentlyScanned] = useState(() => {
     // Load recently scanned products from localStorage
@@ -47,19 +48,9 @@ import Viewer3D from './Viewer3D';
   // Handle scanning the product and fetching its details
   const handleScan = async (e) => {
     e?.preventDefault();
-    
+
     // controllo il prodotto scannerizzato è gia stato preferito
     setLiked(likedProducts.some(p => p.ID === itemCode)); // Check if product is already liked
-    
-
-    // Reset product-related data when scanning a batch
-    setProduct(null);
-    setBatch(null);
-    setbatchProduct(null);
-    setProductHistory([]);
-    setMessage('');
-    setGlbFile(null);
-    setStatus('');
 
     try {
       console.log("Scanning for Item Code: " + itemCode);
@@ -76,7 +67,7 @@ import Viewer3D from './Viewer3D';
         console.log(`Product ${itemCode} found!`);
         onProductSelect(itemCode);
         setProductHistory(historyResponse.data || "");
-        
+
         // Aggiungi il prodotto alla cronologia dei prodotti scansionati
         addToRecentlyScanned(productData);
       } else {
@@ -116,8 +107,6 @@ import Viewer3D from './Viewer3D';
       console.error("Error fetching model: ", error);
       setGlbFile(null);
     }
-    
-
 
     // Retrieve product movements
     // try {
@@ -135,31 +124,14 @@ import Viewer3D from './Viewer3D';
 
   const handleScanBatch = async (e) => {
     e?.preventDefault();
-    // Reset batch-related data when scanning a product
-
-    setBatch(null);
-    setProduct(null);
-    setBatchHistory([]);
-    setMessageBatch('');
-    setbatchProduct(null);
-
- 
     try {
       console.log("Scanning for Item Code: " + itemCodeBatch);
 
       // Fetch batch details from the server
       const responseBatch = await axios.get(`http://127.0.0.1:5000/getBatch?batchId=${itemCodeBatch}`);
-      console.log("responseBatch",responseBatch);
+      console.log("responseBatch", responseBatch);
       const historyResponseBatch = await axios.get(`http://127.0.0.1:5000/getBatchHistory?batchId=${itemCodeBatch}`);
       console.log(historyResponseBatch);
-      if (Array.isArray(responseBatch.data.CustomObject)) {
-        const simplifiedCustom = {};
-        responseBatch.data.CustomObject.forEach(entry => {
-          const [key] = Object.keys(entry);
-          simplifiedCustom[key] = entry[key];
-        });
-        responseBatch.data.CustomObject = simplifiedCustom;
-      }
 
       //Se la chiamata alla getBatch mi ritorna 200 stato OK
       if (responseBatch.status === 200) {
@@ -175,11 +147,11 @@ import Viewer3D from './Viewer3D';
           //Salvo i dettagli del prodotto nella variabile BatchProduct
           setbatchProduct(responseProduct.data);
         }
-          else {
-            alert('Product not found');
-            setbatchProduct(null);
-            onProductSelect(null);
-          }
+        else {
+          alert('Product not found');
+          setbatchProduct(null);
+          onProductSelect(null);
+        }
         setMessageBatch(`Batch ${itemCodeBatch} found!`);
         console.log(`Batch ${itemCodeBatch} found!`);
         onBatchSelect(itemCodeBatch);
@@ -193,12 +165,10 @@ import Viewer3D from './Viewer3D';
       setMessageBatch('Failed to fetch batch details.');
       setBatch(null);
       onBatchSelect(null);
-    }    
-    
-
+    }
   };
 
-const getLastUpdate = () => {
+  const getLastUpdate = () => {
     if (productHistory.length > 0) {
       const lastUpdate = productHistory[productHistory.length - 1].Timestamp;
       const date = new Date(lastUpdate.seconds * 1000 + lastUpdate.nanos / 1000000);
@@ -308,6 +278,8 @@ const getLastUpdate = () => {
 
     link.click();
   };
+
+
   // Funzione per decodificare immagini caricate
   const handleImageUpload = (event) => {
     console.log("starting QR code processing...");
@@ -378,7 +350,7 @@ const getLastUpdate = () => {
     try {
       // Get user ID from localStorage (set during login)
       const userId = localStorage.getItem('email') || 'default';
-      
+
       // Crea un oggetto con solo le informazioni essenziali
       const scannedProduct = {
         ID: productData.ID,
@@ -387,7 +359,7 @@ const getLastUpdate = () => {
         CreationDate: productData.CreationDate,
         timestamp: new Date().toISOString() // Aggiungi timestamp per ordinare per data di scansione
       };
-      
+
       // Send to backend
       await axios.post('http://127.0.0.1:5000/addRecentlySearched', {
         product: scannedProduct,
@@ -398,7 +370,7 @@ const getLastUpdate = () => {
           "Authorization": `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       // Update local state
       // Rimuovi il prodotto se già presente nella lista
       const filteredHistory = recentlyScanned.filter(p => p.ID !== scannedProduct.ID);
@@ -419,16 +391,17 @@ const getLastUpdate = () => {
         const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`, {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('token')}`
-          }}
+          }
+        }
         );
         setRecentlyScanned(response.data);
       } catch (error) {
         console.error("Error fetching recently searched products:", error);
       }
     };
-    
+
     fetchRecentlySearched();
-    
+
     // Also fetch liked products in the same useEffect
     const fetchLikedProducts = async () => {
       try {
@@ -437,13 +410,14 @@ const getLastUpdate = () => {
         const response = await axios.get(`http://127.0.0.1:5000/getLikedProducts?userId=${userId}`, {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('token')}`
-          }});
+          }
+        });
         setLikedProducts(response.data);
       } catch (error) {
         console.error("Error fetching liked products:", error);
       }
     };
-    
+
     fetchLikedProducts();
   }, []);
 
@@ -452,7 +426,7 @@ const getLastUpdate = () => {
     try {
       // Get user ID from localStorage (set during login)
       const userId = localStorage.getItem('email') || 'default';
-      
+
       // In the handleLikeToggle function, modify the axios.delete call
       if (liked) {
         // If already liked, remove from favorites
@@ -463,9 +437,9 @@ const getLastUpdate = () => {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
           });
-          
+
           console.log(`Product ${product.ID} removed from favorites`, response.data);
-          
+
           // Update the list of liked products
           const updatedProducts = likedProducts.filter(p => p.ID !== product.ID);
           setLikedProducts(updatedProducts);
@@ -476,14 +450,14 @@ const getLastUpdate = () => {
       }
       else {
         // If not liked, add to favorites
-        const productToLike = { 
-          ID: product.ID, 
+        const productToLike = {
+          ID: product.ID,
           Name: product.Name,
           Manufacturer: product.Manufacturer,
           CreationDate: product.CreationDate,
           timestamp: new Date().toISOString()
         };
-        
+
         await axios.post('http://127.0.0.1:5000/likeProduct', {
           product: productToLike,
           userId: userId,
@@ -493,9 +467,9 @@ const getLastUpdate = () => {
             'Content-Type': 'application/json'
           }
         });
-        
+
         console.log(`Product ${product.ID} added to favorites`);
-        
+
         // Update the list of liked products
         setLikedProducts([...likedProducts, productToLike]);
         setLiked(true);
@@ -509,7 +483,7 @@ const getLastUpdate = () => {
   return (
     <div className="container mt-5">
       {/* Form di inserimento Item Code */}
-      {!isUser && (<form
+      {(isProducer || isOperator) && (<form
         id="scanningForm"
         onSubmit={(e) => handleScan(e)}
         className="row justify-content-center"
@@ -532,7 +506,7 @@ const getLastUpdate = () => {
                   id="itemCode"
                   placeholder="Enter product Item Code"
                 />
-               <input
+                <input
                   type="file"
                   id="uploader"
                   onChange={handleImageUpload}
@@ -573,13 +547,14 @@ const getLastUpdate = () => {
             </div>
           </div>
         </div>
-        </form>)}
-        {/* Form di inserimento Item Code */}
-        <form
-          id="scanningForm"
-          onSubmit={(e) => handleScanBatch(e)}
-          className="row justify-content-center"
-          >
+      </form>)}
+      <br />
+      {/* Form di inserimento Item Code */}
+      <form
+        id="scanningForm"
+        onSubmit={(e) => handleScanBatch(e)}
+        className="row justify-content-center"
+      >
         <div className="col-md-6">
           <div className="card shadow">
             <div className="card-body">
@@ -591,15 +566,13 @@ const getLastUpdate = () => {
               </Card.Header>
               <br />
               <div className="form-group d-flex align-items-center">
-              <input
-                type="text"
-                value={itemCodeBatch}
-                onChange={(e) => setItemCodeBatch(e.target.value)}
-                className="form-control me-2"
-                id="itemCodeBatch"
-                placeholder="Enter batch Item Code - LXXX"
-              />
-
+                <input
+                  type="text"
+                  onChange={(e) => setItemCodeBatch(e.target.value)}
+                  className="form-control me-2"
+                  id="itemCodeBatch"
+                  placeholder="Enter batch Item Code"
+                />
                 <input
                   type="file"
                   id="uploader"
@@ -642,7 +615,7 @@ const getLastUpdate = () => {
             </div>
           </div>
         </div>
-        </form>
+      </form>
 
       {/* Recently Scanned Products Section */}
       {recentlyScanned.length > 0 && (
@@ -661,12 +634,12 @@ const getLastUpdate = () => {
                         <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
                       </Card.Text>
                       <div className="d-flex justify-content-between align-items-center">
-                        <button 
+                        <button
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => {
                             setItemCode(scannedProduct.ID);
                             document.getElementById("itemCode").value = scannedProduct.ID;
-                            const syntheticEvent = { preventDefault: () => {} };
+                            const syntheticEvent = { preventDefault: () => { } };
                             handleScan(syntheticEvent);
                           }}
                         >
@@ -704,7 +677,7 @@ const getLastUpdate = () => {
                         <small className="text-muted">Created: {likedProduct.CreationDate}</small>
                       </Card.Text>
                       <div className="d-flex justify-content-between align-items-center">
-                        <button 
+                        <button
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => {
                             setItemCode(likedProduct.ID);
@@ -714,12 +687,12 @@ const getLastUpdate = () => {
                         >
                           View Details
                         </button>
-                        <button 
+                        <button
                           className="btn btn-sm btn-danger"
                           onClick={async () => {
                             // Get user ID from localStorage
                             const userId = localStorage.getItem('email') || 'default';
-                            
+
                             try {
                               // Call the backend to unlike the product
                               const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
@@ -728,13 +701,13 @@ const getLastUpdate = () => {
                                   'Content-Type': 'application/json',
                                 }
                               });
-                              
+
                               console.log(`Product ${likedProduct.ID} removed from favorites`, response.data);
-                              
+
                               // Update the list of liked products in state
                               const updatedProducts = likedProducts.filter(p => p.ID !== likedProduct.ID);
                               setLikedProducts(updatedProducts);
-                              
+
                               // If this is the currently displayed product, update its liked status
                               if (product && product.ID === likedProduct.ID) setLiked(false);
                             } catch (error) {
@@ -763,7 +736,7 @@ const getLastUpdate = () => {
                 <h4 className="card-title">General Information ℹ️</h4>
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <div></div> {/* Empty div for flex spacing */}
-                  <button 
+                  <button
                     className={`btn ${liked ? 'btn-danger' : 'btn-outline-danger'}`}
                     onClick={handleLikeToggle}
                     title={liked ? "Unlike this product" : "Like this product"}
@@ -798,14 +771,14 @@ const getLastUpdate = () => {
                         <th>Manufacturer</th>
                         <td>{product.Manufacturer}</td>
                       </tr>
-                    )}              
+                    )}
                     {product.ExpiryDate && (
                       <tr>
                         <th>Expiry Date</th>
                         <td>{product.ExpiryDate}</td>
                       </tr>
                     )}
-                                        
+
                     {product.Ingredients && (
                       <tr>
                         <th>Ingredients</th>
@@ -824,7 +797,7 @@ const getLastUpdate = () => {
                         <td>{product.Allergens}</td>
                       </tr>
                     )}
-                    
+
                     {product.PesticideUse && (
                       <tr>
                         <th>Pesticide Use</th>
@@ -850,8 +823,8 @@ const getLastUpdate = () => {
                       </tr>
                     ))}
 
-                    
-                    
+
+
                     <tr>
                       <th>Status</th>
                       <td>{status || 'No status available'}</td>
@@ -885,25 +858,25 @@ const getLastUpdate = () => {
               </div>
             </div>
           </div>
-          { isProducer && product.Manufacturer == localStorage.getItem("manufacturer") &&
-            <UpdateProduct 
-          productId={itemCode} 
-          productType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
-          onProductUpdate={handleScan} 
-          />}
+          {isProducer && product.Manufacturer == localStorage.getItem("manufacturer") &&
+            <UpdateProduct
+              productId={itemCode}
+              productType={{ "Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate }}
+              onProductUpdate={handleScan}
+            />}
         </div>
       )}
-      
+
       {/* Display batch details if the batch is found */}
       {batch && (
         <div className="row justify-content-center mt-5">
           <div className="col-md-8">
             <div className="card shadow">
               <div className="card-body">
-                <h4 className="card-title">General Information ℹ️</h4>              
+                <h4 className="card-title">General Information ℹ️</h4>
                 <Table striped bordered hover>
                   <tbody>
-                  {batch.ID && (
+                    {batch.ID && (
                       <tr>
                         <th>ID</th>
                         <td>{batch.ID}</td>
@@ -915,14 +888,14 @@ const getLastUpdate = () => {
                         <td>{batch.ProductId}</td>
                       </tr>
                     )}
-                                       
+
                     {batch.Operator && (
                       <tr>
                         <th>Operator</th>
                         <td>{batch.Operator}</td>
                       </tr>
                     )}
-                                        
+
                     {batch.BatchNumber && (
                       <tr>
                         <th>Batch Number</th>
@@ -941,7 +914,7 @@ const getLastUpdate = () => {
                         <td>{batch.ProductionDate}</td>
                       </tr>
                     )}
-                    
+
                     {batch.CustomObject && Object.entries(batch.CustomObject).map(([key, value]) => (
                       <tr key={key}>
                         <th>{key}</th>
@@ -949,8 +922,8 @@ const getLastUpdate = () => {
                       </tr>
                     ))}
 
-                    
-                    
+
+
                     <tr>
                       <th>Status</th>
                       <td>{status || 'No status available'}</td>
@@ -984,91 +957,91 @@ const getLastUpdate = () => {
               </div>
             </div>
           </div>
-          { batchProduct && (
-          <div className="row justify-content-center mt-5">
-          <div className="col-md-8">
-            <div className="card shadow">
-              <div className="card-body">
-                <h4 className="card-title">Product Information ℹ️</h4>
-                {glbFile ? (
-                  <div style={{ marginBlock: "2vw" }}>
-                    <Viewer3D externalGlbFile={glbFile} />
-                  </div>
-                ) : (
-                  <p style={{ color: "grey" }}>no 3D preview available</p>
-                )}
-                <Table striped bordered hover>
-                  <tbody>
-                    {batchProduct.Name && (
-                      <tr>
-                        <th>Name</th>
-                        <td>{batchProduct.Name}</td>
-                      </tr>
+          {batchProduct && (
+            <div className="row justify-content-center mt-5">
+              <div className="col-md-8">
+                <div className="card shadow">
+                  <div className="card-body">
+                    <h4 className="card-title">Product Information ℹ️</h4>
+                    {glbFile ? (
+                      <div style={{ marginBlock: "2vw" }}>
+                        <Viewer3D externalGlbFile={glbFile} />
+                      </div>
+                    ) : (
+                      <p style={{ color: "grey" }}>no 3D preview available</p>
                     )}
-                    {batchProduct.ID && (
-                      <tr>
-                        <th>ID</th>
-                        <td>{batchProduct.ID}</td>
-                      </tr>
-                    )}
-                    {batchProduct.Manufacturer && (
-                      <tr>
-                        <th>Manufacturer</th>
-                        <td>{batchProduct.Manufacturer}</td>
-                      </tr>
-                    )}
-                                       
-                    {batchProduct.ExpiryDate && (
-                      <tr>
-                        <th>Expiry Date</th>
-                        <td>{batchProduct.ExpiryDate}</td>
-                      </tr>
-                    )}
-                                        
-                    {batchProduct.Ingredients && (
-                      <tr>
-                        <th>Ingredients</th>
-                        <td>{batchProduct.Ingredients}</td>
-                      </tr>
-                    )}
-                    {batchProduct.Nutritional_information && (
-                      <tr>
-                        <th>Nutritional Information</th>
-                        <td>{batchProduct.Nutritional_information}</td>
-                      </tr>
-                    )}
-                    {batchProduct.Allergens && (
-                      <tr>
-                        <th>Allergens</th>
-                        <td>{batchProduct.Allergens}</td>
-                      </tr>
-                    )}
-                    
-                    {batchProduct.PesticideUse && (
-                      <tr>
-                        <th>Pesticide Use</th>
-                        <td>{batchProduct.PesticideUse}</td>
-                      </tr>
-                    )}
-                    {batchProduct.FertilizerUse && (
-                      <tr>
-                        <th>Fertilizer Use</th>
-                        <td>{batchProduct.FertilizerUse}</td>
-                      </tr>
-                    )}
-                    {batchProduct.CountryOfOrigin && (
-                      <tr>
-                        <th>Country Of Origin</th>
-                        <td>{batchProduct.CountryOfOrigin}</td>
-                      </tr>
-                    )}
-                    {batchProduct.CustomObject && Object.entries(batchProduct.CustomObject).map(([key, value]) => (
-                      <tr key={key}>
-                        <th>{key}</th>
-                        <td>{value}</td>
-                      </tr>
-                    ))}
-                    {/* <tr>
+                    <Table striped bordered hover>
+                      <tbody>
+                        {batchProduct.Name && (
+                          <tr>
+                            <th>Name</th>
+                            <td>{batchProduct.Name}</td>
+                          </tr>
+                        )}
+                        {batchProduct.ID && (
+                          <tr>
+                            <th>ID</th>
+                            <td>{batchProduct.ID}</td>
+                          </tr>
+                        )}
+                        {batchProduct.Manufacturer && (
+                          <tr>
+                            <th>Manufacturer</th>
+                            <td>{batchProduct.Manufacturer}</td>
+                          </tr>
+                        )}
+
+                        {batchProduct.ExpiryDate && (
+                          <tr>
+                            <th>Expiry Date</th>
+                            <td>{batchProduct.ExpiryDate}</td>
+                          </tr>
+                        )}
+
+                        {batchProduct.Ingredients && (
+                          <tr>
+                            <th>Ingredients</th>
+                            <td>{batchProduct.Ingredients}</td>
+                          </tr>
+                        )}
+                        {batchProduct.Nutritional_information && (
+                          <tr>
+                            <th>Nutritional Information</th>
+                            <td>{batchProduct.Nutritional_information}</td>
+                          </tr>
+                        )}
+                        {batchProduct.Allergens && (
+                          <tr>
+                            <th>Allergens</th>
+                            <td>{batchProduct.Allergens}</td>
+                          </tr>
+                        )}
+
+                        {batchProduct.PesticideUse && (
+                          <tr>
+                            <th>Pesticide Use</th>
+                            <td>{batchProduct.PesticideUse}</td>
+                          </tr>
+                        )}
+                        {batchProduct.FertilizerUse && (
+                          <tr>
+                            <th>Fertilizer Use</th>
+                            <td>{batchProduct.FertilizerUse}</td>
+                          </tr>
+                        )}
+                        {batchProduct.CountryOfOrigin && (
+                          <tr>
+                            <th>Country Of Origin</th>
+                            <td>{batchProduct.CountryOfOrigin}</td>
+                          </tr>
+                        )}
+                        {batchProduct.CustomObject && Object.entries(batchProduct.CustomObject).map(([key, value]) => (
+                          <tr key={key}>
+                            <th>{key}</th>
+                            <td>{value}</td>
+                          </tr>
+                        ))}
+                        {/* <tr>
                       <th>Status</th>
                       <td>{status || 'No status available'}</td>
                     </tr>
@@ -1084,27 +1057,27 @@ const getLastUpdate = () => {
                       <th>First Update *</th>
                       <td>{getFirstUpdate() || 'No updates available'}</td>
                     </tr> */}
-                  </tbody>
-                </Table>
-                <QRCodeCanvas value={batchProduct.ID} style={{ marginBottom: "2vw" }} />
-                <p>
-                  Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
-                  ensuring transparency and reliability.
-                  These values are not provided by the manufacturer.
-                </p>
-               
+                      </tbody>
+                    </Table>
+                    <QRCodeCanvas value={batchProduct.ID} style={{ marginBottom: "2vw" }} />
+                    <p>
+                      Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
+                      ensuring transparency and reliability.
+                      These values are not provided by the manufacturer.
+                    </p>
+
+                  </div>
+                </div>
               </div>
+
             </div>
-          </div>
-          
-          </div>
           )}
-          { batch.Operator == localStorage.getItem("manufacturer") &&
+          {batch.Operator == localStorage.getItem("manufacturer") &&
             <UpdateBatch
-          batchId={itemCodeBatch} 
-          // batchType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
-          onBatchUpdate={handleScanBatch} 
-          />}
+              batchId={itemCodeBatch}
+              // batchType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
+              onBatchUpdate={handleScanBatch}
+            />}
         </div>
       )}
     </div>
@@ -1112,4 +1085,3 @@ const getLastUpdate = () => {
 };
 
 export default ProductList;
-

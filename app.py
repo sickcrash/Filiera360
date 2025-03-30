@@ -466,6 +466,7 @@ def get_operators():
 @app.route('/operators/add', methods=['POST'])
 @jwt_required()
 def add_operator():
+    print("chiamata ricevuta")
     if not required_permissions(get_jwt_identity(), ['producer']):
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
 
@@ -592,14 +593,17 @@ def find_producer_by_operator(operator):
     return None
 
 def required_permissions(manufacturer, roles):
+    print("chiamata a required permissions")
     user = [user for user in users.items() if user[0] == manufacturer]
     user = user[0] if user else None
+    print(user)
 
     if not user:
         return False
 
     for role in roles:
         if user[1]["flags"].get(role):
+            print(user[1]["flags"].get(role))
             return True
 
     return False
@@ -800,6 +804,57 @@ def update_product():
         print("Error uploading product:", e)
         return jsonify({'message': 'Error uploading product.'}), 500
 
+#################################################################################################################################
+@app.route('/updateBatch', methods=['POST'])
+@jwt_required()
+def update_batch():
+    if not required_permissions(get_jwt_identity(), ['producer', 'operator']):
+        return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
+
+    print("update batch chiamata")
+
+    #print("Dati ricevuti dal fe:",request.json)
+    batch_data = request.json
+    print("Dati:",batch_data)
+
+    #print(get_jwt_identity())
+    # PROBLEMA: CAMPO PRODUCTID ARRIVA NULLO
+    print("batch_data.get(\"ProductId\"):", batch_data.get("ProductId"))
+    if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductId")):
+        return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
+
+    real_operator = users.get(get_jwt_identity())["manufacturer"]
+    print("operator authenticated: " + real_operator)
+    client_operator = batch_data.get("Operator")
+    print("upload request by: " + client_operator)
+    # Reject operation if the authenticated manufacturer doesn't match the one in the request
+    if real_operator != client_operator:
+        return jsonify({"message": "Unauthorized: Operator mismatch."}), 403
+    print("Uploading new batch data:", batch_data)
+    batch_data["CustomObject"] = batch_data.get("CustomObject", {})
+    print("Uploading custom object:", batch_data["CustomObject"])
+
+    print("✅ Autorizzato, procedo con l'aggiornamento del batch...")
+
+    try:
+        # Aggiorno i dati del batch
+        batch_data["CustomObject"] = batch_data.get("CustomObject", {})
+
+        # Invio i dati aggiornati alla blockchain
+        print("📢 Invia i dati aggiornati alla blockchain...")
+        response = requests.post('http://localhost:3000/api/batch/updateBatch', json=batch_data)
+
+        print("📢 Risposta dalla blockchain:", response.status_code, response.text)
+
+        if response.status_code == 200:
+            return jsonify({'message': 'Batch updated successfully!'})
+        else:
+            return jsonify({'message': 'Failed to update batch.'}), response.status_code
+
+    except Exception as e:
+        print(f"❌ ERRORE nel backend: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
+
 # ora in uso + autenticazione jwt
 @app.route('/addSensorData', methods=['POST'])
 @jwt_required()
@@ -877,20 +932,6 @@ def add_certification_data():
     verification_result = verify_manufacturer(product_id, real_manufacturer)
     if verification_result:
         return verification_result  # Restituisce l'errore se la verifica non è passata
-    
-# già usata su frontend + autenticazione jwt
-@app.route('/updateBatch', methods=['POST'])
-@jwt_required()
-def update_batch():
-    try:
-        response = requests.post(f'http://localhost:3000/api/product/certification', json=certification_data)
-        if response.status_code == 200:
-            return jsonify({'message': 'Product uploaded successfully!'})
-        else:
-            return jsonify({'message': 'Failed to upload product.'}), 500
-    except Exception as e:
-        print("Error uploading product:", e)
-        return jsonify({'message': 'Error uploading product.'}), 500
 
 # NON UTILIZZATA
 @app.route('/verifyProductCompliance', methods=['POST'])

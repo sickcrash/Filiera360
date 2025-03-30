@@ -457,6 +457,7 @@ const AddProduct = () => {
                 {viewProduct && (
                   <Card.Body>
                     {/* CSV File Upload */}
+                    {/*
                     <Form.Group
                       className="d-flex align-items-center mb-3"
                       style={{ marginTop: "1vw" }}
@@ -526,7 +527,7 @@ const AddProduct = () => {
                       </Form>
                     </Form.Group>
                     {csvFile && <p>{messageProduct}</p>}
-                    {/* Separator */}
+                    
                     <div
                       style={{
                         display: "flex",
@@ -558,7 +559,7 @@ const AddProduct = () => {
                         }}
                       />
                     </div>
-
+                    */}
                     <Form onSubmit={handleUploadProduct}>
                       {/* Display basic fields */}
                       <Form.Group
@@ -883,6 +884,7 @@ const AddProduct = () => {
               </div>
             </div>
           )}
+          <br/>
           {(role === "producer" || role === "operator") && (
             <div className="card shadow">
               <div className="card-body">

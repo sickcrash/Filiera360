@@ -68,5 +68,13 @@
             "Manufacturer": "Green Farm Co.",
             "timestamp": "2025-03-28T21:32:06.399Z"
         }
+    ],
+    "azienda@mail.com": [
+        {
+            "ID": "demoprod",
+            "Name": "Mandarino Cinese",
+            "Manufacturer": "Azienda",
+            "timestamp": "2025-03-30T18:17:23.820Z"
+        }
     ]
 }

@@ -84,7 +84,7 @@ const Login = ({ setIsLoggedIn }) => {
             style={{
               textAlign: "center",
               width: "100%",
-              marginTop: "-4vw",
+              marginTop: "2vw"
             }}
           >
             <img
