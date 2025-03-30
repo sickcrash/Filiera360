@@ -4,20 +4,19 @@ import { Card, Form, Button } from 'react-bootstrap';
 import '../../App.css'
 import Viewer3D from '../Viewer3D';
 
-const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
+const UpdateProduct = ({ productId, onProductUpdate }) => {
   const [name, setName] = useState('');
   const [manufacturer, setManufacturer] = useState('');
-  const [creationDate, setCreationDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [ingredients, setIngredients] = useState('');
   const [allergens, setAllergens] = useState('');
   const [nutritionalInformation, setNutritionalInformation] = useState('');
-  const [moreInfo, setMoreInfo] = useState('');
   const [harvestDate, setHarvestDate] = useState('');
   const [pesticideUse, setPesticideUse] = useState('');
   const [fertilizerUse, setFertilizerUse] = useState('');
   const [countryOfOrigin, setCountryOfOrigin] = useState('');
   const [message, setMessage] = useState('');
+  const [customFields, setCustomFields] = useState([]);
   const [showForm, setShowForm] = useState(false); // Stato per gestire la visibilità del modulo
   const [glbFile, setGlbFile] = useState('')
   const inputWidth = "30%"; // larghezza fissa per le etichette
@@ -29,16 +28,31 @@ const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
 
   const resetForm = () => {
     setName('');
-    setCreationDate('');
     setExpiryDate('');
     setIngredients('');
     setAllergens('');
     setNutritionalInformation('');
-    setMoreInfo('');
+    setCustomFields([]); // Ensure it's an array
     setMessage('');
-    setShowForm(false)
-    setGlbFile('')
-  }
+    setShowForm(false);
+    setGlbFile('');
+  };
+  
+  // Metodo per aggiungere un nuovo campo personalizzato con chiave-valore 
+  const addCustomField = () => {
+    setCustomFields([...customFields, { key: '', value: '' }]);
+  };
+ // Metodo per aggiornare il nuovo campo personalizzato
+  const updateCustomField = (index, key, value) => {
+    const newFields = [...customFields];
+    newFields[index] = { key, value };
+    setCustomFields(newFields);
+  };
+  // Funzione per rimuovere un campo personalizzato
+const removeCustomField = (index) => {
+  const newFields = customFields.filter((_, i) => i !== index);  // Filtra il campo da rimuovere
+  setCustomFields(newFields);
+};
 
   useEffect(() => {
     resetForm()
@@ -51,9 +65,7 @@ const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
       ID: productId,
       Name: name,
       Manufacturer: manufacturer,
-      CreationDate: creationDate,
       ExpiryDate: expiryDate,
-      Moreinfo: moreInfo,
       Ingredients: ingredients,
       Allergens: allergens,
       Nutritional_information: nutritionalInformation,
@@ -61,10 +73,17 @@ const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
       PesticideUse: pesticideUse,
       FertilizerUse: fertilizerUse,
       CountryOfOrigin: countryOfOrigin,
-      Movements: [],
-      SensorData: [],
-      Certifications: []
+      CustomObject: customFields.reduce((obj, field) => {
+        if (field.key.trim()) obj[field.key] = field.value;
+        return obj;
+      }, {})
     };
+     // Verifica se la data di scadenza è maggiore della data di raccolta
+     if (new Date(expiryDate) <= new Date(harvestDate)) {
+      // Se la condizione è vera, mostra un alert con il messaggio di errore
+      alert("Expiry Date must be at least one day after Harvest Date");
+      return; // Termina la funzione
+    }
 
     console.log("Sending updated product data:", productData);
 
@@ -169,17 +188,17 @@ const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
                     />
                   </Form.Group>
 
-                  {/* Creation Date Field */}
-                  <Form.Group controlId="creationDate" className="d-flex align-items-center mb-3">
-                    <Form.Label style={{ width: inputWidth }} className="me-3">Creation Date</Form.Label>
+               
+                  {/* Expiry Date Field */}
+                  <Form.Group controlId="harvestDate" className="d-flex align-items-center mb-3">
+                    <Form.Label style={{ width: inputWidth }} className="me-3">Harvest Date</Form.Label>
                     <Form.Control
                       type="date"
-                      value={creationDate}
-                      onChange={(e) => setCreationDate(e.target.value)}
+                      value={harvestDate}
+                      onChange={(e) => setHarvestDate(e.target.value)}
                       placeholder={placeholderText}
                     />
                   </Form.Group>
-
                   {/* Expiry Date Field */}
                   <Form.Group controlId="expiryDate" className="d-flex align-items-center mb-3">
                     <Form.Label style={{ width: inputWidth }} className="me-3">Expiry Date</Form.Label>
@@ -191,25 +210,14 @@ const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
                     />
                   </Form.Group>
 
-                  {/* More Info Field */}
-                  <Form.Group controlId="moreInfo" className="d-flex align-items-center mb-3">
-                    <Form.Label style={{ width: inputWidth }} className="me-3">More Info</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={moreInfo}
-                      onChange={(e) => setMoreInfo(e.target.value)}
-                      placeholder={placeholderText}
-                    />
-                  </Form.Group>
+                  
 
-                  {/* Upload and view 3D model */}
-                  <Viewer3D
-                    onGlbUpload={setGlbFile}
-                  />
-                  <br/>
+                        {/* Upload and view 3D model */}
+                      <Viewer3D
+                        onGlbUpload={setGlbFile}
+                      />
+                      <br/>
 
-                  {productType["Ingredients"] ?
-                    <div>
                       {/* Ingredients Field */}
                       < Form.Group controlId="ingredients" className="d-flex align-items-center mb-3">
                         <Form.Label style={{ width: inputWidth }} className="me-3">Ingredients</Form.Label>
@@ -242,18 +250,8 @@ const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
                           placeholder={placeholderText}
                         />
                       </Form.Group>
-                    </div>
-                    :
-                    <div>
-                      <Form.Group controlId="harvestDate" className="d-flex align-items-center mb-3">
-                        <Form.Label style={{ width: inputWidth }} className="me-3">Harvest Date</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={harvestDate}
-                          onChange={(e) => setHarvestDate(e.target.value)}
-                          placeholder={placeholderText}
-                        />
-                      </Form.Group>
+                    
+                      
                       <Form.Group controlId="pesticideUse" className="d-flex align-items-center mb-3">
                         <Form.Label style={{ width: inputWidth }} className="me-3">Pesticide Use</Form.Label>
                         <Form.Control
@@ -281,9 +279,66 @@ const UpdateProduct = ({ productId, productType, onProductUpdate }) => {
                           placeholder={placeholderText}
                         />
                       </Form.Group>
-                    </div>
-                  }
+                      {/* Separator */}
+                      <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+                        <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
+                        <span style={{ margin: '0 10px', color: '#666', fontWeight: 'bold' }}></span>
+                        <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
+                      </div>
+                     {/* Custom Fields */}
+                        <h5>Custom Fields</h5>
+                        <p style={{ color: 'gray' }}>edit existing custom fields or add new ones</p>
 
+                        {customFields.map((field, index) => (
+                          <div key={index} className="d-flex mb-2 align-items-center">
+                            <Form.Control 
+                              type="text" 
+                              placeholder="Field Name" 
+                              value={field.key} 
+                              onChange={(e) => updateCustomField(index, e.target.value, field.value)} 
+                              className="me-2" 
+                            />
+                            <Form.Control 
+                              type="text" 
+                              placeholder="Value" 
+                              value={field.value} 
+                              onChange={(e) => updateCustomField(index, field.key, e.target.value)} 
+                            />
+                            {/* Pulsante di rimozione con icona*/}
+                            <button 
+                              type="button" 
+                              className="btn btn-light btn-sm ms-2 p-1" 
+                              onClick={() => removeCustomField(index)} 
+                              style={{
+                                border: 'none', 
+                                background: 'transparent', 
+                                fontSize: '18px', 
+                                cursor: 'pointer', 
+                                color: '#ff4d4d'
+                              }}
+                            >
+                              ✖️
+                            </button>
+                          </div>
+                        ))}
+
+                      {/* Pulsante "Add Field" posizionato fuori dal ciclo map */}
+                      <Button variant="primary" onClick={addCustomField} className="my-3 d-block mx-auto">
+                        + Add Field
+                      </Button>
+
+                        {/* Separator */}
+                      <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+                        <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
+                        <span style={{ margin: '0 10px', color: '#666', fontWeight: 'bold' }}></span>
+                        <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
+                      </div>
+
+                    
+                  
+
+
+                
                   {/* Submit Button */}
                   <div className="d-flex justify-content-center mt-3">
                     <Button

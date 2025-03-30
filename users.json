@@ -9,7 +9,6 @@
             "user": true
         }
     },
-<<<<<<< HEAD
     "ale@gmail.com": {
         "manufacturer": "ale",
         "password": "$2b$12$4h7LcDLVAAIDNMJoofMSdODuVUuCIlfvf0KWFtM.sXE6K4YcKQaZG"
@@ -25,46 +24,45 @@
     "abc@gmail.com": {
         "manufacturer": "abc",
         "password": "$2b$12$OZ2TyXCtRAR85R3C4S5F0uiFCeIlceB6fx4bgJEaegBUZivQGXbrO"
-=======
-    "criscorrado0@gmail.com": {
-        "manufacturer": "Cristian1",
-        "password": "$2b$12$ctdPU9e.l9/4UCrhl37feO657PJVY.rcMFKed0TgPjxKtIGdO4ZTm",
-        "role": "user",
-        "flags": {
-            "producer": false,
-            "operator": false,
-            "user": true
-        }
     },
-    "utente@gmail.com": {
-        "manufacturer": "manufacture name",
-        "password": "$2b$12$LgYKIVaDAyLCNgYGBQU0DOXrGG.j8FzEeb0gllSsoypVEA9M02nLe",
-        "role": "user",
-        "flags": {
-            "producer": false,
-            "operator": false,
-            "user": true
-        }
+    "test@ciao.it": {
+        "manufacturer": "test",
+        "password": "$2b$12$ZbO6LMYWem.Xi79scFm.FuJkXqpLcU0R03iCM7gqqQ.E/Gl8TtMS."
     },
-    "operatore@gmail.com": {
-        "manufacturer": "operator name",
-        "password": "$2b$12$sf1ojZfvnCB.V5QVBXi71evg1GXkTcsFEdvOxscZuF4lVvHd.CoHy",
-        "role": "operator",
-        "flags": {
-            "producer": false,
-            "operator": true,
-            "user": false
-        }
+    "test2@gmail.com": {
+        "manufacturer": "test2",
+        "password": "$2b$12$ZOylzWpi2GiHBinxLSIldOegEt41YTGUN8x4VsIroR1/tG2LpMlkK"
     },
-    "produttore@gmail.com": {
-        "manufacturer": "produttore name",
-        "password": "$2b$12$VQJjynkjPO8aCO3qh8ZN6uvHM5Y30yWkkpPX..jdGCqsxrCyXfItG",
-        "role": "producer",
-        "flags": {
-            "producer": true,
-            "operator": false,
-            "user": false
-        }
->>>>>>> origin/signUp
+    "test456@ciao.it": {
+        "manufacturer": "test456",
+        "password": "$2b$12$XH4qBXVF6wYmjRYbe3J76u0tJkunezn/nbNKsqGiiCROnzwjwWbNu"
+    },
+    "ciao@ciao.it": {
+        "manufacturer": "ciao",
+        "password": "$2b$12$fal5FftSclJNPDfDzRbOg.KLX8P6VO7NoJUbTPhoSfwRPj9L8z8Je"
+    },
+    "carota@ciao.it": {
+        "manufacturer": "carota",
+        "password": "$2b$12$rc7zOlku1iPb2hCefq6A3OHKBgJQyzH464nUupvKLz6arnYVFvqw6"
+    },
+    "cuoricini@ciao.it": {
+        "manufacturer": "cuoricini",
+        "password": "$2b$12$CxCxWO/fRwSA0176HqnxB.O14tPHciDnqb55E0hioy5r6LuympdOm"
+    },
+    "carota123@ciao.it": {
+        "manufacturer": "carota123",
+        "password": "$2b$12$zY6.OhiLe54E3B6lUb.nAOTRm9bLMtJe8LbQqjRVeesdOgzaN7Zim"
+    },
+    "casetta@gmail.com": {
+        "manufacturer": "casetta",
+        "password": "$2b$12$8tyQ6N5rZXkw3Ys4WzhZ0uZ2qHWtpq5/MX.O/6ChpPWxm8OXJIIoS"
+    },
+    "casa123@gmail.com": {
+        "manufacturer": "casa",
+        "password": "$2b$12$sEzWR84mdlN/1GY3EmtQ0O5ehmeRUWxx.Uk2Q2W.Wz7uV10yJ46HC"
+    },
+    "cavolo@ciao.it": {
+        "manufacturer": "cavolo",
+        "password": "$2b$12$KoVlqSbSY3e6dElhKhKyMO5Uof22nhubaogzk7nHciEzvDfPqy6w2"
     }
 }
