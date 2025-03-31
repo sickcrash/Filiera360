@@ -806,6 +806,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr>
                   </tbody>
                 </Table>
+                <br/>
                 <QRCodeCanvas value={product.ID} style={{ marginBottom: "2vw" }} />
                 <p>
                   Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
@@ -845,7 +846,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                         <td>{batch.ID}</td>
                       </tr>
                     )}
-                    {batch.ProductID && (
+                    {batch.ProductId && (
                       <tr>
                         <th>Product Id</th>
                         <td>{batch.ProductId}</td>
@@ -905,6 +906,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr>
                   </tbody>
                 </Table>
+                <br/>
                 <QRCodeCanvas value={batch.ID} style={{ marginBottom: "2vw" }} />
                 <p>
                   Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
@@ -941,7 +943,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                             <td>{batchProduct.Name}</td>
                           </tr>
                         )}
-                        {batchProduct.ID && (
+                        {true && (
                           <tr>
                             <th>ID</th>
                             <td>{batchProduct.ID}</td>
@@ -1022,13 +1024,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr> */}
                       </tbody>
                     </Table>
+                    <br/>
                     <QRCodeCanvas value={batchProduct.ID} style={{ marginBottom: "2vw" }} />
-                    <p>
-                      Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
-                      ensuring transparency and reliability.
-                      These values are not provided by the manufacturer.
-                    </p>
-
                   </div>
                 </div>
               </div>
@@ -1037,7 +1034,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
           )}
           {batch.Operator == localStorage.getItem("manufacturer") &&
             <UpdateBatch
-              batchId={itemCodeBatch}
+              productId={batch.ProductId}
+              batchId={batch.ID}
               // batchType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
               onBatchUpdate={handleScanBatch}
             />}

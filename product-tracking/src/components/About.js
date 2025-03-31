@@ -15,7 +15,7 @@ const About = () => {
             <p>
             Gli sviluppatori non si assumono alcuna responsabilità per eventuali perdite di dati, fuga di credenziali, danni derivanti dall’uso della piattaforma o problemi di sicurezza. Gli utenti sono consapevoli che stanno utilizzando un ambiente sperimentale e accettano i potenziali rischi connessi.
 
-            L’utilizzo della piattaforma è a esclusivo scopo di ricerca e sviluppo accademico. Non è destinata a uso commerciale né a essere impiegata in contesti di produzione o per finalità operative reali.
+            Per le ragioni citate nel paragrafo precedente, l'utilizzo della piattaforma non è stato testato in maniera sufficiente per l'utilizzo commerciale, né per l'impiego in contesti di produzione o per finalità operative reali.
             </p>
             <h3>🔐 Sicurezza e Dati Sensibili</h3>
             <p>

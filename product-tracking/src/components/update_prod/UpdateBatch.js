@@ -3,8 +3,7 @@ import axios from 'axios';
 import { Card, Form, Button } from 'react-bootstrap';
 import '../../App.css'
 
-const UpdateBatch = ({ batchId,onBatchUpdate }) => {
-  const [productId, setProductId] = useState('');
+const UpdateBatch = ({ productId, batchId, onBatchUpdate }) => {
   const [operator, setOperator] = useState('');
   const [batchNumber, setBatchNumber] = useState('');
   const [quantity, setQuantity] = useState('');
