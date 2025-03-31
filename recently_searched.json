@@ -76,5 +76,19 @@
             "Manufacturer": "Azienda",
             "timestamp": "2025-03-30T18:17:23.820Z"
         }
+    ],
+    "stalbore@gmail.com": [
+        {
+            "ID": "sad",
+            "Name": "d",
+            "Manufacturer": "stalbo",
+            "timestamp": "2025-03-31T17:58:16.522Z"
+        },
+        {
+            "ID": "sda",
+            "Name": "s",
+            "Manufacturer": "stalbo",
+            "timestamp": "2025-03-31T17:05:58.487Z"
+        }
     ]
 }
