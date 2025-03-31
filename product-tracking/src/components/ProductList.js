@@ -63,6 +63,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       if (response.status === 200) {
         const productData = response.data;
         setProduct(productData); // Set product details in state
+        setbatchProduct(); // EVITA DI AVERE DUE PRODOTTI DIVERSI IN CONTEMPORANEA
+        setBatch(); // EVITA DI AVERE PRODOTTO E BATCH INCOERENTI
         setMessage(`Product ${itemCode} found!`);
         console.log(`Product ${itemCode} found!`);
         onProductSelect(itemCode);
@@ -146,6 +148,33 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
         if (responseProduct.status === 200) {
           //Salvo i dettagli del prodotto nella variabile BatchProduct
           setbatchProduct(responseProduct.data);
+          setProduct() // EVITA DI AVERE DUE PRODOTTI DIVERSI IN CONTEMPORANEA
+          // Fetch the GLB model using the itemCode from the product
+          try {
+            const modelResponse = await axios.get(`http://127.0.0.1:5000/getModel?productId=${idproduct}`);
+
+            if (modelResponse.status === 200) {
+              const base64Model = modelResponse.data.ModelBase64;
+
+              const byteCharacters = atob(base64Model.split(',')[1]);
+              const byteArray = new Uint8Array(byteCharacters.length);
+
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteArray[i] = byteCharacters.charCodeAt(i);
+              }
+
+              const glbBlob = new Blob([byteArray], { type: 'application/octet-stream' });
+              setGlbFile(glbBlob);
+
+              console.log('GLB model loaded successfully!');
+            } else {
+              console.log('Failed to fetch GLB model.');
+              setGlbFile(null);
+            }
+          } catch (error) {
+            console.error("Error fetching model: ", error);
+            setGlbFile(null);
+          }
         }
         else {
           alert('Product not found');
@@ -824,11 +853,12 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     ))}
 
 
-
+                    {/*
                     <tr>
                       <th>Status</th>
                       <td>{status || 'No status available'}</td>
                     </tr>
+                    */}
                     <tr>
                       <th>N. Updates *</th>
                       <td>{productHistory.length}</td>
