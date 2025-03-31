@@ -215,6 +215,17 @@ const AddProduct = () => {
       );
       setMessageProduct("Product uploaded successfully!");
       setLastAddedProduct(productData.ID);
+      //Fai il resei dei dati del Form Product
+      resetProductForm();
+
+      //Nascondere i form di inserimento manuale che mostri solo quando l'utente clicca su "+ New Product" o "+ New Batch".
+      setViewProduct(false);
+
+      // nasconde il form Batch
+      setViewBatch(false);
+
+      //Resetta lo stato del file CSV caricato per i Product, svuotando il campo file.
+      setCsvFile(null);
     } catch (error) {
       setMessageProduct(
         error.response?.data?.message || "Failed to upload product."
@@ -239,17 +250,6 @@ const AddProduct = () => {
         console.error("Failed to upload 3D model.");
       }
     }
-    //Fai il resei dei dati del Form Product
-    resetProductForm();
-
-    //Nascondere i form di inserimento manuale che mostri solo quando l'utente clicca su "+ New Product" o "+ New Batch".
-    setViewProduct(false);
-
-    // nasconde il form Batch
-    setViewBatch(false);
-
-    //Resetta lo stato del file CSV caricato per i Product, svuotando il campo file.
-    setCsvFile(null);
   };
   // ----------------- UPLOAD BATCH -----------------
 
@@ -287,9 +287,6 @@ const AddProduct = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessageBatch("Batch uploaded successfully!");
-      console.log(batchData.ID);
-      setLastAddedBatch(batchData.ID);
-
       //Fai il resei dei dati del Form Batch
       resetBatchForm();
 
@@ -301,14 +298,17 @@ const AddProduct = () => {
 
       //Nasconde i form di inserimento manuale che mostri solo quando l'utente clicca su "+ New Batch".
       setViewProduct(false);
+      console.log(batchData.ID);
+      setLastAddedBatch(batchData.ID);
+
     } catch (error) {
       setMessageBatch(
         error.response?.data?.message || "Failed to upload batch."
       );
     }
   };
-  // ----------------- CSV Product -----------------
 
+  // ----------------- CSV Product -----------------
   const handleCsvChange = (e) => {
     setCsvFile(e.target.files[0]);
   };
@@ -363,6 +363,7 @@ const AddProduct = () => {
   const handleCsvBatchChange = (e) => {
     setCsvBatchFile(e.target.files[0]);
   };
+
   const handleCsvUploadBatch = async () => {
     if (!csvBatchFile) {
       setMessageBatch("Please upload a CSV file first.");
@@ -410,6 +411,7 @@ const AddProduct = () => {
       header: false, // Il CSV non contiene intestazioni
     });
   };
+
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
@@ -878,13 +880,14 @@ const AddProduct = () => {
                       >
                         Upload Product
                       </Button>
+                      {messageProduct && <p style={{marginTop:"1vw", color:"red"}}>{messageProduct}</p>}
                     </Form>
                   </Card.Body>
                 )}
               </div>
             </div>
           )}
-          <br/>
+          <br />
           {(role === "producer" || role === "operator") && (
             <div className="card shadow">
               <div className="card-body">
@@ -1255,6 +1258,7 @@ const AddProduct = () => {
                       >
                         Upload Batch
                       </Button>
+                      {messageBatch && <p style={{marginTop:"1vw", color:"red"}}>{messageBatch}</p>}
                     </Form>
                   </Card.Body>
                 )}

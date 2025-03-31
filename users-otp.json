@@ -10,5 +10,9 @@
     "azienda@mail.com": {
         "otp": 620795,
         "expiration": "2025-03-30 22:12"
+    },
+    "zio@pera.it": {
+        "otp": 359684,
+        "expiration": "2025-03-31 09:44"
     }
 }

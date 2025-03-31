@@ -13,7 +13,7 @@
     },
     "RT3445": {
         "expires_at": "2026-03-02T00:00:00",
-        "used": false
+        "used": true
     },
     "LS445": {
         "expires_at": "2025-05-07T00:00:00",

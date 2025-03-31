@@ -160,5 +160,16 @@
         "operators": [
             "a@le.it"
         ]
+    },
+    "zio@pera.it": {
+        "manufacturer": "ziopera",
+        "password": "$2b$12$ae8IQdLiJrJbV1n1LoRAZO3qcsvUC.zOahK0X.AKNnp4oldVFk72e",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
     }
 }
