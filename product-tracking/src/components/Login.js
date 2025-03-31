@@ -22,7 +22,7 @@ const Login = ({ setIsLoggedIn }) => {
 
       if (response.status == 200 && !data.access_token) {
         setIsOtpSent(true);
-        setMessage("Login successful! Please enter the OTP sent to your email.");
+        setMessage("Login successful! Please enter the OTP sent to your email. Remember to check your spam folder if you can't find the email.");
         return;
       }
 
@@ -52,7 +52,7 @@ const Login = ({ setIsLoggedIn }) => {
       // Verifica dell'OTP
       const response = await axios.post("http://127.0.0.1:5000/verify-otp", {
         email,
-        otp: parseInt(otp,10),
+        otp: parseInt(otp, 10),
       });
       const data = response.data;
 
@@ -146,7 +146,6 @@ const Login = ({ setIsLoggedIn }) => {
                 </form>
               )}
 
-              {message && <p className="mt-3 text-muted">{message}</p>}
               <p className="mt-3">
                 Don’t have an account?{" "}
                 <span
@@ -156,25 +155,34 @@ const Login = ({ setIsLoggedIn }) => {
                   Sign Up
                 </span>
               </p>
-              <p className="mt-3">
-                <span onClick={() => navigate("/forgot-password")} style={{ color: "darkgrey", cursor: "pointer", textDecoration:"underline" }}>
-                  Forgot your password?
-                </span>
-              </p>
+
+              {message && <p className="mt-3 text-muted">{message}</p>}
+              <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", gap: "2vw" }}>
+                <p className="mt-3">
+                  <span onClick={() => navigate("/forgot-password")} style={{ color: "darkgrey", cursor: "pointer", textDecoration: "underline" }}>
+                    🫣 Forgot your password?
+                  </span>
+                </p>
+                <p className="mt-3">
+                  <span
+                    onClick={() => navigate("/scan-product")}
+                    style={{
+                      color: "darkgrey",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    🔓 Continue without logging in
+                  </span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <p className="mt-3">
-        <span
-          onClick={() => navigate("/scan-product")}
-          style={{
-            color: "darkgrey",
-            cursor: "pointer",
-            textDecoration: "underline",
-          }}
-        >
-          Continue without logging in
+      <p className="mt-3" style={{ textDecoration: "underline", color: "grey", paddingTop: "5vw" }}>
+        <span onClick={() => navigate("/about")} style={{ color: "darkgrey", cursor: "pointer", textDecoration: "underline" }}>
+          ⚠️ Disclaimer & Info
         </span>
       </p>
     </div>

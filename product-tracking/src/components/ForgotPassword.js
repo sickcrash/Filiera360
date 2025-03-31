@@ -31,11 +31,11 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <h3>Forgot Password</h3>
+    <div className="container mt-5" style={{ width: "50%" }}>
+      <h3 style={{ marginTop: "10vw" }}>🫣 Forgot Password</h3>
+      <br />
       <Form onSubmit={handleSubmit}>
         <Form.Group>
-          <Form.Label>Email</Form.Label>
           <Form.Control
             type="email"
             placeholder="Enter your email"
@@ -43,7 +43,11 @@ const ForgotPassword = () => {
             onChange={(e) => setEmail(e.target.value)}
           />
         </Form.Group>
+        <br />
         <Button type="submit" className="mt-3">Send Reset Link</Button>
+        <p className="mt-3" style={{ color: "darkgrey", paddingTop: "1vw" }}>
+          Remember to check your spam folder if you can't find the email.
+        </p>
       </Form>
       {message && <div className="mt-3">{message}</div>}
     </div>

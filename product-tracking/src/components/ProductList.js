@@ -26,7 +26,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
   const [batchHistory, setBatchHistory] = useState([]);
   const [itemCodeBatch, setItemCodeBatch] = useState('');
   const [messageBatch, setMessageBatch] = useState('');
-  const [scanBatch, setScanBatch] = useState('');
+  const [scanBatch, setScanBatch] = useState(0);
 
 
 
@@ -48,6 +48,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
   // Handle scanning the product and fetching its details
   const handleScan = async (e) => {
     e?.preventDefault();
+    setScanBatch(0) // evita conflitti
 
     // controllo il prodotto scannerizzato è gia stato preferito
     setLiked(likedProducts.some(p => p.ID === itemCode)); // Check if product is already liked
@@ -72,6 +73,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
 
         // Aggiungi il prodotto alla cronologia dei prodotti scansionati
         addToRecentlyScanned(productData);
+        window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
         setMessage('Product not found.');
         setProduct(null);
@@ -126,6 +128,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
 
   const handleScanBatch = async (e) => {
     e?.preventDefault();
+    setScan(0) // evita conflitti
+
     try {
       console.log("Scanning for Item Code: " + itemCodeBatch);
 
@@ -142,6 +146,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
         const idproduct = responseBatch.data.ProductId;
 
         setBatch(responseBatch.data); // Set batch details in state
+        addToRecentlyScanned(responseBatch.data);
+        window.scrollTo({ top: 0, behavior: 'smooth' })
         //Chiamo il backend per ottenere i dettagli del prodotto
         const responseProduct = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${idproduct}`);
         //Se la chiamata alla getProduct mi ritorna 200 stato OK
@@ -273,6 +279,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
 
     link.click();
   };
+
   const handleDownloadHistoryLogBatch = () => {
     const history = batchHistory;
     let logContent = `Batch History for ID: ${itemCode}\n\n`;
@@ -308,7 +315,6 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
     link.click();
   };
 
-
   // Funzione per decodificare immagini caricate
   const handleImageUpload = (event) => {
     console.log("starting QR code processing...");
@@ -334,13 +340,48 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
             setScan(scan + 1); // trigger scan
           } else {
             console.log('No QR code found in uploaded image.');
-            setMessage('No QR code found in uploaded image.');
+            setMessageBatch('No QR code found in uploaded image.');
           }
         };
       };
       reader.readAsDataURL(file);
       setShowCamera(false);
       document.getElementById("uploader").value = "";
+    }
+  };
+
+  // Funzione per decodificare immagini caricate
+  const handleImageUploadBatch = (event) => {
+    console.log("starting QR code processing...");
+    const file = event.target.files[0];
+    console.log(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          const imageData = ctx.getImageData(0, 0, img.width, img.height);
+          const code = jsQR(imageData.data, img.width, img.height);
+          if (code) {
+            console.log(code.data);
+            document.getElementById("itemCodeBatch").value = code.data;
+            setItemCodeBatch(code.data);
+            setScanBatch(scan + 1); // trigger scan
+          } else {
+            console.log('No QR code found in uploaded image.');
+            setMessageBatch('No QR code found in uploaded image.');
+          }
+        };
+      };
+      reader.readAsDataURL(file);
+      setShowCamera(false);
+      document.getElementById("uploaderBatch").value = "";
     }
   };
 
@@ -368,7 +409,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
   // Avvia scansione al trigger
   useEffect(() => {
     if (scan > 0) handleScan();
-  }, [scan]);
+    if (scanBatch > 0) handleScanBatch();
+  }, [scan, scanBatch]);
 
   const handleError = (err) => {
     console.error("QR code scan error:", err);
@@ -383,7 +425,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       // Crea un oggetto con solo le informazioni essenziali
       const scannedProduct = {
         ID: productData.ID,
-        Name: productData.Name,
+        Name: productData.Name || "Batch",
         Manufacturer: productData.Manufacturer,
         CreationDate: productData.CreationDate,
         timestamp: new Date().toISOString() // Aggiungi timestamp per ordinare per data di scansione
@@ -567,6 +609,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                 />
               ) : null}
               <input
+                style={{backgroundColor:"#1e90ff", border:"1px solid #1e90ff"}}
                 type="submit"
                 className="btn btn-primary mt-3 w-100"
                 id="scanButton"
@@ -604,14 +647,14 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                 />
                 <input
                   type="file"
-                  id="uploader"
-                  onChange={handleImageUpload}
+                  id="uploaderBatch"
+                  onChange={handleImageUploadBatch}
                   onError={handleError}
                   onClick={() => setShowCamera(false)}
                   style={{ display: 'none' }}
                 />
                 <label
-                  htmlFor="uploader"
+                  htmlFor="uploaderBatch"
                   className="btn btn-secondary me-1"
                   style={{ backgroundColor: "silver", border: 0 }}
                 >
@@ -645,116 +688,6 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
           </div>
         </div>
       </form>
-
-      {/* Recently Scanned Products Section */}
-      {recentlyScanned.length > 0 && (
-        <div className="row mt-4 mb-4">
-          <div className="col-12">
-            <h4>Recently Scanned Products 🕒</h4>
-            <Row xs={1} md={2} lg={3} className="g-4">
-              {recentlyScanned.map((scannedProduct) => (
-                <Col key={scannedProduct.ID}>
-                  <Card className="h-100 shadow-sm">
-                    <Card.Body>
-                      <Card.Title>{scannedProduct.Name}</Card.Title>
-                      <Card.Text>
-                        <small className="text-muted">ID: {scannedProduct.ID}</small><br />
-                        <small className="text-muted">Manufacturer: {scannedProduct.Manufacturer}</small><br />
-                        <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
-                      </Card.Text>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => {
-                            setItemCode(scannedProduct.ID);
-                            document.getElementById("itemCode").value = scannedProduct.ID;
-                            const syntheticEvent = { preventDefault: () => { } };
-                            handleScan(syntheticEvent);
-                          }}
-                        >
-                          View Details
-                        </button>
-                        <small className="text-muted">
-                          {new Date(scannedProduct.timestamp).toLocaleDateString()}
-                        </small>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </div>
-        </div>
-      )}
-
-      {/* Liked Products Section */}
-      {likedProducts.length > 0 && (
-        <div className="row mt-4 mb-4">
-          <div className="col-12">
-            <h4>Your Liked Products ❤️</h4>
-            {/* Griglia responsive - 1 column on small screens, 3 on large */}
-            <Row xs={1} md={2} lg={3} className="g-4">
-              {likedProducts.map((likedProduct) => (
-                <Col key={likedProduct.ID}>
-                  {/* Card per ogni prodotto preferito */}
-                  <Card className="h-100 shadow-sm">
-                    <Card.Body>
-                      <Card.Title>{likedProduct.Name}</Card.Title>
-                      <Card.Text>
-                        <small className="text-muted">ID: {likedProduct.ID}</small><br />
-                        <small className="text-muted">Manufacturer: {likedProduct.Manufacturer}</small><br />
-                        <small className="text-muted">Created: {likedProduct.CreationDate}</small>
-                      </Card.Text>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => {
-                            setItemCode(likedProduct.ID);
-                            document.getElementById("itemCode").value = likedProduct.ID;
-                            handleScan();
-                          }}
-                        >
-                          View Details
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={async () => {
-                            // Get user ID from localStorage
-                            const userId = localStorage.getItem('email') || 'default';
-
-                            try {
-                              // Call the backend to unlike the product
-                              const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
-                                headers: {
-                                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                                  'Content-Type': 'application/json',
-                                }
-                              });
-
-                              console.log(`Product ${likedProduct.ID} removed from favorites`, response.data);
-
-                              // Update the list of liked products in state
-                              const updatedProducts = likedProducts.filter(p => p.ID !== likedProduct.ID);
-                              setLikedProducts(updatedProducts);
-
-                              // If this is the currently displayed product, update its liked status
-                              if (product && product.ID === likedProduct.ID) setLiked(false);
-                            } catch (error) {
-                              console.error("Error removing product from favorites:", error);
-                            }
-                          }}
-                        >
-                          <ion-icon name="heart-dislike-outline"></ion-icon>
-                        </button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </div>
-        </div>
-      )}
 
       {/* Display product details if the product is found */}
       {product && (
@@ -1108,6 +1041,118 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
               // batchType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
               onBatchUpdate={handleScanBatch}
             />}
+        </div>
+      )}
+
+      <br/>
+
+      {/* Recently Scanned Products Section */}
+      {recentlyScanned.length > 0 && (
+        <div className="row mt-4 mb-4">
+          <div className="col-12">
+            <p style={{fontWeight:"bold"}}>Recent uploads/scans 🕒</p>
+            <Row xs={1} md={2} lg={3} className="g-4">
+              {recentlyScanned.map((scannedProduct) => (
+                <Col key={scannedProduct.ID}>
+                  <Card className="h-100 shadow-sm">
+                    <Card.Body>
+                      <Card.Title>{scannedProduct.Name}</Card.Title>
+                      <Card.Text>
+                        <small className="text-muted">ID: {scannedProduct.ID}</small><br />
+                        <small className="text-muted">Manufacturer: {scannedProduct.Manufacturer}</small><br />
+                        <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
+                      </Card.Text>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <button
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => {
+                            setItemCode(scannedProduct.ID);
+                            try{document.getElementById("itemCode").value = scannedProduct.ID;}
+                            catch{}
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                          }}
+                        >
+                          View Details
+                        </button>
+                        <small className="text-muted">
+                          {new Date(scannedProduct.timestamp).toLocaleDateString()}
+                        </small>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        </div>
+      )}
+
+      {/* Liked Products Section */}
+      {likedProducts.length > 0 && (
+        <div className="row mt-4 mb-4">
+          <div className="col-12">
+            <p style={{fontWeight:"bold"}}>Your Liked Products ❤️</p>
+            {/* Griglia responsive - 1 column on small screens, 3 on large */}
+            <Row xs={1} md={2} lg={3} className="g-4">
+              {likedProducts.map((likedProduct) => (
+                <Col key={likedProduct.ID}>
+                  {/* Card per ogni prodotto preferito */}
+                  <Card className="h-100 shadow-sm">
+                    <Card.Body>
+                      <Card.Title>{likedProduct.Name}</Card.Title>
+                      <Card.Text>
+                        <small className="text-muted">ID: {likedProduct.ID}</small><br />
+                        <small className="text-muted">Manufacturer: {likedProduct.Manufacturer}</small><br />
+                        <small className="text-muted">Created: {likedProduct.CreationDate}</small>
+                      </Card.Text>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <button
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => {
+                            setItemCode(likedProduct.ID);
+                            document.getElementById("itemCode").value = likedProduct.ID;
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                          }}
+                        >
+                          View Details
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={async () => {
+                            // Get user ID from localStorage
+                            const userId = localStorage.getItem('email') || 'default';
+
+                            try {
+                              // Call the backend to unlike the product
+                              const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
+                                headers: {
+                                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                  'Content-Type': 'application/json',
+                                }
+                              });
+
+                              console.log(`Product ${likedProduct.ID} removed from favorites`, response.data);
+
+                              // Update the list of liked products in state
+                              const updatedProducts = likedProducts.filter(p => p.ID !== likedProduct.ID);
+                              setLikedProducts(updatedProducts);
+
+                              // If this is the currently displayed product, update its liked status
+                              if (product && product.ID === likedProduct.ID) setLiked(false);
+                            } catch (error) {
+                              console.error("Error removing product from favorites:", error);
+                            }
+                          }}
+                        >
+                          <ion-icon name="heart-dislike-outline"></ion-icon>
+                        </button>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
         </div>
       )}
     </div>

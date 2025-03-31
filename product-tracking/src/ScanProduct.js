@@ -57,7 +57,7 @@ function ScanProduct() {
       {selectedProduct ?
         <p
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          style={{ fontSize: "1.5vw", textDecoration: "underline", cursor: "pointer" }}
+          style={{ fontSize: "1vw", textDecoration: "underline", cursor: "pointer" }}
         >
           ☝️ back to top
         </p>

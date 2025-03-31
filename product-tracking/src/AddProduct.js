@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Card, Form, Button } from "react-bootstrap";
+import { Card, Form, Button, Row, Col } from "react-bootstrap";
 import { QRCodeCanvas } from "qrcode.react";
 import Viewer3D from "./components/Viewer3D";
 import Papa from "papaparse"; // Assicurati che sia installato
@@ -214,6 +214,7 @@ const AddProduct = () => {
         }
       );
       setMessageProduct("Product uploaded successfully!");
+      addToRecentlyScanned(productData);
       setLastAddedProduct(productData.ID);
       //Fai il resei dei dati del Form Product
       resetProductForm();
@@ -287,6 +288,7 @@ const AddProduct = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessageBatch("Batch uploaded successfully!");
+      addToRecentlyScanned(batchData);
       //Fai il resei dei dati del Form Batch
       resetBatchForm();
 
@@ -412,6 +414,71 @@ const AddProduct = () => {
     });
   };
 
+  // Nuovo stato per la cronologia dei prodotti scansionati
+  const [recentlyScanned, setRecentlyScanned] = useState(() => {
+    // Load recently scanned products from localStorage
+    const savedScanned = localStorage.getItem('recentlyScannedProducts');
+    return savedScanned ? JSON.parse(savedScanned) : [];
+  });
+
+  // Funzione per aggiungere un prodotto alla cronologia dei prodotti scansionati
+  const addToRecentlyScanned = async (productData) => {
+    try {
+      // Get user ID from localStorage (set during login)
+      const userId = localStorage.getItem('email') || 'default';
+
+      // Crea un oggetto con solo le informazioni essenziali
+      const scannedProduct = {
+        ID: productData.ID,
+        Name: productData.Name || "Batch",
+        Manufacturer: productData.Manufacturer,
+        CreationDate: productData.CreationDate,
+        timestamp: new Date().toISOString() // Aggiungi timestamp per ordinare per data di scansione
+      };
+
+      // Send to backend
+      await axios.post('http://127.0.0.1:5000/addRecentlySearched', {
+        product: scannedProduct,
+        userId: userId
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      // Update local state
+      // Rimuovi il prodotto se già presente nella lista
+      const filteredHistory = recentlyScanned.filter(p => p.ID !== scannedProduct.ID);
+      // Aggiungi il prodotto all'inizio della lista
+      const updatedHistory = [scannedProduct, ...filteredHistory].slice(0, 5); // Mantieni solo gli ultimi 5 prodotti
+      setRecentlyScanned(updatedHistory);
+    } catch (error) {
+      console.error("Error updating recently searched products:", error);
+    }
+  };
+
+  // Add useEffect to fetch recently searched products
+  useEffect(() => {
+    const fetchRecentlySearched = async () => {
+      try {
+        // Get user ID from localStorage (set during login)
+        const userId = localStorage.getItem('email') || 'default';
+        const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+        );
+        setRecentlyScanned(response.data);
+      } catch (error) {
+        console.error("Error fetching recently searched products:", error);
+      }
+    };
+
+    fetchRecentlySearched();
+  }, []);
+
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
@@ -446,6 +513,7 @@ const AddProduct = () => {
                 )}
                 {!viewProduct && (
                   <button
+                    style={{backgroundColor:"#1e90ff", border:"1px solid #1e90ff"}}
                     className="btn btn-primary mt-3 w-100"
                     onClick={() => {
                       setViewProduct(true);
@@ -1267,6 +1335,36 @@ const AddProduct = () => {
           )}
         </div>
       </div>
+      <br/>
+{/* Recently Scanned Products Section */}
+{recentlyScanned.length > 0 && (
+        <div className="row mt-4 mb-4">
+          <div className="col-12">
+          <p style={{fontWeight:"bold"}}>Recent uploads/scans 🕒</p>
+            <Row xs={1} md={2} lg={3} className="g-4">
+              {recentlyScanned.map((scannedProduct) => (
+                <Col key={scannedProduct.ID}>
+                  <Card className="h-100 shadow-sm">
+                    <Card.Body>
+                      <Card.Title>{scannedProduct.Name}</Card.Title>
+                      <Card.Text>
+                        <small className="text-muted">ID: {scannedProduct.ID}</small><br />
+                        <small className="text-muted">Manufacturer: {scannedProduct.Manufacturer}</small><br />
+                        <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
+                      </Card.Text>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <small className="text-muted">
+                          {new Date(scannedProduct.timestamp).toLocaleDateString()}
+                        </small>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        </div>
+      )}
 
       <br />
       <br />

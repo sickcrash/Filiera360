@@ -12,6 +12,7 @@ import AddProduct from "./AddProduct";
 import ScanProduct from "./ScanProduct";
 import Navbar from "./components/Navbar";
 import ForgotPassword from "./components/ForgotPassword";
+import About from "./components/About";
 import ResetPassword from "./components/ResetPassword";
 import AccessDenied from "./components/AccessDenied";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -32,6 +33,7 @@ function App() {
 
       <Routes>
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/about" element={<About />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route
           path="/login"
