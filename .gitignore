@@ -4,3 +4,5 @@ users-otp.json
 invite_tokens.json
 liked_products.json
 recently_searched.json
+.vscode
+.venv
