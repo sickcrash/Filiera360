@@ -9,7 +9,7 @@ export const ManageOperators = () => {
 
   const handleDeleteOperator = async (operator) => {
     try {
-      const response = await axios.post(`http://localhost:5000/operators/delete`, {
+      const response = await axios.post(`http://127.0.0.1:5000/operators/delete`, {
         email: operator
       },{
           headers: {
@@ -34,7 +34,7 @@ export const ManageOperators = () => {
     }
 
     try {
-        const response = await axios.post(`http://localhost:5000/operators/add`, {
+        const response = await axios.post(`http://127.0.0.1:5000/operators/add`, {
             email: newOperator
         }, {
             headers: {
@@ -58,7 +58,7 @@ export const ManageOperators = () => {
   useEffect(() => {
     const fetchOperators = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/operators`, {
+        const response = await axios.get(`http://127.0.0.1:5000/operators`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
