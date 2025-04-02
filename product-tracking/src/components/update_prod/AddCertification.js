@@ -29,7 +29,7 @@
 
 //     console.log("Sending certification data:", data);
 //     const token = localStorage.getItem('token');
-//     axios.post('http://127.0.0.1:5000/addCertification', data, {
+//     axios.post('/api/addCertification', data, {
 //       headers: {
 //         'Authorization': `Bearer ${token}`,
 //       },

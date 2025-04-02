@@ -14,7 +14,7 @@ const Login = ({ setIsLoggedIn }) => {
     e.preventDefault();
     try {
       // Richiesta di login
-      const response = await axios.post("http://127.0.0.1:5000/login", {
+      const response = await axios.post("/api/login", {
         email,
         password,
       });
@@ -50,7 +50,7 @@ const Login = ({ setIsLoggedIn }) => {
     e.preventDefault();
     try {
       // Verifica dell'OTP
-      const response = await axios.post("http://127.0.0.1:5000/verify-otp", {
+      const response = await axios.post("/api/verify-otp", {
         email,
         otp: parseInt(otp, 10),
       });

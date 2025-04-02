@@ -112,7 +112,7 @@ def send_otp(email):
 # Verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
 def verify_manufacturer(product_id, real_manufacturer):
     try:
-        blockchain_response = requests.get(f'http://localhost:3000/readProduct?productId={product_id}')
+        blockchain_response = requests.get(f'http://middleware:3000/readProduct?productId={product_id}')
         if blockchain_response.status_code == 200:
             blockchain_data = blockchain_response.json()
             registered_manufacturer = blockchain_data.get("Manufacturer")
@@ -130,7 +130,7 @@ def verify_manufacturer(product_id, real_manufacturer):
 # Verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
 def verify_operator(batch_id, real_operator):
     try:
-        blockchain_response = requests.get(f'http://localhost:3000/readBatch?batchId={batch_id}')
+        blockchain_response = requests.get(f'http://middleware:3000/readBatch?batchId={batch_id}')
         print("📢 Risposta dalla blockchain:", blockchain_response)
         if blockchain_response.status_code != 200:
             print(f"Errore: impossibile recuperare batch {batch_id}")
@@ -187,7 +187,7 @@ def forgot_password():
 
     token = generate_reset_token(email)
 
-    reset_url = f"http://localhost:3001/reset-password/{token}"
+    reset_url = f"/api/reset-password/{token}"
     msg = Message('Password Reset Request',
                   sender='noreply@example.com',
                   recipients=[email])
@@ -269,7 +269,7 @@ def init_ledger():
     errors = []
     for product in products:
         try:
-            response = requests.post(f'http://localhost:3000/uploadProduct', json=product)
+            response = requests.post(f'http://middleware:3000/uploadProduct', json=product)
             if response.status_code != 200:
                 errors.append({"product_id": product.get("ID"), "error": response.json().get("message", "Unknown error")})
         except Exception as e:
@@ -520,7 +520,7 @@ def get_product():
     print("ATTEMPTING TO CONNECT:")
      # Send request to JavaScript server to get product details
     try: 
-        response = requests.get(f'http://localhost:3000/readProduct?productId={productId}')
+        response = requests.get(f'http://middleware:3000/readProduct?productId={productId}')
         if response.status_code == 200:
             productinfo = response.json()
             return jsonify(response.json())
@@ -541,7 +541,7 @@ def get_product_history():
     
     # Invia richiesta al server JavaScript per ottenere la cronologia del prodotto
     try:
-        response = requests.get(f'http://localhost:3000/productHistory?productId={productId}')
+        response = requests.get(f'http://middleware:3000/productHistory?productId={productId}')
         if response.status_code == 200:
             product_history = response.json()
             return jsonify(product_history)
@@ -558,7 +558,7 @@ def get_batch():
     print("ATTEMPTING TO CONNECT:")
      # Send request to JavaScript server to get product details
     try: 
-        response = requests.get(f'http://localhost:3000/readBatch?batchId={batchId}')
+        response = requests.get(f'http://middleware:3000/readBatch?batchId={batchId}')
         if response.status_code == 200:
             batchinfo = response.json()
             return jsonify(response.json())
@@ -576,7 +576,7 @@ def get_batch_history():
         return jsonify({'message': 'Batch ID is required'}), 400
     
     try:
-        response = requests.get(f'http://localhost:3000/batchHistory?batchId={batch_id}')
+        response = requests.get(f'http://middleware:3000/batchHistory?batchId={batch_id}')
         if response.status_code == 200:
             return jsonify(response.json())
         else:
@@ -619,7 +619,7 @@ def verify_product_authorization(email, product_id):
             return False
 
     try: 
-        response = requests.get(f'http://localhost:3000/readProduct?productId={product_id}')
+        response = requests.get(f'http://middleware:3000/readProduct?productId={product_id}')
         if response.status_code != 200:
             return jsonify({'message': 'Failed to get product.'}), 500
             
@@ -652,7 +652,7 @@ def upload_product():
     try:
         # Send the cleaned product data to the external service
         print("Faccio la chiamata all'AppServer")
-        response = requests.post(f'http://localhost:3000/uploadProduct', json=product_data)
+        response = requests.post(f'http://middleware:3000/uploadProduct', json=product_data)
         if response.status_code == 200:
             return jsonify({'message': response.json().get('message', 'Product uploaded successfully!')})
         else:
@@ -693,7 +693,7 @@ def uploadBatch():
     try:
         # Send the cleaned product data to the external service
         print("Faccio la chiamata all'AppServer")
-        response = requests.post('http://localhost:3000/uploadBatch', json=batch_data)
+        response = requests.post('http://middleware:3000/uploadBatch', json=batch_data)
         if response.status_code == 200:
             print('Risposta dalla blockchain: ',response.status_code)
             return jsonify({'message': response.json().get('message', 'Batch uploaded successfully!')})
@@ -795,7 +795,7 @@ def update_product():
     # in caso di corrispondenza manufacturer
     print("Updating Product:", product_data)
     try:
-        response = requests.post(f'http://localhost:3000/api/product/updateProduct', json=product_data)
+        response = requests.post(f'http://middleware:3000/api/product/updateProduct', json=product_data)
         if response.status_code == 200:
             return jsonify({'message': 'Product updated successfully!'})
         else:
@@ -842,7 +842,7 @@ def update_batch():
 
         # Invio i dati aggiornati alla blockchain
         print("📢 Invia i dati aggiornati alla blockchain...")
-        response = requests.post('http://localhost:3000/api/batch/updateBatch', json=batch_data)
+        response = requests.post('http://middleware:3000/api/batch/updateBatch', json=batch_data)
 
         print("📢 Risposta dalla blockchain:", response.status_code, response.text)
 
@@ -876,7 +876,7 @@ def add_sensor_data():
     # in caso di corrispondenza manufacturer
     print("Uploading sensor data:", sensor_data)
     try:
-        response = requests.post(f'http://localhost:3000/api/product/sensor', json=sensor_data)
+        response = requests.post(f'http://middleware:3000/api/product/sensor', json=sensor_data)
         if response.status_code == 200:
             return jsonify({'message': 'Product uploaded successfully!'})
         else:
@@ -906,7 +906,7 @@ def add_movement_data():
     # in caso di corrispondenza manufacturer
     print("Add movement data:", movement_data)
     try:
-        response = requests.post(f'http://localhost:3000/api/product/movement', json=movement_data)
+        response = requests.post(f'http://middleware:3000/api/product/movement', json=movement_data)
         if response.status_code == 200:
             return jsonify({'message': 'Product uploaded successfully!'})
         else:
@@ -939,7 +939,7 @@ def verify_product_compliance():
     compliance_data  = request.json
     print("Check if product is complaint:", compliance_data)
     try:
-        response = requests.post(f'http://localhost:3000/api/product/verifyProductCompliance', json=compliance_data)
+        response = requests.post(f'http://middleware:3000/api/product/verifyProductCompliance', json=compliance_data)
         print(response.json())
         if response.status_code == 200:
             return jsonify({'message': 'Product is compliant!'})
@@ -955,7 +955,7 @@ def get_all_movements():
     productId = request.args.get('productId')
     print("get all movements:", productId)
     try:
-        response = requests.get(f'http://localhost:3000/api/product/getMovements?productId={productId}')
+        response = requests.get(f'http://middleware:3000/api/product/getMovements?productId={productId}')
         print(response.json())
         if response.status_code == 200:
             return jsonify(response.json())
@@ -971,7 +971,7 @@ def get_all_sensor_data():
     productId = request.args.get('productId')
     print("get all sensor:", productId)
     try:
-        response = requests.get(f'http://localhost:3000/api/product/getSensorData?productId={productId}')
+        response = requests.get(f'http://middleware:3000/api/product/getSensorData?productId={productId}')
         print(response.json())
         if response.status_code == 200:
             return jsonify(response.json())
@@ -1011,7 +1011,7 @@ def get_all_sensor_data():
         print("✅ Operatore verificato, aggiornamento batch in corso...")
         
         # Invio dei dati aggiornati alla blockchain
-        response = requests.post('http://localhost:3000/api/batch/updateBatch', json=batch_data)
+        response = requests.post('http://middleware:3000/api/batch/updateBatch', json=batch_data)
         print("📢 Dati inviati a AppServer:", batch_data)
 
         
@@ -1047,7 +1047,7 @@ def get_all_sensor_data():
 #     # in caso di corrispondenza manufacturer
 #     print("Uploading sensor data:", sensor_data)
 #     try:
-#         response = requests.post('http://localhost:3000/api/product/sensor', json=sensor_data)
+#         response = requests.post('http://middleware:3000/api/product/sensor', json=sensor_data)
 #         if response.status_code == 200:
 #             return jsonify({'message': 'Product uploaded successfully!'})
 #         else:
@@ -1077,7 +1077,7 @@ def get_all_sensor_data():
 #     # in caso di corrispondenza manufacturer
 #     print("Add movement data:", movement_data)
 #     try:
-#         response = requests.post('http://localhost:3000/api/product/movement', json=movement_data)
+#         response = requests.post('http://middleware:3000/api/product/movement', json=movement_data)
 #         if response.status_code == 200:
 #             return jsonify({'message': 'Product uploaded successfully!'})
 #         else:
@@ -1107,7 +1107,7 @@ def get_all_sensor_data():
 #     # in caso di corrispondenza manufacturer
 #     print("Add certification data:", certification_data)
 #     try:
-#         response = requests.post('http://localhost:3000/api/product/certification', json=certification_data)
+#         response = requests.post('http://middleware:3000/api/product/certification', json=certification_data)
 #         if response.status_code == 200:
 #             return jsonify({'message': 'Product uploaded successfully!'})
 #         else:
@@ -1122,7 +1122,7 @@ def get_all_sensor_data():
 #     compliance_data  = request.json
 #     print("Check if product is complaint:", compliance_data)
 #     try:
-#         response = requests.post('http://localhost:3000/api/product/verifyProductCompliance', json=compliance_data)
+#         response = requests.post('http://middleware:3000/api/product/verifyProductCompliance', json=compliance_data)
 #         print(response.json())
 #         if response.status_code == 200:
 #             return jsonify({'message': 'Product is compliant!'})
@@ -1138,7 +1138,7 @@ def get_all_sensor_data():
 #     productId = request.args.get('productId')
 #     print("get all movements:", productId)
 #     try:
-#         response = requests.get(f'http://localhost:3000/api/product/getMovements?productId={productId}')
+#         response = requests.get(f'http://middleware:3000/api/product/getMovements?productId={productId}')
 #         print(response.json())
 #         if response.status_code == 200:
 #             return jsonify(response.json())
@@ -1154,7 +1154,7 @@ def get_all_sensor_data():
 #     productId = request.args.get('productId')
 #     print("get all sensor:", productId)
 #     try:
-#         response = requests.get(f'http://localhost:3000/api/product/getSensorData?productId={productId}')
+#         response = requests.get(f'http://middleware:3000/api/product/getSensorData?productId={productId}')
 #         print(response.json())
 #         if response.status_code == 200:
 #             return jsonify(response.json())
@@ -1170,7 +1170,7 @@ def get_all_sensor_data():
     productId = request.args.get('productId')
     print("get all certifications:", productId)
     try:
-        response = requests.get(f'http://localhost:3000/api/product/getCertifications?productId={productId}')
+        response = requests.get(f'http://middleware:3000/api/product/getCertifications?productId={productId}')
         print(response.json())
         if response.status_code == 200:
             return jsonify(response.json())
@@ -1226,7 +1226,7 @@ def scan():
     print("ATTEMPTING TO CONNECT:")
      # Send request to JavaScript server to get product details
     try: 
-        response = requests.get(f'http://localhost:3000/readProduct?productId={item_code}')
+        response = requests.get(f'http://middleware:3000/readProduct?productId={item_code}')
         if response.status_code == 200:
             productinfo = response.json()
             globals()["productinfo"]=productinfo

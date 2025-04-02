@@ -117,7 +117,7 @@ const removeCustomField = (index) => {
         console.log("Uploading updated model for product: " + productId);
 
         const token = localStorage.getItem('token');
-        const response = await axios.post('http://127.0.0.1:5000/uploadModel', postData, {
+        const response = await axios.post('/api/uploadModel', postData, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         console.log("Model uploaded successfully!");
@@ -129,7 +129,7 @@ const removeCustomField = (index) => {
     // Aggiornamento del prodotto e, se presente, caricamento del modello 3D
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://127.0.0.1:5000/updateProduct', productData, {
+      const response = await axios.post('/api/updateProduct', productData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setMessage(response.data.message || 'Product updated successfully');

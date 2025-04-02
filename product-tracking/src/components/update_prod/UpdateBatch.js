@@ -73,7 +73,7 @@ const removeCustomField = (index) => {
 
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.post('http://127.0.0.1:5000/updateBatch', batchData, {
+        const response = await axios.post('/api/updateBatch', batchData, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 

@@ -2,16 +2,16 @@ FROM python:3.8-slim
 
 WORKDIR /app
 
-# Copia solo il file app.py dalla directory superiore
 COPY app.py /app/app.py
 COPY requirements.txt /app/requirements.txt
 COPY prompts_variables_storage.py /app/prompts_variables_storage.py
+COPY invite_tokens.json /app/
+COPY users.json /app/
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Espone la porta 5000
 EXPOSE 5000
 
-# Comando di avvio
-CMD ["flask", "run"]
+# Comando di avvio aggiornato per bind esterno
+CMD ["flask", "run", "--host=0.0.0.0"]

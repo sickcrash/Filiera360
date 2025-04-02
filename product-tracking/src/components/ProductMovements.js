@@ -10,7 +10,7 @@
 //   // Fetch movements from the server
 //   const fetchMovements = useCallback(async () => {
 //     try {
-//       const response = await axios.get(`http://127.0.0.1:5000/getAllMovements?productId=${productId}`);
+//       const response = await axios.get(`/api/getAllMovements?productId=${productId}`);
 //       setMovements(response.data);
 //     } catch (error) {
 //       console.error('Failed to fetch movements', error);
@@ -26,7 +26,7 @@
 //   useEffect(() => {
 //     const getProductManufacturer = async () => {
 //       try {
-//         const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${productId}`);
+//         const response = await axios.get(`/api/getProduct?productId=${productId}`);
 //         if (response.status === 200) {
 //           setProductManufacturer(response.data.Manufacturer);
 //         } else {

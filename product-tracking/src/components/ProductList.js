@@ -58,8 +58,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
 
       // Fetch product details from the server
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${itemCode}`);
-      const historyResponse = await axios.get(`http://127.0.0.1:5000/getProductHistory?productId=${itemCode}`);
+      const response = await axios.get(`/api/getProduct?productId=${itemCode}`);
+      const historyResponse = await axios.get(`/api/getProductHistory?productId=${itemCode}`);
 
       if (response.status === 200) {
         const productData = response.data;
@@ -87,7 +87,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
 
     // Fetch the GLB model using the itemCode from the product
     try {
-      const modelResponse = await axios.get(`http://127.0.0.1:5000/getModel?productId=${itemCode}`);
+      const modelResponse = await axios.get(`/api/getModel?productId=${itemCode}`);
 
       if (modelResponse.status === 200) {
         const base64Model = modelResponse.data.ModelBase64;
@@ -114,7 +114,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
 
     // Retrieve product movements
     // try {
-    //   const movementsResponse = await axios.get(`http://127.0.0.1:5000/getAllMovements?productId=${itemCode}`);
+    //   const movementsResponse = await axios.get(`/api/getAllMovements?productId=${itemCode}`);
     //   if (movementsResponse.status === 200) {
     //     const movementsFound = movementsResponse.data;
     //     setStatus(movementsFound[movementsFound.length - 1]?.Status || "");
@@ -134,9 +134,9 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       console.log("Scanning for Item Code: " + itemCodeBatch);
 
       // Fetch batch details from the server
-      const responseBatch = await axios.get(`http://127.0.0.1:5000/getBatch?batchId=${itemCodeBatch}`);
+      const responseBatch = await axios.get(`/api/getBatch?batchId=${itemCodeBatch}`);
       console.log("responseBatch", responseBatch);
-      const historyResponseBatch = await axios.get(`http://127.0.0.1:5000/getBatchHistory?batchId=${itemCodeBatch}`);
+      const historyResponseBatch = await axios.get(`/api/getBatchHistory?batchId=${itemCodeBatch}`);
       console.log(historyResponseBatch);
 
       //Se la chiamata alla getBatch mi ritorna 200 stato OK
@@ -149,7 +149,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
         addToRecentlyScanned(responseBatch.data);
         window.scrollTo({ top: 0, behavior: 'smooth' })
         //Chiamo il backend per ottenere i dettagli del prodotto
-        const responseProduct = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${idproduct}`);
+        const responseProduct = await axios.get(`/api/getProduct?productId=${idproduct}`);
         //Se la chiamata alla getProduct mi ritorna 200 stato OK
         if (responseProduct.status === 200) {
           //Salvo i dettagli del prodotto nella variabile BatchProduct
@@ -157,7 +157,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
           setProduct() // EVITA DI AVERE DUE PRODOTTI DIVERSI IN CONTEMPORANEA
           // Fetch the GLB model using the itemCode from the product
           try {
-            const modelResponse = await axios.get(`http://127.0.0.1:5000/getModel?productId=${idproduct}`);
+            const modelResponse = await axios.get(`/api/getModel?productId=${idproduct}`);
 
             if (modelResponse.status === 200) {
               const base64Model = modelResponse.data.ModelBase64;
@@ -432,7 +432,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       };
 
       // Send to backend
-      await axios.post('http://127.0.0.1:5000/addRecentlySearched', {
+      await axios.post('/api/addRecentlySearched', {
         product: scannedProduct,
         userId: userId
       }, {
@@ -459,7 +459,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       try {
         // Get user ID from localStorage (set during login)
         const userId = localStorage.getItem('email') || 'default';
-        const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`, {
+        const response = await axios.get(`/api/getRecentlySearched?userId=${userId}`, {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('token')}`
           }
@@ -478,7 +478,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       try {
         // Get user ID from localStorage (set during login)
         const userId = localStorage.getItem('email') || 'default';
-        const response = await axios.get(`http://127.0.0.1:5000/getLikedProducts?userId=${userId}`, {
+        const response = await axios.get(`/api/getLikedProducts?userId=${userId}`, {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('token')}`
           }
@@ -502,7 +502,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       if (liked) {
         // If already liked, remove from favorites
         try {
-          const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${product.ID}&userId=${userId}`, {
+          const response = await axios.delete(`/api/unlikeProduct?productId=${product.ID}&userId=${userId}`, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -529,7 +529,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
           timestamp: new Date().toISOString()
         };
 
-        await axios.post('http://127.0.0.1:5000/likeProduct', {
+        await axios.post('/api/likeProduct', {
           product: productToLike,
           userId: userId,
         }, {
@@ -1122,7 +1122,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
 
                             try {
                               // Call the backend to unlike the product
-                              const response = await axios.delete(`http://127.0.0.1:5000/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
+                              const response = await axios.delete(`/api/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
                                 headers: {
                                   'Authorization': `Bearer ${localStorage.getItem('token')}`,
                                   'Content-Type': 'application/json',

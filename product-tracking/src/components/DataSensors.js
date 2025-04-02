@@ -22,7 +22,7 @@
 
 //   const fetchSensors = useCallback(async () => {
 //     try {
-//       const response = await axios.get(`http://127.0.0.1:5000/getAllSensorData?productId=${productId}`);
+//       const response = await axios.get(`/api/getAllSensorData?productId=${productId}`);
 //       setSensors(response.data);
 //     } catch (error) {
 //       console.error('Failed to fetch sensor data', error);
@@ -30,7 +30,7 @@
 
 //     const getProductManufacturer = async () => {
 //       try {
-//         const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${productId}`);
+//         const response = await axios.get(`/api/getProduct?productId=${productId}`);
 //         if (response.status === 200) {
 //           setProductManufacturer(response.data.Manufacturer);
 //         } else {

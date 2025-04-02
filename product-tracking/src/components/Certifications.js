@@ -10,7 +10,7 @@
 
 //   // Fetch certifications when component mounts or productId changes
 //   useEffect(() => {
-//     axios.get(`http://127.0.0.1:5000/getAllCertifications?productId=${productId}`)
+//     axios.get(`/api/getAllCertifications?productId=${productId}`)
 //       .then((response) => {
 //         setCertifications(response.data);
 //       })
@@ -21,7 +21,7 @@
 //     // fetch product manufacturer
 //     const getProductManufacturer = async () => {
 //       try {
-//         const response = await axios.get(`http://127.0.0.1:5000/getProduct?productId=${productId}`);
+//         const response = await axios.get(`/api/getProduct?productId=${productId}`);
 //         if (response.status === 200) {
 //           setProductManufacturer(response.data.Manufacturer);
 //         } else {

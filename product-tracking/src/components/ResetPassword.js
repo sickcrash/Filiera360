@@ -18,7 +18,7 @@ const ResetPassword = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/reset-password/${token}`,
+        `/api/reset-password/${token}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -53,7 +53,7 @@ const ResetPassword = () => {
     const validateToken = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/reset-password/${token}`
+          `/api/reset-password/${token}`
         );
         const data = await response.json();
 

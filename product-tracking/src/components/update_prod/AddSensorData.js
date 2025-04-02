@@ -35,7 +35,7 @@
 //     console.log("Sending sensor data:", data);
 //     const token = localStorage.getItem('token');
 //     try {
-//       const response = await axios.post('http://127.0.0.1:5000/addSensorData', data, {
+//       const response = await axios.post('/api/addSensorData', data, {
 //         headers: {
 //           'Authorization': `Bearer ${token}`,
 //         },
@@ -87,7 +87,7 @@
 //             };
 //             // Esegui la richiesta POST per ogni riga
 //             const token = localStorage.getItem('token');
-//             await axios.post('http://127.0.0.1:5000/addSensorData', postData, {
+//             await axios.post('/api/addSensorData', postData, {
 //               headers: {
 //                 'Authorization': `Bearer ${token}`,
 //               },

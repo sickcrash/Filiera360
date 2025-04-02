@@ -29,7 +29,7 @@
 
 //     console.log("Sending movement data:", data);
 //     const token = localStorage.getItem('token');
-//     axios.post('http://127.0.0.1:5000/addMovementsData', data, {
+//     axios.post('/api/addMovementsData', data, {
 //       headers: {
 //         'Authorization': `Bearer ${token}`,
 //       },

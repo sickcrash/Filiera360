@@ -187,7 +187,7 @@ const AddProduct = () => {
         };
         const token = localStorage.getItem("token");
         const response = await axios.post(
-          "http://127.0.0.1:5000/uploadModel",
+          "/api/uploadModel",
           postData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -204,7 +204,7 @@ const AddProduct = () => {
       const token = localStorage.getItem("token");
       console.log("invio dati al backend", productData);
       await axios.post(
-        "http://127.0.0.1:5000/uploadProduct",
+        "/api/uploadProduct",
         JSON.stringify(productData),
         {
           headers: {
@@ -236,7 +236,7 @@ const AddProduct = () => {
       try {
         const base64File = await convertFileToBase64(glbFile);
         await axios.post(
-          "http://127.0.0.1:5000/uploadModel",
+          "/api/uploadModel",
           {
             ID: id,
             ModelBase64: base64File,
@@ -284,7 +284,7 @@ const AddProduct = () => {
     try {
       const token = localStorage.getItem("token");
       console.log(batchData);
-      await axios.post("http://127.0.0.1:5000/uploadBatch", batchData, {
+      await axios.post("/api/uploadBatch", batchData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessageBatch("Batch uploaded successfully!");
@@ -342,7 +342,7 @@ const AddProduct = () => {
 
           try {
             const token = localStorage.getItem("token");
-            await axios.post("http://127.0.0.1:5000/uploadProduct", postData, {
+            await axios.post("/api/uploadProduct", postData, {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -392,7 +392,7 @@ const AddProduct = () => {
           try {
             const token = localStorage.getItem("token");
             await axios.post(
-              "http://127.0.0.1:5000/uploadBatch",
+              "/api/uploadBatch",
               postBatchData,
               {
                 headers: {
@@ -437,7 +437,7 @@ const AddProduct = () => {
       };
 
       // Send to backend
-      await axios.post('http://127.0.0.1:5000/addRecentlySearched', {
+      await axios.post('/api/addRecentlySearched', {
         product: scannedProduct,
         userId: userId
       }, {
@@ -464,7 +464,7 @@ const AddProduct = () => {
       try {
         // Get user ID from localStorage (set during login)
         const userId = localStorage.getItem('email') || 'default';
-        const response = await axios.get(`http://127.0.0.1:5000/getRecentlySearched?userId=${userId}`, {
+        const response = await axios.get(`/api/getRecentlySearched?userId=${userId}`, {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('token')}`
           }

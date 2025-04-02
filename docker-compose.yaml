@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  flask_app:
+  backend:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.backend
@@ -9,13 +9,13 @@ services:
       - "5000:5000"
     networks:
       - filiera360_default
-
-  product_tracking:
+      
+  frontend:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.frontend
     ports:
-      - "3001:3001"
+      - "3001:80"   # Da "3001:3001" a "3001:80"
     environment:
       - PORT=3001
       - HOST=0.0.0.0
@@ -23,7 +23,8 @@ services:
     networks:
       - filiera360_default
 
-  myapp:
+
+  middleware:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.middleware
