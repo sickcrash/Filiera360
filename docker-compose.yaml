@@ -9,7 +9,7 @@ services:
       - "5000:5000"
     networks:
       - filiera360_default
-      
+
   frontend:
     build:
       context: .
@@ -40,6 +40,11 @@ services:
 
 networks:
   filiera360_default:
-    external: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.19.0.0/16"
+          gateway: "172.19.0.1"
   fabric_test:
     external: true
