@@ -18,7 +18,11 @@ const ResetPassword = () => {
 
     try {
       const response = await fetch(
+<<<<<<< HEAD
         `/api/reset-password/${token}`,
+=======
+        `http://127.0.0.1:5000/reset-password/${token}`,
+>>>>>>> ded673831a52c69239e34cebddc68e8c3e8417c7
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -53,7 +57,11 @@ const ResetPassword = () => {
     const validateToken = async () => {
       try {
         const response = await fetch(
+<<<<<<< HEAD
           `/api/reset-password/${token}`
+=======
+          `http://127.0.0.1:5000/reset-password/${token}`
+>>>>>>> ded673831a52c69239e34cebddc68e8c3e8417c7
         );
         const data = await response.json();
 

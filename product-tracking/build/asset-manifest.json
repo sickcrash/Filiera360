@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "./static/css/main.a1fcb0cb.css",
+    "main.js": "./static/js/main.bd9af3c4.js",
+    "static/media/logo_filiera360.png": "./static/media/logo_filiera360.d467d6377f1e446828e9.png",
+    "index.html": "./index.html",
+    "main.a1fcb0cb.css.map": "./static/css/main.a1fcb0cb.css.map",
+    "main.bd9af3c4.js.map": "./static/js/main.bd9af3c4.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a1fcb0cb.css",
+    "static/js/main.bd9af3c4.js"
+  ]
+}

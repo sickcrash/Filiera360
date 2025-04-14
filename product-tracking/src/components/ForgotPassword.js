@@ -11,7 +11,11 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     try {
+<<<<<<< HEAD
       const response = await fetch("/api/forgot-password", {
+=======
+      const response = await fetch("http://127.0.0.1:5000/forgot-password", {
+>>>>>>> ded673831a52c69239e34cebddc68e8c3e8417c7
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

@@ -9,7 +9,11 @@ export const ManageOperators = () => {
 
   const handleDeleteOperator = async (operator) => {
     try {
+<<<<<<< HEAD
       const response = await axios.post(`/api/operators/delete`, {
+=======
+      const response = await axios.post(`http://127.0.0.1:5000/operators/delete`, {
+>>>>>>> ded673831a52c69239e34cebddc68e8c3e8417c7
         email: operator
       },{
           headers: {
@@ -34,7 +38,11 @@ export const ManageOperators = () => {
     }
 
     try {
+<<<<<<< HEAD
         const response = await axios.post(`/api/operators/add`, {
+=======
+        const response = await axios.post(`http://127.0.0.1:5000/operators/add`, {
+>>>>>>> ded673831a52c69239e34cebddc68e8c3e8417c7
             email: newOperator
         }, {
             headers: {
@@ -58,7 +66,11 @@ export const ManageOperators = () => {
   useEffect(() => {
     const fetchOperators = async () => {
       try {
+<<<<<<< HEAD
         const response = await axios.get(`/api/operators`, {
+=======
+        const response = await axios.get(`http://127.0.0.1:5000/operators`, {
+>>>>>>> ded673831a52c69239e34cebddc68e8c3e8417c7
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
