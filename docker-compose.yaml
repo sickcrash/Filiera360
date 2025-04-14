@@ -34,7 +34,7 @@ services:
       - filiera360_default
       - fabric_test
     volumes:
-      - /home/tiz/Desktop/ecofood/tryfabr/fabric-samples/test-network:/test-network:ro
+      - ./linux_files/fabric-samples/test-network:/test-network:ro
     environment:
     - PEER_ENDPOINT=peer0.org1.example.com:7051
 
