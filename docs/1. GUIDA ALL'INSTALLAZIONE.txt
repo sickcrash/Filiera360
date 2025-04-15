@@ -1,0 +1,63 @@
+L'applicazione comprende 4 diversi microservizi che vengono spiegati in "INTRODUZIONE AI FILE"
+
+****************************
+INSTALLAZIONE PIATTAFORMA
+****************************
+
+Su Windows: è necessario installare WSL (da MS Store "Ubuntu 22.04 LTS"), VSCode, e l'estensione di VSCODE "WSL";
+    tutti i comandi a seguire andranno eseguiti su WSL.
+Su Mac: utilizzare i file semplicemente in locale + VSCode.
+
+
+#1
+installare git sulla propria WSL o sul proprio Mac
+installare i prerequisiti di hyperledger fabric la cui guida è presente qua:
+https://hyperledger-fabric.readthedocs.io/en/latest/prereqs.html
+
+#2
+nella directory da voi scelta (es. home di wsl, desktop di Mac): 
+    git clone https://github.com/sickcrash/Filiera360
+    spostarsi su Filiera360/linux_files
+    curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh && chmod +x install-fabric.sh
+    ./install-fabric.sh
+
+#3
+Copiare la cartella "myapp" e la cartella "mychaincode" all'interno della WSL, nella cartella fabric-samples appena creata:
+    cp -vr ./my* ./fabric-samples
+    Copiare il contenuto di manageUtils in test-network:
+    cp -vr ./manageUtils/* ./fabric-samples/test-network/
+    [ cp potrebbe richiedere l'installazione manuale del comando stesso ]
+
+#4
+posizionarsi all'interno della cartella test-network e eseguire i seguenti comandi:
+    ./network.sh down
+    (questo comando azzera tutta la blockchain)
+    successivamente creare un canale tramite il seguente comando:
+    ./network.sh up createChannel -c mychannel -ca
+    infine, si fa il deployment del chaincode copiato poco fa, 
+    per le organizzazioni org0 e org1 presenti all'interno del fabric-samples
+    ./network.sh deployCC -ccn basic -ccp ../mychaincode/ -ccl javascript
+    ora il chaincode sarà disponibile e verrà approvato da entrambe le organizzazioni. 
+
+
+****************************
+    SETUP GITHUB
+****************************
+
+(1) registrarsi a github, installare git, comunicare la propria mail per avere i permessi
+(2) verificare che Git sia stato installato con: git --version
+(3) aprire VSCode e installare l'estensione GitHub Pull Requests, poi dall'icona in basso a sinistra di github loggarsi via browser
+(4) spostarsi da VSCode nella cartella di lavoro
+
+dopo essere stati aggiunti come collaboratori, il flusso di lavoro
+sarà il seguente per ognuno:
+
+(1) Creare il proprio branch con un nome a propria scelta
+    git checkout -b origin nomebranch
+(2) Aggiornare sempre il branch prima di lavorare (per evitare conflitti):
+	git pull origin nomebranch
+(3) Dopo aver fatto le modifiche al codice, per aggiungere e confermare le modifiche:
+	git add .
+	git commit -m "Descrizione della modifica"
+(4) Inviare le modifiche alla repository su GitHub nel proprio branch:
+	git push origin nomebranch
