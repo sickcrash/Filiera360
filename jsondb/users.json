@@ -1,0 +1,35 @@
+{
+    "stalbore@gmail.com": {
+        "manufacturer": "stalbo",
+        "password": "$2b$12$6luNwjidEzloeFxwf.sB6OorMzbI6rfRBG/88aLV881PvnlUn5o0S",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
+    },
+    "deadbeef@deadbeef.ot": {
+        "manufacturer": "deadbeef",
+        "password": "$2b$12$7oLU9AQPt1qdhF8ACKHfEeLOuxfFeQyE/YEFZQHWqwzrOrNZtxEtS",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": []
+    },
+    "g@g.g": {
+        "manufacturer": "grant",
+        "password": "$2b$12$UV7nXp5MI1CPtf1FTdsub.v2XZFaBGhf5oMDE8ljZ8wX3.NHSEByW",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
+    }
+}

@@ -5,7 +5,7 @@ Si avvia con: npm start		// DEVI SPOSTARTI NELLA CARTELLA product-tracking
 
 [ app.py ] -> è il file del server Flask che riceve tutte le richieste del frontend e le inoltra al server Node (middleware), previa autenticazione/autorizzazione.
 Si avvia con: flask run		// DEVI SPOSTARTI NELLA CARTELLA CONTENENTE IL FILE
-Tiene traccia degli utenti e dei modelli 3D nei file users.json e models.json
+Tiene traccia degli utenti e dei modelli 3D nei file ./jsondb/users.json e models.json
 Contiene un endpoint /initLedger che se chiamato al primo avvio della blockchain, registra i prodotti esempio contenuti in sampleData.json.
 Si noti che il progetto originale prevede un'interfaccia html per questo server, che è stata mantenuta, e che consente di interagire con il modello AI.
 

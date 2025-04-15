@@ -9,6 +9,8 @@ services:
       - "5000:5000"
     networks:
       - filiera360_default
+    volumes:
+      - ./jsondb/:/app/jsondb:rw
 
   frontend:
     build:
@@ -32,7 +34,7 @@ services:
       - "3000:3000"
     networks:
       - filiera360_default
-      - fabric_test
+      # - fabric_test
     volumes:
       - ./linux_files/fabric-samples/test-network:/test-network:ro
     environment:
@@ -46,5 +48,5 @@ networks:
       config:
         - subnet: "172.19.0.0/16"
           gateway: "172.19.0.1"
-  fabric_test:
-    external: true
+  # fabric_test:
+  #   external: true

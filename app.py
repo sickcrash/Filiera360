@@ -61,7 +61,7 @@ def send_otp_email(email, otp):
     return True
 
 
-otp_store_file = "users-otp.json"
+otp_store_file = "./jsondb/users-otp.json"
 otp_lifetime = timedelta(minutes=5)
 
 
@@ -225,7 +225,7 @@ def reset_password(token):
 # Carica gli utenti dal file JSON (database utenti)
 def load_users():
     try:
-        with open('users.json', 'r') as f:
+        with open('./jsondb/users.json', 'r') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
@@ -240,7 +240,7 @@ def load_models():
     
 # Salva gli utenti nel file JSON
 def save_users(users):
-    with open('users.json', 'w') as f:
+    with open('./jsondb/users.json', 'w') as f:
         json.dump(users, f, indent=4)
 
 # Salva i modelli nel file JSON
@@ -284,19 +284,19 @@ def init_ledger():
 # Caricamento token
 def load_invite_tokens():
     try:
-        with open("invite_tokens.json", "r") as file:
+        with open("./jsondb/invite_tokens.json", "r") as file:
             return json.load(file)
     except FileNotFoundError:
         return {}
 
 # Salvataggio token aggiornati
 def save_invite_tokens(tokens):
-    with open("invite_tokens.json", "w") as file:
+    with open("./jsondb/invite_tokens.json", "w") as file:
         json.dump(tokens, file, indent=4)
 
 # Salvataggio degli utenti in un file JSON
 def save_users(users):
-    with open("users.json", "w") as file:
+    with open("./jsondb/users.json", "w") as file:
         json.dump(users, file, indent=4)
 
 # Verifichiamo se un token è valido e non scaduto
