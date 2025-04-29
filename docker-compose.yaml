@@ -6,9 +6,17 @@ services:
       context: .
       dockerfile: dockerfiles/Dockerfile.backend
     ports:
-      - "5000:5000"
+      - "5001:5000"
     networks:
       - filiera360_default
+    depends_on: 
+      mysql:
+        condition: service_healthy   #il backend deve dipendere dal database per evitare problemi di connessione
+    environment:
+      - MYSQL_HOST=mysql   # variabile d'ambiente 
+      - MYSQL_USER=root     # 
+      - MYSQL_PASSWORD=mikaela1 # password MySQL
+      - MYSQL_DB=filiera360 # nome del database
     volumes:
       - ./jsondb/:/app/jsondb:rw
 
@@ -24,6 +32,8 @@ services:
       - BROWSER=none
     networks:
       - filiera360_default
+    depends_on: 
+      - backend 
 
 
   middleware:
@@ -40,6 +50,24 @@ services:
     environment:
     - PEER_ENDPOINT=peer0.org1.example.com:7051
 
+  mysql:
+    networks:
+      - filiera360_default
+    image: mysql:8.0 
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: mikaela1 # password del root
+      MYSQL_DATABASE: filiera360 
+    ports:
+      - "3306:3306" 
+    volumes:
+      - mysql_data:/var/lib/mysql # volume per far si che i dati del db non vengano persi
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -pmikaela1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10 
+
 networks:
   filiera360_default:
     driver: bridge
@@ -50,3 +78,6 @@ networks:
           gateway: "172.19.0.1"
   fabric_test:
     external: true
+
+volumes:
+  mysql_data: 
