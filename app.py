@@ -4,6 +4,9 @@ import random
 import secrets
 import traceback
 from datetime import datetime, timedelta
+import pymysql
+import time
+
 
 import bcrypt
 import jwt
@@ -21,6 +24,30 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from werkzeug.security import check_password_hash
 
 import prompts_variables_storage
+
+# le variabili d'ambiente ottenute da Docker Compose
+MYSQL_HOST = os.getenv("MYSQL_HOST", "mysql")
+MYSQL_USER = os.getenv("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "mikaela1")
+MYSQL_DB = os.getenv("MYSQL_DB", "filiera360")
+max_retries = 10
+
+for attempt in range(max_retries):
+    try:
+        connection = pymysql.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DB,
+            port=3306
+        )
+        print("Connection to MySQL successful!")
+        break
+    except pymysql.MySQLError as e:
+        print(f"Connection failed on attempt {attempt + 1}/{max_retries}: {e}")
+        time.sleep(2)
+else:
+    raise Exception("Could not connect to MySQL after several retries.")
 
 # Update the CORS configuration to allow all methods
 app = Flask(__name__, instance_relative_config=True)
