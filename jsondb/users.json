@@ -31,5 +31,38 @@
             "user": false
         },
         "operators": []
+    },
+    "test1@gmail.com": {
+        "manufacturer": "test1",
+        "password": "$2b$12$.vgqZj1tTIbrpX9I6CCHROKeuAZ8nFrBAi4.9C30Yy/Go3oh3xTo.",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
+    },
+    "test23@gmail.com": {
+        "manufacturer": "test23",
+        "password": "$2b$12$9vvIB7U4wMzukCvGFe1oJ.s6T5lcCmIcTU7vqpViQJUcKa..CFKje",
+        "role": "user",
+        "flags": {
+            "producer": false,
+            "operator": false,
+            "user": true
+        },
+        "operators": []
+    },
+    "test12@gmail.com": {
+        "manufacturer": "test12",
+        "password": "$2b$12$xF1QbJdUBdDQg9RVgzkjZuvg3GScmCw6U5YrvKYZQyWK47C0k1hm2",
+        "role": "user",
+        "flags": {
+            "producer": false,
+            "operator": false,
+            "user": true
+        },
+        "operators": []
     }
 }

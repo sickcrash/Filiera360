@@ -6,7 +6,7 @@ import traceback
 from datetime import datetime, timedelta
 import pymysql
 import time
-
+import pytz
 
 import bcrypt
 import jwt
@@ -39,7 +39,8 @@ for attempt in range(max_retries):
             user=MYSQL_USER,
             password=MYSQL_PASSWORD,
             database=MYSQL_DB,
-            port=3306
+            port=3306,
+            cursorclass=pymysql.cursors.DictCursor
         )
         print("Connection to MySQL successful!")
         break
@@ -88,51 +89,42 @@ def send_otp_email(email, otp):
     return True
 
 
-otp_store_file = "./jsondb/users-otp.json"
+
 otp_lifetime = timedelta(minutes=5)
 
 
 # @app.route('/send-otp', methods=['POST'])
 def send_otp(email):
-    # email = request.json.get('email')
-
-    # Verifica che l'email sia registrata nel sistema
-    if email not in users:
-        return jsonify({"message": "User not found."}), 404
-
     otp = generate_otp()
-    expiration_time = (datetime.now() + otp_lifetime).strftime("%Y-%m-%d %H:%M")  # Formatta scadenza
+    local_tz = pytz.timezone("Europe/Rome")
+    expiration_time = (datetime.now(local_tz) + otp_lifetime).strftime("%Y-%m-%d %H:%M:%S")
 
     try:
-        # Prova a leggere il file JSON esistente
-        with open(otp_store_file, 'r') as f:
-            otp_store = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        otp_store = {}  # Se il file non esiste o è vuoto, inizializza un dizionario vuoto
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            # Controlla se l'utente esiste
+            cursor.execute("SELECT email FROM users WHERE email = %s", (email,))
+            if not cursor.fetchone():
+                return jsonify({"message": "User not found."}), 404
 
-    # Salva l'OTP e la sua scadenza
-    otp_store[email] = {
-        "otp": otp,
-        "expiration": expiration_time  # Salviamo la data come stringa
-    }
-
-    try:
-        # Scrive i dati aggiornati nel file JSON
-        with open(otp_store_file, "w") as file:
-            json.dump(otp_store, file, indent=4)
+            # Inserisci o aggiorna OTP
+            cursor.execute("""
+                INSERT INTO otp_codes (email, otp, expiration)
+                VALUES (%s, %s, %s)
+                ON DUPLICATE KEY UPDATE otp = VALUES(otp), expiration = VALUES(expiration)
+            """, (email, otp, expiration_time))
+        
+        connection.commit()  
 
     except Exception as e:
-        print(f"Errore nel salvataggio dell'OTP: {e}")
-        return jsonify({"message": "Error saving OTP."}), 500
+        print(f"[OTP ERROR] {e}")
+        traceback.print_exc()
+        return jsonify({"message": "Error saving OTP to database."}), 500
 
-    # Invia l'OTP via email
 
-    return send_otp_email(email, otp)
-
-"""     if send_otp_email(email, otp):
+    if send_otp_email(email, otp):
         return jsonify({"message": "OTP sent to your email."})
     else:
-        return jsonify({"message": "Failed to send OTP."}), 500 """
+        return jsonify({"message": "Failed to send OTP."}), 500
 
 
 
@@ -249,14 +241,15 @@ def reset_password(token):
 
     return jsonify({"message": "Token is valid, proceed with password reset"}), 200
 
-# Carica gli utenti dal file JSON (database utenti)
+###################
+# Carica dal db
 def load_users():
-    try:
-        with open('./jsondb/users.json', 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
-    
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM users")
+        users = cursor.fetchall()
+        return {user['email']: user for user in users}
+
+ 
 # Carica i modelli 3D dal file JSON
 def load_models():
     try:
@@ -265,10 +258,28 @@ def load_models():
     except (FileNotFoundError, json.JSONDecodeError):
         return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
     
-# Salva gli utenti nel file JSON
+ #################   
+# Salva gli utenti nel db
 def save_users(users):
-    with open('./jsondb/users.json', 'w') as f:
-        json.dump(users, f, indent=4)
+    with connection.cursor() as cursor:
+        for email, user in users.items():
+            cursor.execute("""
+                INSERT INTO users (email, manufacturer, password, role, operators)
+                VALUES (%s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    manufacturer=VALUES(manufacturer),
+                    password=VALUES(password),
+                    role=VALUES(role),
+                    operators=VALUES(operators)
+            """, (
+                user.get('email'),
+                user.get('manufacturer'),
+                user.get('password'),
+                user.get('role'),
+                user.get('operators')
+            ))
+    connection.commit()
+
 
 # Salva i modelli nel file JSON
 def save_models(models):
@@ -276,7 +287,7 @@ def save_models(models):
         json.dump(models, f, indent=4)
 
 # Carica i database all'avvio del server
-users = load_users()
+
 models = load_models()
 
 # questa funzione va chiamata solamente alla prima scrittura
@@ -322,9 +333,9 @@ def save_invite_tokens(tokens):
         json.dump(tokens, file, indent=4)
 
 # Salvataggio degli utenti in un file JSON
-def save_users(users):
+"""def save_users(users):
     with open("./jsondb/users.json", "w") as file:
-        json.dump(users, file, indent=4)
+        json.dump(users, file, indent=4)"""
 
 # Verifichiamo se un token è valido e non scaduto
 def is_valid_invite_token(token):
@@ -344,6 +355,7 @@ def is_valid_invite_token(token):
 
     return True, "Valid token."
 
+###########
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -353,130 +365,149 @@ def signup():
     role = data.get('role', 'user') 
     invite_token = data.get('inviteToken', None) 
     
-    # Verifica che tutti i campi siano forniti
+    #Verifica che tutti i campi siano forniti
     if not email or not manufacturer or not password:
         return jsonify({"message": "All fields are required"}), 400
     
-    # Controlla se l'email è già registrata
-    if email in users:
-        return jsonify({"message": "Email already exists"}), 409
-    
-    # Controlla se il manufacturer è già registrato
-    if any(user["manufacturer"] == manufacturer for user in users.values()):
-        return jsonify({"message": "Manufacturer already exists"}), 409
+    #Controlla se l'email è già presente nel database
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT email FROM users WHERE email = %s", (email,))
+            if cursor.fetchone():  # Se l'email esiste già nel DB
+                return jsonify({"message": "Email already exists"}), 409
 
-    # Controlla il token di invito per i produttori
-    if role == "producer":
-        if not invite_token:
-            return jsonify({"message": "The invite token is required for producers."}), 400
+            #Controlla se il manufacturer è già registrato nel database
+            cursor.execute("SELECT manufacturer FROM users WHERE manufacturer = %s", (manufacturer,))
+            if cursor.fetchone():  # Se il manufacturer esiste già nel DB
+                return jsonify({"message": "Manufacturer already exists"}), 409
 
-        is_valid, message = is_valid_invite_token(invite_token)
-        if not is_valid:
-            return jsonify({"message": message}), 403
+            
+            if role == "producer":
+                if not invite_token:
+                    return jsonify({"message": "The invite token is required for producers."}), 400
 
-    # Crea un hash della password con bcrypt
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    
-    # Aggiungi l'utente al dizionario degli utenti
-    users[email] = {
-        "manufacturer": manufacturer,
-        "password": hashed_password,
-        "role": role,
-        "flags": {
-            "producer": role == "producer",
-            "operator": role == "operator",
-            "user": role == "user" 
-        },
-        "operators": []
-    }
+                is_valid, message = is_valid_invite_token(invite_token)
+                if not is_valid:
+                    return jsonify({"message": message}), 403
 
-    save_users(users)
+            # Crea un hash della password con bcrypt
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-    # Se il token è stato usato, viene segnato come utilizzato
-    if role == "producer" and invite_token:
-        tokens = load_invite_tokens()
-        tokens[invite_token]["used"] = True
-        save_invite_tokens(tokens)
+            #Inserisci l'utente nel db
+            cursor.execute("""
+                INSERT INTO users (email, manufacturer, password, role)
+                VALUES (%s, %s, %s, %s)
+            """, (
+                email,
+                manufacturer,
+                hashed_password,
+                role
+            ))
 
-    return jsonify({"message": "User registered successfully"}), 201
+            connection.commit()
+
+            #Se il token è stato usato, viene segnato come utilizzato
+            if role == "producer" and invite_token:
+                tokens = load_invite_tokens()
+                tokens[invite_token]["used"] = True
+                save_invite_tokens(tokens)
+
+            return jsonify({"message": "User registered successfully"}), 201
+
+    except pymysql.MySQLError as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "Database error"}), 500
 
 
+
+####################################
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
     email = data.get("email")
     password = data.get("password")
 
-    # Carica gli utenti
-    users = load_users()
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:  
+            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+            user = cursor.fetchone()
 
-    user = users.get(email)
+        if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+            return jsonify({"message": "Invalid email or password"}), 401
 
-    # Verifica se l'utente esiste e la password è corretta
-    if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-        return jsonify({"message": "Invalid email or password"}), 401
+        # Per utenti con ruolo "user", login diretto con JWT
+        if user['role'] == 'user':
+            token = create_access_token(identity=email)
+            return jsonify({
+                "message": "Login successful",
+                "access_token": token,
+                "role": user['role'],
+                "manufacturer": user.get('manufacturer'),
+                "email": email
+            })
 
-    """ # Se la 2FA è abilitata, invia il codice OTP
-    if user.get('two_factor_enabled', False):
-        secret = user.get('2fa_secret', None)
-        if not secret:
-            secret = pyotp.random_base32()  # Genera un segreto se non esiste
-            user['2fa_secret'] = secret
-            save_users(users)  # Salva l'utente con il nuovo segreto
+        # Per altri ruoli
+        otp_response = send_otp(email)
+        return otp_response  
 
-        otp = pyotp.TOTP(secret).now()  # Genera il codice OTP
-        # In un'app reale, invieresti l'OTP via email o SMS, ma per ora lo restituiamo nel corpo della risposta
-        return jsonify({"message": "2FA required", "otp": otp})  # Solo per scopi di sviluppo """
+    except Exception as e:
+        print(f"Error during login: {e}")
+        return jsonify({"message": "Internal server error"}), 500
 
-    if user["flags"]["user"]:
-        token = create_access_token(email)
-        return jsonify({"message": "Login successful", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
-    else:
-        if send_otp(email):
-            return jsonify({"message": "OTP sent to your email."})
-        else:
-            return jsonify({"message": "Failed to send OTP."}), 500
-
-    # Se la 2FA non è necessaria, crea un token JWT
     
 
 
 # Endpoint per la verifica dell'OTP
 @app.route('/verify-otp', methods=['POST'])
 def verify_otp():
-    email = request.json.get('email')
-    otp = request.json.get('otp')
+    data = request.get_json()
+    email = data.get('email')
+    otp = str(data.get('otp')) 
+
+    # Controlla se l'email o l'OTP sono vuoti
+    if not email or not otp:
+        return jsonify({"message": "Email and OTP are required."}), 400
 
     try:
-        with open(otp_store_file, 'r') as f:
-            otp_store = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return jsonify({"message": "OTP has expired or is invalid."}), 400
+        with connection.cursor() as cursor:
+        
+            cursor.execute("SELECT otp, expiration FROM otp_codes WHERE email = %s", (email,))
+            record = cursor.fetchone()
 
-    if email not in otp_store:
-        return jsonify({"message": "OTP has expired or is invalid."}), 400
+            if not record:
+                return jsonify({"message": "OTP has expired or is invalid."}), 400
 
-    otp_data = otp_store[email]
+            stored_otp = record['otp']
+            expiration_time = record['expiration']
 
-    try:
-        stored_otp = int(otp_data['otp'])  
-        expiration_time = datetime.strptime(otp_data['expiration'], "%Y-%m-%d %H:%M")
-        otp_present = 'otp' in otp_data  
-        otp_expired = expiration_time < datetime.now()
+            #Verifica se l'OTP corrisponde e se non è scaduto
+            if str(stored_otp) == otp and expiration_time > datetime.now():
+                # OTP valido, genera access token e restituisci i dati utente
+                cursor.execute("SELECT email, role, manufacturer FROM users WHERE email = %s", (email,))
+                user = cursor.fetchone()
 
-        if otp_present and stored_otp == otp and not otp_expired:
-            print("OTP validato con successo")
-            user = users.get(email)
-            token = create_access_token(email)
-            return jsonify({"message": "OTP validated successfully.", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
-            # return jsonify({"message": "OTP validated successfully.", "token": "JWT_Token"})
-        else:
-            print("OTP non valido o scaduto")  
-            return jsonify({"message": "Invalid OTP."}), 400
+                #verifica se l'utente non esiste
+                if not user:
+                    return jsonify({"message": "User not found."}), 404
+
+                #Crea il token JWT
+                token = create_access_token(email)
+                
+                return jsonify({
+                    "message": "OTP validated successfully.",
+                    "access_token": token,
+                    "role": user['role'],
+                    "manufacturer": user['manufacturer'],
+                    "email": email
+                }), 200
+            else:
+                return jsonify({"message": "Invalid or expired OTP."}), 400
+
     except Exception as e:
         print(f"Errore nella verifica dell'OTP: {e}")
-        traceback.print_exc()  
-        return jsonify({"message": "Errore nella verifica dell'OTP."}), 500 
+        return jsonify({"message": "Internal server error"}), 500
+
+
 
 
 @app.route('/operators', methods=['GET'])

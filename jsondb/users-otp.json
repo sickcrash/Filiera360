@@ -18,5 +18,9 @@
     "stalbore@gmail.com": {
         "otp": 807317,
         "expiration": "2025-03-31 20:13"
+    },
+    "test1@gmail.com": {
+        "otp": 824126,
+        "expiration": "2025-04-30 09:10"
     }
 }

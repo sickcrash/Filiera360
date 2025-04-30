@@ -8,3 +8,4 @@ pyotp
 flask_mail
 pymysql
 cryptography
+pytz
