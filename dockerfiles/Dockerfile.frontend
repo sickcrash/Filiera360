@@ -1,7 +1,19 @@
-FROM node:18-alpine 
+# dockerfiles/Dockerfile.frontend.dev
+FROM node:18-alpine
+
 WORKDIR /app
+
+# Copia solo package.json per sfruttare la cache
 COPY product-tracking/package*.json ./
 RUN npm ci
 
+# Copia il resto del sorgente
 COPY product-tracking/ ./
-CMD ["npm", "start"]
+
+# Per la live‑reload su filesystem montato da host (opzionale)
+ENV CHOKIDAR_USEPOLLING=true \
+    HOST=0.0.0.0 \
+    PORT=3001
+
+EXPOSE 3001
+CMD ["npm", "start"]   
