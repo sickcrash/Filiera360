@@ -17,7 +17,7 @@ services:
       context: .
       dockerfile: dockerfiles/Dockerfile.frontend
     ports:
-      - "3001:80"   # Da "3001:3001" a "3001:80"
+      - "3001:3001"   # Da "3001:3001" a "3001:80"
     environment:
       - PORT=3001
       - HOST=0.0.0.0
