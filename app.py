@@ -513,62 +513,92 @@ def verify_otp():
 @app.route('/operators', methods=['GET'])
 @jwt_required()
 def get_operators():
-    if not required_permissions(get_jwt_identity(), ['producer']):
-        return jsonify({"operators": None})
+    user_email = get_jwt_identity()
 
-    user = users.get(get_jwt_identity())
-    operators = user.get("operators", [])
+    if not required_permissions(user_email, ['producer']):
+        return jsonify({"operators": None}), 403
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT operators FROM users WHERE email = %s", (user_email,))
+        result = cursor.fetchone()
+        operators = json.loads(result["operators"]) if result and result["operators"] else []
 
     return jsonify({"operators": operators})
+
+
+
 
 @app.route('/operators/add', methods=['POST'])
 @jwt_required()
 def add_operator():
-    print("chiamata ricevuta")
-    if not required_permissions(get_jwt_identity(), ['producer']):
+    user_email = get_jwt_identity()
+
+    if not required_permissions(user_email, ['producer']):
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
 
     data = request.json
     operator_email = data.get("email")
     if not operator_email:
         return jsonify({"message": "Email is required."}), 400
-    
-    operator = users.get(operator_email)
-    if not operator:
-        return jsonify({"message": "Operator not found."}), 404
 
-    if not operator.get("flags", {}).get("operator"):
-        return jsonify({"message": "User is not an operator and cannot be added."}), 400
+    with connection.cursor() as cursor:
+        #verifica se l'utente da aggiungere è un operatore
+        cursor.execute("SELECT role FROM users WHERE email = %s", (operator_email,))
+        operator = cursor.fetchone()
+        if not operator:
+            return jsonify({"message": "Operator not found."}), 404
+        if operator["role"] != "operator":
+            return jsonify({"message": "User is not an operator."}), 400
 
-    user = users.get(get_jwt_identity())
-    if operator_email in user.get("operators", []):
-        return jsonify({"message": "Operator already added."}), 409
+        cursor.execute("SELECT operators FROM users WHERE email = %s", (user_email,))
+        user = cursor.fetchone()
+        operators = json.loads(user["operators"]) if user and user["operators"] else []
 
-    user["operators"].append(operator_email)
-    save_users(users)
+        if operator_email in operators:
+            return jsonify({"message": "Operator already added."}), 409
 
+        operators.append(operator_email)
+
+        # Salva nel db
+        cursor.execute("UPDATE users SET operators = %s WHERE email = %s",
+                       (json.dumps(operators), user_email))
+        connection.commit()
     return jsonify({"message": "Operator added successfully."}), 201
+
+
 
 @app.route('/operators/delete', methods=['POST'])
 @jwt_required()
 def remove_operator():
-    if not required_permissions(get_jwt_identity(), ['producer']):
+    user_email = get_jwt_identity()
+
+    if not required_permissions(user_email, ['producer']):
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
 
     data = request.json
     operator_email = data.get("email")
-
     if not operator_email:
         return jsonify({"message": "Email is required."}), 400
 
-    user = users.get(get_jwt_identity())
-    if operator_email not in user.get("operators", []):
-        return jsonify({"message": "Operator not found."}), 404
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT operators FROM users WHERE email = %s", (user_email,))
+        user = cursor.fetchone()
+        operators = json.loads(user["operators"]) if user and user["operators"] else []
 
-    user["operators"].remove(operator_email)
-    save_users(users)
+        if operator_email not in operators:
+            return jsonify({"message": "Operator not found."}), 404
 
+        operators.remove(operator_email)
+
+        cursor.execute("UPDATE users SET operators = %s WHERE email = %s",
+                       (json.dumps(operators), user_email))
+        connection.commit()
     return jsonify({"message": "Operator removed successfully."})
+
+
+
+
+
 
 # già usata su frontend
 @app.route('/getProduct', methods=['GET'])
@@ -650,21 +680,12 @@ def find_producer_by_operator(operator):
     
     return None
 
-def required_permissions(manufacturer, roles):
-    print("chiamata a required permissions")
-    user = [user for user in users.items() if user[0] == manufacturer]
-    user = user[0] if user else None
-    print(user)
+def required_permissions(email, allowed_roles):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT role FROM users WHERE email = %s", (email,))
+        result = cursor.fetchone()
+        return result and result["role"] in allowed_roles
 
-    if not user:
-        return False
-
-    for role in roles:
-        if user[1]["flags"].get(role):
-            print(user[1]["flags"].get(role))
-            return True
-
-    return False
 
 def verify_product_authorization(email, product_id):
     user = users.get(email)
