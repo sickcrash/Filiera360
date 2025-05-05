@@ -35,6 +35,9 @@ AVVIO E GESTIONE PIATTAFORMA
     docker compose up --build -d  
     [ funziona solo se sono già stati avviati i container di hyperledger ]
 
+-> per visualizzare su browser la piattaforma:
+    navigare su localhost:80
+
 -> per propagare le modifiche di frontend/backend/middleware:
     docker compose up --build -d  
     ( la cartella jsodb consente di modificare in locale i file di database,

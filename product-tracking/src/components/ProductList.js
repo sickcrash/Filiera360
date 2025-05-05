@@ -492,6 +492,22 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
     fetchLikedProducts();
   }, []);
 
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    const scanProductMatch = pathname.match(/\/scan-product\/(.+)/);
+  
+    if (scanProductMatch && scanProductMatch[1]) {
+      const batchCode = decodeURIComponent(scanProductMatch[1]); // es: '12345'
+      console.log("Batch dalla URL:", batchCode);
+  
+      // Simula lo scan
+      setItemCodeBatch(batchCode);
+      document.getElementById("itemCodeBatch").value = batchCode;
+      setScanBatch(prev => prev + 1); // triggera la scansione 
+      setShowCamera(false);
+    }
+  }, []);
+
   // Update the handleLikeToggle function to include user ID
   const handleLikeToggle = async () => {
     try {

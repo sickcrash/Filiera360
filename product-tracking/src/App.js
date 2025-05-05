@@ -62,6 +62,7 @@ function App() {
           }
         />
         <Route path="/scan-product" element={<ScanProduct />} />
+        <Route path="/scan-product/:id" element={<ScanProduct />} />
         <Route
           path="/account"
           element={
