@@ -8,3 +8,4 @@ recently_searched.json
 .venv
 ./linux_files/fabric-samples/
 ./product-tracking/build/
+.DS_Store
