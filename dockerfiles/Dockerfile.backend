@@ -5,7 +5,7 @@ WORKDIR /app
 COPY app.py /app/app.py
 COPY requirements.txt /app/requirements.txt
 COPY prompts_variables_storage.py /app/prompts_variables_storage.py
-COPY invite_tokens.json /app/
+# COPY ./invite_tokens.json /app/
 COPY users.json /app/
 
 RUN pip install --upgrade pip

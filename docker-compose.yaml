@@ -7,6 +7,8 @@ services:
       dockerfile: dockerfiles/Dockerfile.backend
     networks:
       - filiera360_default
+    volumes:
+      - ./tokens:/app/tokens:rw
     restart: always
 
   frontend:
