@@ -5,38 +5,40 @@ services:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.backend
-    ports:
-      - "5000:5000"
     networks:
       - filiera360_default
+    restart: always
 
   frontend:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.frontend
     ports:
-      - "3001:80"   # Da "3001:3001" a "3001:80"
+      - "80:80"
+      - "443:443"
     environment:
       - PORT=3001
       - HOST=0.0.0.0
       - BROWSER=none
     networks:
       - filiera360_default
+    restart: always
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
 
   middleware:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.middleware
-    ports:
-      - "3000:3000"
     networks:
       - filiera360_default
       - fabric_test
     volumes:
-      - /home/tiz/Desktop/ecofood/tryfabr/fabric-samples/test-network:/test-network:ro
+      - /home/ubuntu/Filiera360/linux_files/fabric-samples/test-network:/test-network:ro
     environment:
     - PEER_ENDPOINT=peer0.org1.example.com:7051
+    restart: always
 
 networks:
   filiera360_default:

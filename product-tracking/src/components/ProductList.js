@@ -943,7 +943,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                             <td>{batchProduct.Name}</td>
                           </tr>
                         )}
-                        {true && (
+                        {batchProduct.ID && (
                           <tr>
                             <th>ID</th>
                             <td>{batchProduct.ID}</td>

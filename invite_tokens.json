@@ -2,5 +2,21 @@
     "ABC123": {
         "expires_at": "2025-04-01T00:00:00",
         "used": true
+    },
+    "PLBTKN1": {
+        "expires_at": "2026-04-01T00:00:00",
+        "used": false
+    },
+    "PLBTKN2": {
+        "expires_at": "2026-04-01T00:00:00",
+        "used": false
+    },
+    "PLBBCK1": {
+        "expires_at": "2026-04-01T00:00:00",
+        "used": false
+    },
+    "PLBBCK1": {
+        "expires_at": "2026-04-01T00:00:00",
+        "used": false
     }
 }

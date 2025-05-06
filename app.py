@@ -187,7 +187,7 @@ def forgot_password():
 
     token = generate_reset_token(email)
 
-    reset_url = f"/api/reset-password/{token}"
+    reset_url = f"http://54.242.3.102/api/reset-password/{token}"
     msg = Message('Password Reset Request',
                   sender='noreply@example.com',
                   recipients=[email])
