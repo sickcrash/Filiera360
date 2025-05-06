@@ -28,7 +28,7 @@ import prompts_variables_storage
 # le variabili d'ambiente ottenute da Docker Compose
 MYSQL_HOST = os.getenv("MYSQL_HOST", "mysql")
 MYSQL_USER = os.getenv("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "mikaela1")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 MYSQL_DB = os.getenv("MYSQL_DB", "filiera360")
 max_retries = 10
 

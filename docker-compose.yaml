@@ -15,7 +15,7 @@ services:
     environment:
       - MYSQL_HOST=mysql   # variabile d'ambiente 
       - MYSQL_USER=root     # 
-      - MYSQL_PASSWORD=mikaela1 # password MySQL
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD} # password MySQL
       - MYSQL_DB=filiera360 # nome del database
     volumes:
       - ./jsondb/:/app/jsondb:rw
@@ -56,14 +56,14 @@ services:
     image: mysql:8.0 
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: mikaela1 # password del root
-      MYSQL_DATABASE: filiera360 
+     - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+     - MYSQL_DATABASE=filiera360
     ports:
       - "3306:3306" 
     volumes:
       - mysql_data:/var/lib/mysql # volume per far si che i dati del db non vengano persi
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -pmikaela1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 10 

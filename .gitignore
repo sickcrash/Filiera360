@@ -7,4 +7,5 @@ recently_searched.json
 .vscode
 .venv
 ./linux_files/fabric-samples/
+.env
 
