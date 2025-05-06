@@ -19,7 +19,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
   const [batchProduct, setbatchProduct] = useState(null);
   const [productHistory, setProductHistory] = useState([]);
   const [status, setStatus] = useState('');
-  const [showCamera, setShowCamera] = useState('false');
+  const [showCamera, setShowCamera] = useState(false);
+  const [showCamera2, setShowCamera2] = useState(false);
   const [scan, setScan] = useState(0);
   const [glbFile, setGlbFile] = useState(null);
   const [batch, setBatch] = useState(null);
@@ -335,8 +336,10 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
           const code = jsQR(imageData.data, img.width, img.height);
           if (code) {
             console.log(code.data);
-            document.getElementById("itemCode").value = code.data;
-            setItemCode(code.data);
+            const match = code.data.match(/\/scan-product\/([^\/\s]+)/);
+            const id = match ? match[1] : code.data;
+            setItemCode(id);
+            document.getElementById("itemCode").value = id
             setScan(scan + 1); // trigger scan
           } else {
             console.log('No QR code found in uploaded image.');
@@ -370,8 +373,10 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
           const code = jsQR(imageData.data, img.width, img.height);
           if (code) {
             console.log(code.data);
-            document.getElementById("itemCodeBatch").value = code.data;
-            setItemCodeBatch(code.data);
+            const match = code.data.match(/\/scan-product\/([^\/\s]+)/);
+            const id = match ? match[1] : code.data;
+            setItemCodeBatch(id);
+            document.getElementById("itemCodeBatch").value = id;
             setScanBatch(scan + 1); // trigger scan
           } else {
             console.log('No QR code found in uploaded image.');
@@ -380,7 +385,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
         };
       };
       reader.readAsDataURL(file);
-      setShowCamera(false);
+      setShowCamera2(false);
       document.getElementById("uploaderBatch").value = "";
     }
   };
@@ -388,10 +393,12 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
   // Funzione per gestire la scansione dalla fotocamera
   const handleQrScan = (data) => {
     if (data) {
-      console.log(data.text);
-      document.getElementById("itemCode").value = data.text;
-      setItemCode(data.text);
-      setScan(scanBatch + 1); // trigger scan
+      console.log(data.text)
+      const match = data.text.match(/\/scan-product\/([^\/\s]+)/);
+      const id = match ? match[1] : data.text;
+      document.getElementById("itemCode").value = id;
+      setItemCode(id);
+      setScan(scan + 1); // trigger scan
       setShowCamera(false);
     }
   };
@@ -399,10 +406,12 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
   const handleQrScanBatch = (data) => {
     if (data) {
       console.log(data.text);
-      document.getElementById("itemCodeBatch").value = data.text;
-      setItemCodeBatch(data.text);
+      const match = data.text.match(/\/scan-product\/([^\/\s]+)/);
+      const id = match ? match[1] : data.text;
+      document.getElementById("itemCodeBatch").value = id;
+      setItemCodeBatch(id);
       setScanBatch(scanBatch + 1); // trigger scan
-      setShowCamera(false);
+      setShowCamera2(false);
     }
   };
 
@@ -490,6 +499,22 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
     };
 
     fetchLikedProducts();
+  }, []);
+
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    const scanProductMatch = pathname.match(/\/scan-product\/(.+)/);
+
+    if (scanProductMatch && scanProductMatch[1]) {
+      const batchCode = decodeURIComponent(scanProductMatch[1]); // es: '12345'
+      console.log("Batch dalla URL:", batchCode);
+
+      // Simula lo scan
+      setItemCodeBatch(batchCode);
+      document.getElementById("itemCodeBatch").value = batchCode;
+      setScanBatch(prev => prev + 1); // triggera la scansione 
+      setShowCamera(false);
+    }
   }, []);
 
   // Update the handleLikeToggle function to include user ID
@@ -609,7 +634,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                 />
               ) : null}
               <input
-                style={{backgroundColor:"#1e90ff", border:"1px solid #1e90ff"}}
+                style={{ backgroundColor: "#1e90ff", border: "1px solid #1e90ff" }}
                 type="submit"
                 className="btn btn-primary mt-3 w-100"
                 id="scanButton"
@@ -650,7 +675,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                   id="uploaderBatch"
                   onChange={handleImageUploadBatch}
                   onError={handleError}
-                  onClick={() => setShowCamera(false)}
+                  onClick={() => setShowCamera2(false)}
                   style={{ display: 'none' }}
                 />
                 <label
@@ -664,12 +689,12 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                   className="btn btn-secondary"
                   title="Scan QR Code"
                   style={{ backgroundColor: "silver", border: 0 }}
-                  onClick={() => setShowCamera(!showCamera)}
+                  onClick={() => setShowCamera2(!showCamera2)}
                 >
                   <ion-icon name="camera-outline"></ion-icon>
                 </div>
               </div>
-              {showCamera === true ? (
+              {showCamera2 === true ? (
                 <QrScanner
                   style={{ width: "100%", paddingTop: "2vw" }}
                   delay={300}
@@ -806,8 +831,11 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr>
                   </tbody>
                 </Table>
-                <br/>
-                <QRCodeCanvas value={product.ID} style={{ marginBottom: "2vw" }} />
+                <br />
+                <QRCodeCanvas
+                  value={`${window.location.origin}/scan-product/${itemCode}`}
+                  style={{ marginBottom: "2vw" }}
+                />
                 <p>
                   Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
                   ensuring transparency and reliability.
@@ -906,8 +934,11 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr>
                   </tbody>
                 </Table>
-                <br/>
-                <QRCodeCanvas value={batch.ID} style={{ marginBottom: "2vw" }} />
+                <br />
+                <QRCodeCanvas
+                  value={`${window.location.origin}/scan-product/${itemCodeBatch}`}
+                  style={{ marginBottom: "2vw" }}
+                />
                 <p>
                   Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
                   ensuring transparency and reliability.
@@ -943,7 +974,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                             <td>{batchProduct.Name}</td>
                           </tr>
                         )}
-                        {batchProduct.ID && (
+                        {true && (
                           <tr>
                             <th>ID</th>
                             <td>{batchProduct.ID}</td>
@@ -1024,8 +1055,11 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr> */}
                       </tbody>
                     </Table>
-                    <br/>
-                    <QRCodeCanvas value={batchProduct.ID} style={{ marginBottom: "2vw" }} />
+                    <br />
+                    <QRCodeCanvas
+                      value={`${window.location.origin}/scan-product/${batchProduct.ID}`}
+                      style={{ marginBottom: "2vw" }}
+                    />
                   </div>
                 </div>
               </div>
@@ -1042,13 +1076,13 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
         </div>
       )}
 
-      <br/>
+      <br />
 
       {/* Recently Scanned Products Section */}
       {recentlyScanned.length > 0 && (
         <div className="row mt-4 mb-4">
           <div className="col-12">
-            <p style={{fontWeight:"bold"}}>Recent uploads/scans 🕒</p>
+            <p style={{ fontWeight: "bold" }}>Recent uploads/scans 🕒</p>
             <Row xs={1} md={2} lg={3} className="g-4">
               {recentlyScanned.map((scannedProduct) => (
                 <Col key={scannedProduct.ID}>
@@ -1065,8 +1099,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => {
                             setItemCode(scannedProduct.ID);
-                            try{document.getElementById("itemCode").value = scannedProduct.ID;}
-                            catch{}
+                            try { document.getElementById("itemCode").value = scannedProduct.ID; }
+                            catch { }
                             window.scrollTo({ top: 0, behavior: 'smooth' })
                           }}
                         >
@@ -1089,7 +1123,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       {likedProducts.length > 0 && (
         <div className="row mt-4 mb-4">
           <div className="col-12">
-            <p style={{fontWeight:"bold"}}>Your Liked Products ❤️</p>
+            <p style={{ fontWeight: "bold" }}>Your Liked Products ❤️</p>
             {/* Griglia responsive - 1 column on small screens, 3 on large */}
             <Row xs={1} md={2} lg={3} className="g-4">
               {likedProducts.map((likedProduct) => (

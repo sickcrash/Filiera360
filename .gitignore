@@ -7,3 +7,4 @@ recently_searched.json
 .vscode
 .venv
 linux_files/fabric-samples
+.DS_Store

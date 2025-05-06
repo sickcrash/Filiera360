@@ -501,7 +501,7 @@ const AddProduct = () => {
                     {lastAddedProduct && (
                       <div>
                         <QRCodeCanvas
-                          value={lastAddedProduct}
+                          value={`${window.location.origin}/scan-product/${lastAddedProduct}`}
                           style={{ marginBottom: "2vw" }}
                         />
                         <p>
@@ -973,7 +973,7 @@ const AddProduct = () => {
                     {lastAddedBatch && (
                       <div>
                         <QRCodeCanvas
-                          value={lastAddedBatch}
+                          value={`${window.location.origin}/scan-product/${lastAddedBatch}`}
                           style={{ marginBottom: "2vw" }}
                         />
                         <p>
