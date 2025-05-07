@@ -42,8 +42,8 @@ CREATE TABLE `invite_token` (
 );
 
 CREATE TABLE `models` (
-  `id` INT PRIMARY KEY,
-  `stringa` TEXT NOT NULL
+  `id` VARCHAR(50) PRIMARY KEY,
+  `stringa` LONGTEXT NOT NULL
 );
 
 ALTER TABLE `otp_codes` ADD CONSTRAINT `fk_otp_user_email` FOREIGN KEY (`email`) REFERENCES `users` (`email`) ON DELETE CASCADE;
