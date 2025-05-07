@@ -284,14 +284,14 @@ def init_ledger():
 # Caricamento token
 def load_invite_tokens():
     try:
-        with open("invite_tokens.json", "r") as file:
+        with open("./tokens/invite_tokens.json", "r") as file:
             return json.load(file)
     except FileNotFoundError:
         return {}
 
 # Salvataggio token aggiornati
 def save_invite_tokens(tokens):
-    with open("invite_tokens.json", "w") as file:
+    with open("./tokens/invite_tokens.json", "w") as file:
         json.dump(tokens, file, indent=4)
 
 # Salvataggio degli utenti in un file JSON
