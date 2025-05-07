@@ -6,5 +6,6 @@ liked_products.json
 recently_searched.json
 .vscode
 .venv
-linux_files/fabric-samples
+linux_files/fabric-samples/
+linux_files/install-fabric.sh
 .DS_Store
