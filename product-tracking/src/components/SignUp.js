@@ -58,30 +58,9 @@ const SignUp = () => {
     <div className="container mt-5">
       <div className="row justify-content-center">
         <div className="col-md-6" style={{ textAlign: "center" }}>
-          {/* Logo */}
-          <div
-            style={{
-              textAlign: 'center',
-              width: "100%",
-              marginTop: "1vw"
-            }}
-          >
-            <img
-              src={require("../logo_filiera360.png")}
-              style={{
-                width: "30%",
-              }}
-            />
-          </div>
           <br />
           <div className="card shadow">
             <div className="card-body">
-              <div
-                onClick={() => navigate("/login")}
-                style={{ position: "absolute", fontSize: "2.3vw", display: "flex", marginTop: "0.5vw", cursor:"pointer", color:"grey" }}
-              >
-                <ion-icon name="arrow-back-circle-outline"></ion-icon>
-              </div>
               <h3 className="card-title">Sign Up</h3>
               <br />
               <form onSubmit={handleSignUp}>

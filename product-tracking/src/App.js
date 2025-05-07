@@ -29,7 +29,7 @@ function App() {
 
   return (
     <Router>
-      {isLoggedIn && <Navbar />}
+      <Navbar />
 
       <Routes>
         <Route path="/forgot-password" element={<ForgotPassword />} />
