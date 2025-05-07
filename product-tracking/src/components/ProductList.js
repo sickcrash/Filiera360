@@ -7,11 +7,14 @@ import { QRCodeCanvas } from 'qrcode.react';
 import QrScanner from 'react-qr-scanner';
 import jsQR from 'jsqr';
 import Viewer3D from './Viewer3D';
+import { useParams } from 'react-router-dom';
 
 const ProductList = ({ onProductSelect, onBatchSelect }) => {
   const isProducer = localStorage.getItem("role") === "producer";
   const isOperator = localStorage.getItem("role") === "operator";
   const isUser = localStorage.getItem("role") === "user";
+
+  const { id } = useParams();
 
   const [itemCode, setItemCode] = useState('');
   const [message, setMessage] = useState('');
@@ -502,18 +505,12 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
   }, []);
 
   useEffect(() => {
-    const pathname = window.location.pathname;
-    const scanProductMatch = pathname.match(/\/scan-product\/(.+)/);
-
-    if (scanProductMatch && scanProductMatch[1]) {
-      const batchCode = decodeURIComponent(scanProductMatch[1]); // es: '12345'
-      console.log("Batch dalla URL:", batchCode);
-
-      // Simula lo scan
+    if (id) {
+      const batchCode = decodeURIComponent(id); // es: 'L12345'
+      console.log("ID Batch estratto da URL:", batchCode);
       setItemCodeBatch(batchCode);
       document.getElementById("itemCodeBatch").value = batchCode;
       setScanBatch(prev => prev + 1); // triggera la scansione 
-      setShowCamera(false);
     }
   }, []);
 

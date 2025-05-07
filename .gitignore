@@ -6,6 +6,12 @@ liked_products.json
 recently_searched.json
 .vscode
 .venv
+<<<<<<< HEAD
 linux_files/fabric-samples
 .DS_Store
 ./tempbackup
+=======
+linux_files/fabric-samples/
+linux_files/install-fabric.sh
+.DS_Store
+>>>>>>> cb2fac7981e456c73b3e3f7a8ee83ff94d937fb5
