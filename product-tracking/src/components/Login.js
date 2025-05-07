@@ -79,21 +79,6 @@ const Login = ({ setIsLoggedIn }) => {
     <div className="container mt-5">
       <div className="row justify-content-center">
         <div className="col-md-6" style={{ textAlign: "center" }}>
-          {/* Logo */}
-          <div
-            style={{
-              textAlign: "center",
-              width: "100%",
-              marginTop: "2vw"
-            }}
-          >
-            <img
-              src={require("../logo_filiera360.png")}
-              style={{
-                width: "30%",
-              }}
-            />
-          </div>
           <br />
           <div className="card shadow">
             <div className="card-body">
@@ -180,7 +165,7 @@ const Login = ({ setIsLoggedIn }) => {
           </div>
         </div>
       </div>
-      <p className="mt-3" style={{ textDecoration: "underline", color: "grey", paddingTop: "5vw" }}>
+      <p className="mt-3" style={{ textDecoration: "underline", color: "grey", paddingTop: "3vw" }}>
         <span onClick={() => navigate("/about")} style={{ color: "darkgrey", cursor: "pointer", textDecoration: "underline" }}>
           ⚠️ Disclaimer & Info
         </span>
