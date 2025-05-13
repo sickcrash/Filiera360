@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import pymysql
 import time
 import pytz
+import base64
 
 import bcrypt
 import jwt
@@ -52,11 +53,13 @@ else:
 
 # Update the CORS configuration to allow all methods
 app = Flask(__name__, instance_relative_config=True)
+app.config['MAX_CONTENT_LENGTH'] = 300 * 1024 * 1024
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 cors = CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"]}})
 app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['DEBUG'] = True
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -250,12 +253,15 @@ def load_users():
         return {user['email']: user for user in users}
 
  
-# Carica i modelli 3D dal file JSON
+# Carica i modelli 3D dal db
 def load_models():
     try:
-        with open('models.json', 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM models")
+            models = cursor.fetchall()
+            return {str(model['id']): model for model in models}
+    except Exception as e:
+        print("Error loading models from database:", e)
         return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
     
  #################   
@@ -281,14 +287,20 @@ def save_users(users):
     connection.commit()
 
 
-# Salva i modelli nel file JSON
+# Salva i modelli nel DB
 def save_models(models):
-    with open('models.json', 'w') as f:
-        json.dump(models, f, indent=4)
+    try:
+        with connection.cursor() as cursor:
+            for product_id, glbFile in models.items():
+                cursor.execute("""
+                    INSERT INTO models (id, stringa) VALUES (%s, %s)
+                    ON DUPLICATE KEY UPDATE stringa = VALUES(stringa)
+                """, (product_id, glbFile))
+        connection.commit()
+    except Exception as e:
+        print("Error saving model to database:", e)
 
-# Carica i database all'avvio del server
 
-models = load_models()
 
 # questa funzione va chiamata solamente alla prima scrittura
 # della rete o dopo suoi eventuali reset
@@ -673,11 +685,14 @@ def get_batch_history():
         print("Failed to get batch history:", e)
         return jsonify({'message': 'Failed to get batch history.'}), 500
 
-def find_producer_by_operator(operator):
-    for email, user in users.items():
-        if operator in user.get("operators", []):
-            return user
-    
+def find_producer_by_operator(operator_email):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT email, operators FROM users WHERE role = 'producer'")
+        producers = cursor.fetchall()
+        for producer in producers:
+            operators = json.loads(producer["operators"]) if producer["operators"] else []
+            if operator_email in operators:
+                return producer  
     return None
 
 def required_permissions(email, allowed_roles):
@@ -688,36 +703,65 @@ def required_permissions(email, allowed_roles):
 
 
 def verify_product_authorization(email, product_id):
-    user = users.get(email)
-    if not user or not product_id:
+    if not email or not product_id:
         return False
 
-    if user["flags"].get("operator", False):
-        user = find_producer_by_operator(email)
-        if not user:
-            return False
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT role, manufacturer, operators FROM users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            if not user:
+                return False
 
-    try: 
+            if user["role"] == "operator":
+                producer = find_producer_by_operator(email)
+                if not producer:
+                    return False
+                manufacturer = producer["manufacturer"]
+            else:
+                # L'utente è un producer o altro
+                manufacturer = user["manufacturer"]
+
+        # ottengo il prodotto dal middleware
         response = requests.get(f'http://middleware:3000/readProduct?productId={product_id}')
         if response.status_code != 200:
-            return jsonify({'message': 'Failed to get product.'}), 500
-            
+            print('Failed to get product.')
+            return False
+
         product = response.json()
-        return product.get("Manufacturer") == user["manufacturer"]
+        return product.get("Manufacturer") == manufacturer
+
     except Exception as e:
-        print("Failed to get product:", e)
-        return jsonify({'message': 'Failed to get product.'}), 500
+        print("Failed to verify product authorization:", e)
+        return False
+
 
 # ora in uso + autenticazione jwt
 @app.route('/uploadProduct', methods=['POST'])
 @jwt_required()
 def upload_product():
-    if not required_permissions(get_jwt_identity(), ['producer']):
+    email = get_jwt_identity()
+    if not required_permissions(email, ['producer']):
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
 
     print("Sono arrivata al backend")
     product_data = request.json
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
+
+    #debug 
+    print("dati ricevuti nella richiesta:", product_data)
+
+   # ottengo manufacturer dal DB in base all'utente loggato
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({"message": "User not found."}), 404
+            real_manufacturer = user["manufacturer"]
+    except Exception as e:
+        print("DB error:", e)
+        return jsonify({"message": "Database error."}), 500
+
     print("manufacturer authenticated: " + real_manufacturer)
     client_manufacturer = product_data.get("Manufacturer")
     print("upload request by: " + client_manufacturer)
@@ -732,6 +776,12 @@ def upload_product():
         # Send the cleaned product data to the external service
         print("Faccio la chiamata all'AppServer")
         response = requests.post(f'http://middleware:3000/uploadProduct', json=product_data)
+
+        # DEBUG
+        print("REQUEST SENT:", product_data)
+        print("RESPONSE STATUS:", response.status_code)
+        print("RESPONSE TEXT:", response.text)
+
         if response.status_code == 200:
             return jsonify({'message': response.json().get('message', 'Product uploaded successfully!')})
         else:
@@ -790,39 +840,60 @@ def uploadBatch():
 @app.route('/uploadModel', methods=['POST'])
 @jwt_required()
 def upload_model():
-    if not required_permissions(get_jwt_identity(), ['producer']):
+    email = get_jwt_identity()
+    if not required_permissions(email, ['producer']):
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
 
     try:
         product_data = request.json
-        # log del manufacturer che effettua la richiesta di upload
-        real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
+        
+       #  produttore autenticato dal DB
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({"message": "User not found in database."}), 404
+            real_manufacturer = user["manufacturer"]
         print("Manufacturer authenticated: ", real_manufacturer)
 
         # prendo l'id del prodotto dalla richiesta POST
         product_id = product_data.get("ID")
+        glbFile = product_data.get('ModelBase64')
         if not product_id:
             return jsonify({"message": "Product ID is required."}), 400
         
         print("product id: " + product_id)
+        print("glbFile length:", len(glbFile) if glbFile else "No file")
 
         # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
         verification_result = verify_manufacturer(product_id, real_manufacturer)
         if verification_result:
             return verification_result  # Restituisce l'errore se la verifica non è passata
 
-        print("converting file...")
-        # in caso di successo
-        glbFile = product_data.get('ModelBase64')
+        
         if not glbFile:
             return jsonify({"message": "missing GLB file"}), 400
+        #debug
+        print(f"Product ID: {product_id}")
+        print(f"Length of incoming Base64 string: {len(glbFile)}")
+        print(f"First 100 characters: {glbFile[:100]}")
+
+        #decodifico il file Base64
+        print("Decoding base64...")
+        decoded_glb = base64.b64decode(glbFile)
+        print(f"Decoded file size: {len(decoded_glb)} bytes")
+
+
         print("Uploading 3D model...")
         
-        # Aggiungi il file Base64 al dizionario dei modelli
-        models[product_id] = glbFile
-        
-        # Salva il risultato nel file JSON
-        save_models(models)
+       # salva il modello nella tabella 'models'
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO models (id, stringa)
+                VALUES (%s, %s)
+                ON DUPLICATE KEY UPDATE stringa = VALUES(stringa)
+            """, (product_id, glbFile))
+        connection.commit()
         return jsonify({"message": "Model uploaded successfully"}), 201
 
     except Exception as e:
@@ -836,26 +907,43 @@ def get_model():
     productId = request.args.get('productId')
     if not productId:
         return jsonify({"message": "Product ID is required."}), 400
-    
-    # prendo il file GLB associato al prodotto
-    glbFile = models.get(productId)
-    if not glbFile:
-        return jsonify({"message": "No model found for the provided product ID."}), 404
-
+    try:
+        # prendo il file GLB dal database
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT stringa FROM models WHERE id = %s", (productId,))
+            result = cursor.fetchone()
+            if not result:
+                return jsonify({"message": "No model found for the provided product ID."}), 404
+            glbFile = result["stringa"]
     # Se il file esiste, lo restituiamo come risposta
-    return jsonify({"ModelBase64": glbFile}), 200
+        return jsonify({"ModelBase64": glbFile}), 200
+
+    except Exception as e:
+        print("Error occurred:", e)
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
+
 
 
 # già usata su frontend + autenticazione jwt
 @app.route('/updateProduct', methods=['POST'])
 @jwt_required()
 def update_product():
-    if not required_permissions(get_jwt_identity(), ['producer']):
+    email = get_jwt_identity()
+    if not required_permissions(email, ['producer']):
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
     product_data  = request.json
-    # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
-    print("Manufacturer authenticated:", real_manufacturer)
+   # Recupera il manufacturer dell'utente loggato
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
+            result = cursor.fetchone()
+            if not result:
+                return jsonify({"message": "User not found."}), 404
+            real_manufacturer = result["manufacturer"]
+            print("Manufacturer authenticated:", real_manufacturer)
+    except Exception as e:
+        print("Database error while fetching manufacturer:", e)
+        return jsonify({"message": "Database error."}), 500
 
     product_id = product_data.get("ID")
     if not product_id:
@@ -998,11 +1086,20 @@ def add_movement_data():
 @app.route('/addCertification', methods=['POST'])
 @jwt_required()
 def add_certification_data():
+    email = get_jwt_identity()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
+            result = cursor.fetchone()
+            if not result:
+                return jsonify({"message": "User not found."}), 404
+            real_manufacturer = result["manufacturer"]
+            print("Manufacturer authenticated:", real_manufacturer)
+    except Exception as e:
+        print("Database error while fetching manufacturer:", e)
+        return jsonify({"message": "Database error."}), 500
+    
     certification_data  = request.json
-    # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
-    print("Manufacturer authenticated:", real_manufacturer)
-
     product_id = certification_data.get("id")
     if not product_id:
         return jsonify({"message": "Product ID is required."}), 400
@@ -1010,7 +1107,7 @@ def add_certification_data():
     # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
     verification_result = verify_manufacturer(product_id, real_manufacturer)
     if verification_result:
-        return verification_result  # Restituisce l'errore se la verifica non è passata
+        return verification_result  
 
 # NON UTILIZZATA
 @app.route('/verifyProductCompliance', methods=['POST'])
