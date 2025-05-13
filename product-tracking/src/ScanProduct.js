@@ -50,29 +50,14 @@ function ScanProduct() {
       <div className="col-md-11 mx-auto">
 
 
-        {/* Explore Products */}
-        <div style={{ width: '570px', margin: '0 auto' }}>
-          <div className="card shadow mt-4">
-            <div className="card-header bg-light">
-              <h4 className="mb-2">Explore 🔎</h4>
-              <p className="text-muted mb-3">🔗 Insert manufacturer's name</p>
-            </div>
-            <div className="card-body">
-              <Explore 
-              onProductsSelect={setSelectedManufacturer}
-              />
-            </div>
-          </div>
-        </div>
-
-
-
-
         {/* Scan Batch */}
         <ProductList
           onProductSelect={setSelectedProduct}
           onBatchSelect={setSelectedBatch}
+          onProductsSelect={setSelectedManufacturer}
         />
+
+
 
 
 

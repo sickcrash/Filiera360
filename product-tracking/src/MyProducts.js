@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const MyProducts = ({ onProductsSelect }) => {
   const [manufacturer, setManufacturer] = useState('');
+  const [itemCode, setItemCode] = useState('');
   const [products, setProducts] = useState([]);
   const [message, setMessage] = useState('');
 
@@ -43,27 +44,51 @@ const MyProducts = ({ onProductsSelect }) => {
   return (
     <div className="search-product-container">
 
-      {products.map((product, index) => (
-        <div key={index} style={{ border: '1px solid #ccc', marginBottom: '10px', padding: '10px' }}>
-          <h3>{product.Name}</h3>
-          <p><strong>Id:</strong> {product.ID}</p>
-          <p><strong>Expiry Date:</strong> {product.ExpiryDate}</p>
-          <p><strong>Ingredients:</strong> {product.Ingredients}</p>
-          <p><strong>Allergens:</strong> {product.Allergens}</p>
-          <p><strong>Nutritional Information:</strong> {product.Nutritional_information}</p>
-          <p><strong>Harvest Date:</strong> {product.HarvestDate}</p>
-          <p><strong>Pesticide Use:</strong> {product.PesticideUse}</p>
-          <p><strong>Fertilizer Use:</strong> {product.FertilizerUse}</p>
-          <p><strong>Country of Origin:</strong> {product.CountryOfOrigin}</p>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center', // centro orizzontale
+          alignItems: 'flex-start',     // centro verticale
+          width: '100%',       // altezza minima per centrare verticalmente
+          gap: '20px',
+          padding: '20px'
+        }}
+      >
+        {products.map((product, index) => (
+          <div
+            key={index}
+            style={{
+              border: '1px solid #ccc',
+              padding: '10px',
+              width: '280px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+              backgroundColor: '#fff',
+              margin: '0 auto'
+            }}
+          >
+            <h3>{product.Name}</h3>
+            <p><strong>Id:</strong> {product.ID}</p>
+            <p><strong>Expiry Date:</strong> {product.ExpiryDate}</p>
+            <p><strong>Ingredients:</strong> {product.Ingredients}</p>
 
-          {/* Custom fields rendering */}
-          {product.CustomObject && Object.entries(product.CustomObject).map(([key, value]) => (
-            <div key={key} style={{ textAlign: "center" }}>
-              <p><strong>{key}</strong>: {value}</p>
-            </div>
-          ))}
-        </div>
-      ))}
+            <button
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => {
+                setItemCode(product.ID);
+                try {
+                  document.getElementById("itemCode").value = product.ID;
+                } catch { }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              View Details
+            </button>
+          </div>
+        ))}
+      </div>
+
 
       {message && <p className="mt-3 text-danger">{message}</p>}
     </div>

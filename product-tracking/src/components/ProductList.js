@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Card, Table, Row, Col } from 'react-bootstrap';
 import UpdateProduct from './update_prod/UpdateProduct';
 import UpdateBatch from './update_prod/UpdateBatch';
+import Explore from '../Explore';
+
 import { QRCodeCanvas } from 'qrcode.react';
 import QrScanner from 'react-qr-scanner';
 import jsQR from 'jsqr';
@@ -609,7 +611,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                 />
               ) : null}
               <input
-                style={{backgroundColor:"#1e90ff", border:"1px solid #1e90ff"}}
+                style={{ backgroundColor: "#1e90ff", border: "1px solid #1e90ff" }}
                 type="submit"
                 className="btn btn-primary mt-3 w-100"
                 id="scanButton"
@@ -628,7 +630,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
         className="row justify-content-center"
       >
         <div className="col-md-6">
-          <div className="card shadow">
+          <div className="card shadow mt-4">
             <div className="card-body">
               <Card.Header>
                 <h4>Scan Batch 🔎</h4>
@@ -687,6 +689,25 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
             </div>
           </div>
         </div>
+
+        {/* Explore Products */}
+        <div style={{ marginTop: "45px" }}>
+          <div className="row justify-content-center">
+            <div className="col-md-6">
+              <div className="card shadow mt-1">
+                <div className="card-header bg-light">
+                  <h4 className="mb-2">Explore 🔎</h4>
+                  <p className="text-muted mb-3">🔗 Insert manufacturer's name</p>
+                </div>
+                <div className="card-body">
+                  <Explore />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
       </form>
 
       {/* Display product details if the product is found */}
@@ -806,7 +827,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr>
                   </tbody>
                 </Table>
-                <br/>
+                <br />
                 <QRCodeCanvas value={product.ID} style={{ marginBottom: "2vw" }} />
                 <p>
                   Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
@@ -906,7 +927,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr>
                   </tbody>
                 </Table>
-                <br/>
+                <br />
                 <QRCodeCanvas value={batch.ID} style={{ marginBottom: "2vw" }} />
                 <p>
                   Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
@@ -1024,7 +1045,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr> */}
                       </tbody>
                     </Table>
-                    <br/>
+                    <br />
                     <QRCodeCanvas value={batchProduct.ID} style={{ marginBottom: "2vw" }} />
                   </div>
                 </div>
@@ -1042,13 +1063,13 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
         </div>
       )}
 
-      <br/>
+      <br />
 
       {/* Recently Scanned Products Section */}
       {recentlyScanned.length > 0 && (
         <div className="row mt-4 mb-4">
           <div className="col-12">
-            <p style={{fontWeight:"bold"}}>Recent uploads/scans 🕒</p>
+            <p style={{ fontWeight: "bold" }}>Recent uploads/scans 🕒</p>
             <Row xs={1} md={2} lg={3} className="g-4">
               {recentlyScanned.map((scannedProduct) => (
                 <Col key={scannedProduct.ID}>
@@ -1065,8 +1086,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => {
                             setItemCode(scannedProduct.ID);
-                            try{document.getElementById("itemCode").value = scannedProduct.ID;}
-                            catch{}
+                            try { document.getElementById("itemCode").value = scannedProduct.ID; }
+                            catch { }
                             window.scrollTo({ top: 0, behavior: 'smooth' })
                           }}
                         >
@@ -1089,7 +1110,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       {likedProducts.length > 0 && (
         <div className="row mt-4 mb-4">
           <div className="col-12">
-            <p style={{fontWeight:"bold"}}>Your Liked Products ❤️</p>
+            <p style={{ fontWeight: "bold" }}>Your Liked Products ❤️</p>
             {/* Griglia responsive - 1 column on small screens, 3 on large */}
             <Row xs={1} md={2} lg={3} className="g-4">
               {likedProducts.map((likedProduct) => (

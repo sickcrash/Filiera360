@@ -64,5 +64,16 @@
             "user": false
         },
         "operators": []
+    },
+    "gabriele.lafortezza.1@gmail.com": {
+        "manufacturer": "lello34",
+        "password": "$2b$12$BpX2GSbUyOUypT6m/FSNreUTKeWGM2m8VE2r4nQOxlK4bTQbHJXZG",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": []
     }
 }

@@ -73,7 +73,7 @@ const Account = ({ setIsLoggedIn }) => {
         </div>
       </div>}
 
-      <div style={{ width: '580px', margin: '0 auto' }}>
+      <div style={{ width: '580px', margin: '0 auto', marginBottom: '100px' }}>
         <div className="row justify-content-center">
           <div className="card shadow mt-4">
             <div className="card-header bg-light">
