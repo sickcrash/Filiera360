@@ -530,6 +530,32 @@ def get_product():
         print("Failed to get product:", e)
         return jsonify({'message': 'Failed to get product.'}), 500
     
+    
+@app.route('/getProductsByManufacturer', methods=['GET'])
+def get_products_by_manufacturer():
+    manufacturer = request.args.get('manufacturer')
+    print(f"Received request for manufacturer: {manufacturer}")  # Log per vedere il parametro
+    
+    if not manufacturer:
+        return jsonify({'error': 'Missing manufacturer parameter'}), 400
+    
+    try:
+        # Chiama il middleware Node.js
+        response = requests.get(f'http://middleware:3000/readProductsByManufacturer?manufacturer={manufacturer}')
+        
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        else:
+            print(f"Node.js returned error: {response.status_code}")  # Log per vedere il codice di risposta di Node.js
+            return jsonify({'error': 'Failed to retrieve products'}), 500
+    
+    except Exception as e:
+        print(f"Error while getting products: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+
+    
 # nuova aggiunta
 @app.route('/getProductHistory', methods=['GET'])
 # @jwt_required()

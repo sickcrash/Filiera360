@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Card, Button } from "react-bootstrap";
 import { Navigate, useNavigate } from "react-router-dom";
-import {ManageOperators} from "./components/ManageOperators";
+import { ManageOperators } from "./components/ManageOperators";
+import MyProducts from "./MyProducts";
 
 const Account = ({ setIsLoggedIn }) => {
+  const [selectedManufacturer, setSelectedManufacturer] = useState(null);
   const navigate = useNavigate();
   const [manufacturer, setManufacturer] = useState('');
   const [email, setEmail] = useState('');
@@ -17,11 +19,11 @@ const Account = ({ setIsLoggedIn }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-      localStorage.removeItem("manufacturer");
-      localStorage.removeItem("email");
-      // Store user ID for liked products
-      localStorage.removeItem("userId");
-      localStorage.removeItem("role");
+    localStorage.removeItem("manufacturer");
+    localStorage.removeItem("email");
+    // Store user ID for liked products
+    localStorage.removeItem("userId");
+    localStorage.removeItem("role");
 
     setIsLoggedIn(false);
     navigate("/login");
@@ -51,7 +53,7 @@ const Account = ({ setIsLoggedIn }) => {
                 <h4 style={{ textAlign: "center", fontWeight: "lighter" }}>
                   role: <b>{role}</b>
                 </h4>
-                <hr/>
+                <hr />
                 <Button onClick={handleForgotPassword} className="btn btn-secondary w-100" >
                   Reset password
                 </Button>
@@ -65,11 +67,25 @@ const Account = ({ setIsLoggedIn }) => {
       </div>
 
 
-      {role === 'producer'&& <div className="row justify-content-center">
+      {role === 'producer' && <div className="row justify-content-center">
         <div className="col-md-6">
           <ManageOperators />
         </div>
       </div>}
+
+      <div style={{ width: '580px', margin: '0 auto' }}>
+        <div className="row justify-content-center">
+          <div className="card shadow mt-4">
+            <div className="card-header bg-light">
+              <h4 className="mb-2">My Products 🛒</h4>
+            </div>
+            <div className="card-body">
+              <MyProducts />
+            </div>
+          </div>
+        </div>
+      </div>
+
 
     </div>
   );

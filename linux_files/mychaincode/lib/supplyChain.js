@@ -150,6 +150,32 @@ class SupplyChainContract extends Contract {
         }
         return productJSON.toString();
     }
+
+   async ReadProductsByManufacturer(ctx, manufacturer) {
+    const allResults = [];
+    const iterator = await ctx.stub.getStateByRange("", "");
+
+    while (true) {
+        const res = await iterator.next();
+
+        if (res.value && res.value.value.toString()) {
+            const product = JSON.parse(res.value.value.toString('utf8'));
+            if (product.Manufacturer === manufacturer) {
+                allResults.push(product);
+            }
+        }
+
+        if (res.done) {
+            await iterator.close();
+            break;
+        }
+    }
+
+    return JSON.stringify(allResults);
+}
+
+
+    
     async ReadBatch(ctx, batchId) {
         const batchJSON = await ctx.stub.getState(batchId);
         if (!batchJSON || batchJSON.length === 0) {
@@ -265,6 +291,7 @@ class SupplyChainContract extends Contract {
         return JSON.stringify(updatedBatch);
     }
     
+    
        
     // DeleteProduct deletes an given product from the world state.
     async DeleteProduct(ctx, id) {
@@ -279,6 +306,7 @@ class SupplyChainContract extends Contract {
         const productJSON = await ctx.stub.getState(id);
         return productJSON && productJSON.length > 0;
     }
+    
 
 
 

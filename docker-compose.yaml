@@ -1,4 +1,4 @@
-version: "3.8"
+
 
 services:
   backend:
@@ -9,6 +9,8 @@ services:
       - ./jsondb/:/app/jsondb:rw
     networks:
       - filiera360_default
+    extra_hosts:
+      - "peer0.org1.example.com:172.19.0.6"  # IP del peer
     expose:
       - "5000"             # visto solo dagli altri container
 
@@ -18,8 +20,12 @@ services:
       dockerfile: dockerfiles/Dockerfile.frontend
     networks:
       - filiera360_default
-    expose:
-      - "3001"
+    volumes:
+    - ./product-tracking/src:/app/src
+    ports:
+      - "3001:3001"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
 
   middleware:
     build:

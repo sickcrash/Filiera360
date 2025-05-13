@@ -390,6 +390,15 @@ async function readProductByID(contract, productId) {
     console.log('*** Result:', result);
     return result;
 }
+
+async function readProductByManufacturer(contract, manufacturer) {
+    console.log('\n--> Evaluate Transaction: ReadProductsByManufacturer, function returns product attributes');
+    const resultBytes = await contract.evaluateTransaction('ReadProductsByManufacturer', manufacturer);
+    const resultJson = utf8Decoder.decode(resultBytes);
+    const result = JSON.parse(resultJson);
+    console.log('*** Result:', result);
+    return result;
+}
 async function readBatchByID(contract, batchId) {
     console.log('\n--> Evaluate Transaction: ReadBatch, function returns product attributes!');
     const resultBytes = await contract.evaluateTransaction('ReadBatch', batchId);
@@ -415,6 +424,32 @@ async function getBatchHistoryByID(contract, batchId) {
     console.log('*** Result:', result);
     return result;
 }
+
+app.get('/readProductsByManufacturer', async (req, res) => { 
+    const { manufacturer } = req.query;
+    console.log(`Received request for manufacturer: ${manufacturer}`);
+
+    try {
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
+        console.log("Contract and network loaded successfully");
+
+        const result = await readProductByManufacturer(contract, manufacturer);
+        console.log("Result from Hyperledger:", result);
+
+        if (result) {
+            res.json(result);
+        } else {
+            console.error("No products found for manufacturer");
+            res.status(404).json({ error: 'No products found' });
+        }
+    } catch (error) {
+        console.error('Error reading product by manufacturer:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 
 app.get('/readProduct', async (req, res) => {
     const { productId } = req.query;

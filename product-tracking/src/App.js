@@ -6,10 +6,12 @@ import {
   Navigate,
 } from "react-router-dom";
 import Login from "./components/Login";
+import ManufacturerProducts from "./components/ManufacturerProducts";
 import SignUp from "./components/SignUp";
 import Account from "./Account";
 import AddProduct from "./AddProduct";
 import ScanProduct from "./ScanProduct";
+import Explore from "./Explore";
 import Navbar from "./components/Navbar";
 import ForgotPassword from "./components/ForgotPassword";
 import About from "./components/About";
@@ -33,8 +35,11 @@ function App() {
 
       <Routes>
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/explore" element={<Explore />} />
         <Route path="/about" element={<About />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/manufacturer-products" element={<ManufacturerProducts />} />
+
         <Route
           path="/login"
           element={
@@ -45,6 +50,19 @@ function App() {
             )
           }
         />
+        <Route
+          path="/my-products"
+          element={
+            isLoggedIn ? (
+              <ProtectedRoute allowedRoles={["producer", "operator"]}>
+                <ManufacturerProducts />
+              </ProtectedRoute>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
         <Route
           path="/signup"
           element={isLoggedIn ? <Navigate to="/add-product" /> : <SignUp />}

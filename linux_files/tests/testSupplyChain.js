@@ -143,4 +143,28 @@ describe('SupplyChainContract', () => {
         const result = await contract.GetAllCertifications(ctx, 'PROD1');
         assert.strictEqual(result, JSON.stringify(product.Certifications));
     });
+
+    it('should get all products by manufacturer', async () => {
+        const products = [
+            { ID: 'P1', Manufacturer: 'Green Farm Co.', docType: 'product' },
+            { ID: 'P2', Manufacturer: 'Green Farm Co.', docType: 'product' },
+        ];
+
+        const iterator = {
+            next: sinon.stub(),
+            close: sinon.stub().resolves()
+        };
+
+        // Simula il comportamento dell'iteratore
+        iterator.next.onCall(0).resolves({ value: { value: Buffer.from(JSON.stringify(products[0])) }, done: false });
+        iterator.next.onCall(1).resolves({ value: { value: Buffer.from(JSON.stringify(products[1])) }, done: false });
+        iterator.next.onCall(2).resolves({ done: true });
+
+        ctx.stub.getQueryResult.resolves(iterator);
+
+        const result = await contract.GetProductsByManufacturer(ctx, 'Green Farm Co.');
+        assert.strictEqual(result, JSON.stringify(products));
+    });
+
 });
+
