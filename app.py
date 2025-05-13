@@ -22,9 +22,6 @@ from werkzeug.security import check_password_hash
 
 import prompts_variables_storage
 
-import sys
-sys.stdout.reconfigure(line_buffering=True)
-
 # Update the CORS configuration to allow all methods
 app = Flask(__name__, instance_relative_config=True)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -928,7 +925,6 @@ def add_sensor_data():
 @app.route('/addCertification', methods=['POST'])
 @jwt_required()
 def add_certification_data():
-    print("ciao")
     certification_data  = request.json
     # log del manufacturer che effettua la richiesta di update
     real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
