@@ -7,6 +7,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import QrScanner from 'react-qr-scanner';
 import jsQR from 'jsqr';
 import Viewer3D from './Viewer3D';
+import DataSensors from './DataSensors';
 
 const ProductList = ({ onProductSelect, onBatchSelect }) => {
   const isProducer = localStorage.getItem("role") === "producer";
@@ -262,6 +263,24 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       logContent += `Fertilizer Use: ${valueData.FertilizerUse || 'N/A'}\n`;
       logContent += `Country Of Origin: ${valueData.CountryOfOrigin || 'N/A'}\n`;
 
+      if (valueData.SensorData && Object.keys(valueData.SensorData).length > 0) {
+        logContent += `Sensor Data:\n`;
+        Object.entries(valueData.SensorData).forEach(([key, value]) => {
+          logContent += `${key}: ${value}\n`;
+        });
+      } else {
+        logContent += `Sensor Data: N/A\n`; // Se non ci sono sensor data, mostriamo N/A
+      }
+
+      if (valueData.Certifications && Object.keys(valueData.Certifications).length > 0) {
+        logContent += `Certifications:\n`;
+        Object.entries(valueData.Certifications).forEach(([key, value]) => {
+          logContent += `${key}: ${value}\n`;
+        });
+      } else {
+        logContent += `Custom Fields: N/A\n`; // Se non ci sono certifications, mostriamo N/A
+      }
+
       if (valueData.CustomObject && Object.keys(valueData.CustomObject).length > 0) {
         logContent += `Custom Fields:\n`;
         Object.entries(valueData.CustomObject).forEach(([key, value]) => {
@@ -296,6 +315,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       logContent += `Batch number: ${valueData.BatchNumber}\n`;
       logContent += `Quantity: ${valueData.Quantity}\n`;
       logContent += `Production date: ${valueData.Production_date || 'N/A'}\n`;
+      logContent += `State: ${valueData.State || 'N/A'}\n`;
 
       if (valueData.CustomObject && Object.keys(valueData.CustomObject).length > 0) {
         logContent += `Custom Batch Fields:\n`;
@@ -734,13 +754,18 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                         <td>{product.Manufacturer}</td>
                       </tr>
                     )}
-                    {product.ExpiryDate && (
+                    {product.SowingDate && (
                       <tr>
-                        <th>Expiry Date</th>
-                        <td>{product.ExpiryDate}</td>
+                        <th>Sowing Date</th>
+                        <td>{product.SowingDate}</td>
                       </tr>
                     )}
-
+                    {product.HarvestDate && (
+                      <tr>
+                        <th>Harvest Date</th>
+                        <td>{product.HarvestDate}</td>
+                      </tr>
+                    )}
                     {product.Ingredients && (
                       <tr>
                         <th>Ingredients</th>
@@ -806,6 +831,10 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr>
                   </tbody>
                 </Table>
+                <br/>
+                <DataSensors productId={product.ID} />
+                <br/>
+                <br/>
                 <br/>
                 <QRCodeCanvas value={product.ID} style={{ marginBottom: "2vw" }} />
                 <p>
@@ -878,20 +907,18 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                         <td>{batch.ProductionDate}</td>
                       </tr>
                     )}
-
+                    {batch.State && (
+                      <tr>
+                        <th>Status</th>
+                        <td>{batch.State}</td>
+                      </tr>
+                    )}
                     {batch.CustomObject && Object.entries(batch.CustomObject).map(([key, value]) => (
                       <tr key={key}>
                         <th>{key}</th>
                         <td>{value}</td>
                       </tr>
                     ))}
-
-
-
-                    <tr>
-                      <th>Status</th>
-                      <td>{status || 'No status available'}</td>
-                    </tr>
                     <tr>
                       <th>N. Updates *</th>
                       <td>{batchHistory.length}</td>
@@ -955,11 +982,16 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                             <td>{batchProduct.Manufacturer}</td>
                           </tr>
                         )}
-
-                        {batchProduct.ExpiryDate && (
+                        {batchProduct.SowingDate && (
                           <tr>
-                            <th>Expiry Date</th>
-                            <td>{batchProduct.ExpiryDate}</td>
+                            <th>Sowing Date</th>
+                            <td>{batchProduct.SowingDate}</td>
+                          </tr>
+                        )}
+                        {batchProduct.HarvestDate && (
+                          <tr>
+                            <th>Harvest Date</th>
+                            <td>{batchProduct.HarvestDate}</td>
                           </tr>
                         )}
 
@@ -1024,6 +1056,10 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                     </tr> */}
                       </tbody>
                     </Table>
+                    <br/>
+                    <DataSensors productId={batchProduct.ID} />
+                    <br/>
+                    <br/>
                     <br/>
                     <QRCodeCanvas value={batchProduct.ID} style={{ marginBottom: "2vw" }} />
                   </div>

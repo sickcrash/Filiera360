@@ -11,14 +11,16 @@ class SupplyChainContract extends Contract {
                 "ID": "AGRI_X",
                 "Name": "Organic Carrots",
                 "Manufacturer": "Green Farm Co.",
-                "ExpiryDate": "2023-05-01",
+                "HarvestDate": "2023-05-01",
                 "Ingredients": "",
                 "Allergens": "",
                 "Nutritional_information": "",
-                "HarvestDate": "2023-02-25",
+                "SowingDate": "2023-02-25",
                 "PesticideUse": "No pesticides used",
                 "FertilizerUse": "Organic",
                 "CountryOfOrigin": "Canada",
+                "SensorData": [],
+                "Certifications": [],
                 "CustomObject": [
                     {
                         "tipo": "ortaggio",
@@ -30,14 +32,16 @@ class SupplyChainContract extends Contract {
                 "ID": "FIN_X",
                 "Name": "Almond Milk",
                 "Manufacturer": "NutraFoods Inc.",
-                "ExpiryDate": "2023-10-01",
+                "HarvestDate": "2023-10-01",
                 "Ingredients": "Almonds, Water, Sugar, Salt, Vitamin D",
                 "Allergens": "Almonds",
                 "Nutritional_information": "Calories: 60 per 240ml, Protein: 1g, Fat: 2.5g",
-                "HarvestDate": "",
+                "SowingDate": "",
                 "PesticideUse": "",
                 "FertilizerUse": "",
                 "CountryOfOrigin": "",
+                "SensorData": [],
+                "Certifications": [],
                 "CustomObject": [
                     {
                         "tipo": "frutta",
@@ -54,6 +58,7 @@ class SupplyChainContract extends Contract {
                 "ProductionDate": "2023-05-01",
                 "Quantity": "6",
                 "BatchNumber":"3",
+                "State":"Shipped",
                 "CustomObject": [
                     {
                         "codiceSpedizione": "1234"
@@ -67,6 +72,7 @@ class SupplyChainContract extends Contract {
                 "ProductionDate": "2025-01-01",
                 "Quantity": "16",
                 "BatchNumber":"13",
+                "State":"Delivered",
                 "CustomObject": [
                     {
                         "codiceSpedizione": "4567"
@@ -87,7 +93,7 @@ class SupplyChainContract extends Contract {
 
     }
 
-    async createProduct(ctx, id, name, manufacturer, expiryDate, ingredients, allergens, nutritionalInformation, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, customObject) {
+    async createProduct(ctx, id, name, manufacturer, harvestDate, ingredients, allergens, nutritionalInformation, sowingDate, pesticideUse, fertilizerUse, countryOfOrigin, sensorData, certifications, customObject) {
        console.log("Sono nella supplychain")
         console.log(`Creating product ${id}`);
         
@@ -100,14 +106,16 @@ class SupplyChainContract extends Contract {
             ID: id,
             Name: name,
             Manufacturer: manufacturer,
-            ExpiryDate: expiryDate,
+            HarvestDate: harvestDate,
             Ingredients: ingredients,
             Allergens: allergens,
             Nutritional_information: nutritionalInformation,
-            HarvestDate: harvestDate,
+            SowingDate: sowingDate,
             PesticideUse: pesticideUse,
             FertilizerUse: fertilizerUse,
             CountryOfOrigin: countryOfOrigin,
+            SensorData: JSON.parse(sensorData),
+            Certifications: JSON.parse(certifications),
             CustomObject: JSON.parse(customObject) // Convertiamo il JSON in oggetto
         };
     
@@ -115,7 +123,7 @@ class SupplyChainContract extends Contract {
         console.log(`Product ${id} created`);
         return JSON.stringify(product);
     }
-    async createBatch(ctx, idBatch, productId, operator, batchNumber, quantity,  productionDate, customObject) {
+    async createBatch(ctx, idBatch, productId, operator, batchNumber, quantity,  productionDate, state, customObject) {
         console.log("Sono nella supplychain")
          console.log(`Creating Batch ${idBatch}`);
          
@@ -134,7 +142,8 @@ class SupplyChainContract extends Contract {
              Operator: operator,
              BatchNumber: batchNumber,
              Quantity: quantity,
-             ProductionDate:productionDate,
+             ProductionDate: productionDate,
+             State: state,
              CustomObject: JSON.parse(customObject) // Convertiamo il JSON in oggetto
          };
      
@@ -208,7 +217,7 @@ class SupplyChainContract extends Contract {
         }
     }
 
-    async UpdateProduct(ctx, id, name, manufacturer, expiryDate, ingredients, allergens, nutritional_information, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, customObject) {
+    async UpdateProduct(ctx, id, name, manufacturer, expiryDate, ingredients, allergens, nutritional_information, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, sensorData, certifications, customObject) {
     
         console.log('Sono su chaincode');
         // Check if the product exists
@@ -234,6 +243,8 @@ class SupplyChainContract extends Contract {
             PesticideUse: pesticideUse || existingProduct.PesticideUse,
             FertilizerUse: fertilizerUse || existingProduct.FertilizerUse,
             CountryOfOrigin: countryOfOrigin || existingProduct.CountryOfOrigin,
+            SensorData: sensorData ? JSON.parse(sensorData) : existingProduct.SensorData,
+            Certifications: certifications ? JSON.parse(certifications) : existingProduct.Certifications,
             CustomObject: customObject ? JSON.parse(customObject) : existingProduct.CustomObject
         };
     
@@ -241,7 +252,7 @@ class SupplyChainContract extends Contract {
         return JSON.stringify(updatedProduct);
     }
 
-    async UpdateBatch(ctx, batchId, productId, operator, batchNumber, quantity, productionDate, customObject) {
+    async UpdateBatch(ctx, batchId, productId, operator, batchNumber, quantity, productionDate, state, customObject) {
         const batchAsBytes = await ctx.stub.getState(batchId);
         if (!batchAsBytes || batchAsBytes.length === 0) {
             throw new Error(`The batch ${batchId} does not exist`);
@@ -258,6 +269,7 @@ class SupplyChainContract extends Contract {
             BatchNumber: batchNumber || existingBatch.BatchNumber,
             Quantity: quantity || existingBatch.Quantity,
             ProductionDate: productionDate || existingBatch.ProductionDate,
+            State: state || existingBatch.state,
             CustomObject: customObject ? JSON.parse(customObject) : existingBatch.CustomObject
         };
         
@@ -299,65 +311,43 @@ class SupplyChainContract extends Contract {
         return batchJSON && batchJSON.length > 0;
     }
 
-    // async AddSensorData(ctx, id, sensor_id, temperature, humidity, timestamp) {
-    //     const productAsBytes = await ctx.stub.getState(id);
-    //     if (!productAsBytes || productAsBytes.length === 0) {
-    //         throw new Error(`Il prodotto ${id} non esiste.`);
-    //     }
-    //     const product = JSON.parse(productAsBytes.toString());
-
-    //     // Aggiungi i dati del sensore alla cronologia del prodotto
-    //     product.SensorData.push({
-    //         SensorId: sensor_id,
-    //         Temperature: temperature,
-    //         Humidity: humidity,
-    //         Timestamp: timestamp
-    //     });
-
-    //     await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
-    //     console.info(`Dati del sensore aggiunti per il prodotto ${id}.`);
-    // }
-
-    async UpdateProductLocation(ctx, id, newLocation, status, date) {
+    async AddSensorData(ctx, id, sensor_id, signals) {
         const productAsBytes = await ctx.stub.getState(id);
         if (!productAsBytes || productAsBytes.length === 0) {
             throw new Error(`Il prodotto ${id} non esiste.`);
         }
         const product = JSON.parse(productAsBytes.toString());
 
-        // Aggiungi il movimento alla cronologia
-        product.Movements.push({
-            Location: newLocation,
-            Date: date,
-            Status: status
+        // Aggiungi i dati del sensore alla cronologia del prodotto
+        product.SensorData.push({
+            SensorId: sensor_id,
+            Signals: JSON.parse(signals)
         });
 
-        product.Status = status
-
         await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
-        console.info(`Prodotto ${id} aggiornato con successo.`);
+        console.info(`Dati del sensore aggiunti per il prodotto ${id}.`);
     }
 
-    // async AddCertification(ctx, id, certificationType, certifyingBody, issueDate) {
-    //     // Retrieve the product data from the state
-    //     const productAsBytes = await ctx.stub.getState(id);
-    //     if (!productAsBytes || productAsBytes.length === 0) {
-    //         throw new Error(`Product ${id} does not exist.`);
-    //     }
+    async AddCertification(ctx, id, certificationType, certifyingBody, issueDate) {
+         // Retrieve the product data from the state
+         const productAsBytes = await ctx.stub.getState(id);
+         if (!productAsBytes || productAsBytes.length === 0) {
+             throw new Error(`Product ${id} does not exist.`);
+         }
 
-    //     const product = JSON.parse(productAsBytes.toString());
+         const product = JSON.parse(productAsBytes.toString());
 
-    //     product.Certifications.push({
-    //         CertificationType: certificationType,
-    //         CertifyingBody: certifyingBody,
-    //         IssueDate: issueDate
-    //     });
+         product.Certifications.push({
+             CertificationType: certificationType,
+             CertifyingBody: certifyingBody,
+             IssueDate: issueDate
+         });
 
-    //     await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
-    //     console.info(`Certification added to product ${id}.`);
-    // }
+         await ctx.stub.putState(id, Buffer.from(JSON.stringify(product)));
+         console.info(`Certification added to product ${id}.`);
+    }
 
-    /*async VerifyCertification(ctx, id, requiredCertificationType) {
+    async VerifyCertification(ctx, id, requiredCertificationType) {
         const productAsBytes = await ctx.stub.getState(id);
         if (!productAsBytes || productAsBytes.length === 0) {
             throw new Error(`Product ${id} does not exist.`);
@@ -380,34 +370,25 @@ class SupplyChainContract extends Contract {
 
         const res = JSON.stringify({ compliant: false, message: `Product ${id} is not compliant with the required certification: ${requiredCertificationType}.` });
         return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(res))));
-    }*/
+    }
 
-    // async GetAllMovements(ctx, id) {
-    //     const productAsBytes = await ctx.stub.getState(id);
-    //     if (!productAsBytes || productAsBytes.length === 0) {
-    //         throw new Error(`Product ${id} does not exist.`);
-    //     }
-    //     const product = JSON.parse(productAsBytes.toString());
-    //     return JSON.stringify(product.Movements);
-    // }
+    async GetAllSensorData(ctx, id) {
+        const productAsBytes = await ctx.stub.getState(id);
+        if (!productAsBytes || productAsBytes.length === 0) {
+            throw new Error(`Product ${id} does not exist.`);
+        }
+        const product = JSON.parse(productAsBytes.toString());
+        return JSON.stringify(product.SensorData);
+    }
 
-    // async GetAllSensorData(ctx, id) {
-    //     const productAsBytes = await ctx.stub.getState(id);
-    //     if (!productAsBytes || productAsBytes.length === 0) {
-    //         throw new Error(`Product ${id} does not exist.`);
-    //     }
-    //     const product = JSON.parse(productAsBytes.toString());
-    //     return JSON.stringify(product.SensorData);
-    // }
-
-    // async GetAllCertifications(ctx, id) {
-    //     const productAsBytes = await ctx.stub.getState(id);
-    //     if (!productAsBytes || productAsBytes.length === 0) {
-    //         throw new Error(`Product ${id} does not exist.`);
-    //     }
-    //     const product = JSON.parse(productAsBytes.toString());
-    //     return JSON.stringify(product.Certifications);
-    // }
+    async GetAllCertifications(ctx, id) {
+         const productAsBytes = await ctx.stub.getState(id);
+         if (!productAsBytes || productAsBytes.length === 0) {
+             throw new Error(`Product ${id} does not exist.`);
+         }
+         const product = JSON.parse(productAsBytes.toString());
+         return JSON.stringify(product.Certifications);
+     }
 }
 
 module.exports = SupplyChainContract;

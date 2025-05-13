@@ -3,22 +3,25 @@ import axios from 'axios';
 import { Card, Form, Button } from 'react-bootstrap';
 import '../../App.css'
 import Viewer3D from '../Viewer3D';
+import AddSensorData from "./AddSensorData";
 
 const UpdateProduct = ({ productId, onProductUpdate }) => {
   const [name, setName] = useState('');
   const [manufacturer, setManufacturer] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
+  const [harvestDate, setHarvestDate] = useState('');
   const [ingredients, setIngredients] = useState('');
   const [allergens, setAllergens] = useState('');
   const [nutritionalInformation, setNutritionalInformation] = useState('');
-  const [harvestDate, setHarvestDate] = useState('');
+  const [sowingDate, setSowingDate] = useState('');
   const [pesticideUse, setPesticideUse] = useState('');
   const [fertilizerUse, setFertilizerUse] = useState('');
   const [countryOfOrigin, setCountryOfOrigin] = useState('');
   const [message, setMessage] = useState('');
   const [customFields, setCustomFields] = useState([]);
+  const [sensorData, setSensorData] = useState([]);
   const [showForm, setShowForm] = useState(false); // Stato per gestire la visibilità del modulo
   const [glbFile, setGlbFile] = useState('')
+  const [showAddSensor, setShowAddSensor] = useState(false);
   const inputWidth = "30%"; // larghezza fissa per le etichette
   const placeholderText = "+ add new"; // testo del placeholder per tutti i campi
 
@@ -26,13 +29,20 @@ const UpdateProduct = ({ productId, onProductUpdate }) => {
     setManufacturer(localStorage.getItem('manufacturer'));
   }, []);
 
+useEffect(() => {
+    setShowAddSensor(false);
+    
+  }, [harvestDate, sowingDate]);
+
   const resetForm = () => {
     setName('');
-    setExpiryDate('');
+    setHarvestDate('');
+    setSowingDate('');
     setIngredients('');
     setAllergens('');
     setNutritionalInformation('');
     setCustomFields([]); // Ensure it's an array
+    setSensorData([]);
     setMessage('');
     setShowForm(false);
     setGlbFile('');
@@ -65,13 +75,15 @@ const removeCustomField = (index) => {
       ID: productId,
       Name: name,
       Manufacturer: manufacturer,
-      ExpiryDate: expiryDate,
+      HarvestDate: harvestDate,
       Ingredients: ingredients,
       Allergens: allergens,
       Nutritional_information: nutritionalInformation,
-      HarvestDate: harvestDate,
+      SowingDate: sowingDate,
       PesticideUse: pesticideUse,
       FertilizerUse: fertilizerUse,
+      Certifications: [],
+      SensorData: sensorData,
       CountryOfOrigin: countryOfOrigin,
       CustomObject: customFields.reduce((obj, field) => {
         if (field.key.trim()) obj[field.key] = field.value;
@@ -79,9 +91,9 @@ const removeCustomField = (index) => {
       }, {})
     };
      // Verifica se la data di scadenza è maggiore della data di raccolta
-     if (new Date(expiryDate) <= new Date(harvestDate)) {
+     if (new Date(harvestDate) <= new Date(sowingDate)) {
       // Se la condizione è vera, mostra un alert con il messaggio di errore
-      alert("Expiry Date must be at least one day after Harvest Date");
+      alert("Harvest Date must be at least one day after Sowing Date");
       return; // Termina la funzione
     }
 
@@ -189,23 +201,23 @@ const removeCustomField = (index) => {
                   </Form.Group>
 
                
-                  {/* Expiry Date Field */}
+                  {/* Sowing Date Field */}
+                  <Form.Group controlId="sowingDate" className="d-flex align-items-center mb-3">
+                    <Form.Label style={{ width: inputWidth }} className="me-3">Sowing Date</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={sowingDate}
+                      onChange={(e) => setSowingDate(e.target.value)}
+                      placeholder={placeholderText}
+                    />
+                  </Form.Group>
+                  {/* Harvest Date Field */}
                   <Form.Group controlId="harvestDate" className="d-flex align-items-center mb-3">
                     <Form.Label style={{ width: inputWidth }} className="me-3">Harvest Date</Form.Label>
                     <Form.Control
                       type="date"
                       value={harvestDate}
                       onChange={(e) => setHarvestDate(e.target.value)}
-                      placeholder={placeholderText}
-                    />
-                  </Form.Group>
-                  {/* Expiry Date Field */}
-                  <Form.Group controlId="expiryDate" className="d-flex align-items-center mb-3">
-                    <Form.Label style={{ width: inputWidth }} className="me-3">Expiry Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      value={expiryDate}
-                      onChange={(e) => setExpiryDate(e.target.value)}
                       placeholder={placeholderText}
                     />
                   </Form.Group>
@@ -334,7 +346,25 @@ const removeCustomField = (index) => {
                         <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #666' }} />
                       </div>
 
-                    
+{/* ----------------------------- SENSOR DATA ----------------------------- */}
+<div className="text-center mt-4">
+  <h5>Sensors 🌡️</h5>
+  <p style={{ color: "grey" }}>
+                    ℹ️ Sensor data are processed and extracted from the Databoom server. To retrieve it, you need to enter the sowing date and harvest date
+                    <br />
+                  </p>
+    <Button
+    variant="outline-success"
+    onClick={() => setShowAddSensor(!showAddSensor)}
+    className="mb-3"
+    disabled={!harvestDate || !sowingDate}
+  >
+    {showAddSensor ? "Cancel" : "+ Add Sensor Data"}
+  </Button>
+  {showAddSensor && (
+    <AddSensorData productId={productId} /*onAddSensorData={(data) => console.log("Sensor added:", data)}*/ sowingDate={sowingDate} harvestDate={harvestDate} onAddSensorData={(data) => setSensorData(data)} />
+  )}
+</div>                    
                   
 
 

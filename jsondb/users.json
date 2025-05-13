@@ -31,5 +31,16 @@
             "user": false
         },
         "operators": []
+    },
+    "gab@das.it": {
+        "manufacturer": "Gabriele",
+        "password": "$2b$12$eZsobWEXRQCLgBF7hcNmP.rnMEYoUXdzfZtatbOM7xQ3OdRb67/CS",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
     }
 }

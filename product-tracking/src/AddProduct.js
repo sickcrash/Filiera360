@@ -5,6 +5,8 @@ import { Card, Form, Button, Row, Col } from "react-bootstrap";
 import { QRCodeCanvas } from "qrcode.react";
 import Viewer3D from "./components/Viewer3D";
 import Papa from "papaparse"; // Assicurati che sia installato
+import AddCertification from "./components/update_prod/AddCertification";
+import AddSensorData from "./components/update_prod/AddSensorData";
 // Estraggo fuori costanti comuni
 const inputWidth = "30%";
 const placeholderText = "+ add new";
@@ -15,11 +17,11 @@ const AddProduct = () => {
 
   const [id, setId] = useState("");
   const [name, setName] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
+  const [harvestDate, setHarvestDate] = useState("");
   const [ingredients, setIngredients] = useState("");
   const [allergens, setAllergens] = useState("");
   const [nutritionalInformation, setNutritionalInformation] = useState("");
-  const [harvestDate, setHarvestDate] = useState("");
+  const [sowingDate, setSowingDate] = useState("");
   const [pesticideUse, setPesticideUse] = useState("");
   const [fertilizerUse, setFertilizerUse] = useState("");
   const [countryOfOrigin, setCountryOfOrigin] = useState("");
@@ -31,6 +33,9 @@ const AddProduct = () => {
   const [csvFile, setCsvFile] = useState(null);
   const [viewProduct, setViewProduct] = useState(false);
   const [customFields, setCustomFields] = useState([]);
+  const [sensorData, setSensorData] = useState([]);
+  const [showAddSensor, setShowAddSensor] = useState(false);
+  const [showAddCertification, setShowAddCertification] = useState(false);
   // Batch fields
   const [operator, setOperator] = useState("");
   const [idBatch, setIdBatch] = useState("");
@@ -38,6 +43,7 @@ const AddProduct = () => {
   const [batchNumber, setBatchNumber] = useState("");
   const [quantity, setQuantity] = useState("");
   const [productionDate, setProductionDate] = useState("");
+  const [state, setState] = useState("");
   const [customBatchFields, setCustomBatchFields] = useState([]);
   const [csvBatchFile, setCsvBatchFile] = useState(null);
   const [viewBatch, setViewBatch] = useState(false);
@@ -59,20 +65,26 @@ const AddProduct = () => {
     setOperator(localStorage.getItem("manufacturer") || ""); // Da sostituire con altro gruppo in futuro
   }, []);
 
+  useEffect(() => {
+    setShowAddSensor(false);
+    
+  }, [harvestDate, sowingDate]);
+
   const resetProductForm = () => {
     setId("");
     setName("");
-    setExpiryDate("");
+    setHarvestDate("");
     setIngredients("");
     setAllergens("");
     setNutritionalInformation("");
-    setHarvestDate("");
+    setSowingDate("");
     setPesticideUse("");
     setFertilizerUse("");
     setCountryOfOrigin("");
     setView("");
     setProductType("");
     setGlbFile("");
+    setSensorData([]);
     setCustomFields([]); // Ensure it's an array
   };
   const resetBatchForm = () => {
@@ -81,6 +93,7 @@ const AddProduct = () => {
     setBatchNumber("");
     setQuantity("");
     setProductionDate("");
+    setState("");
     setCustomBatchFields([]);
   };
   // ----------------- CUSTOM FIELDS FUNCTIONS -----------------
@@ -133,8 +146,8 @@ const AddProduct = () => {
     e.preventDefault();
 
     // Verifica se la data di scadenza è maggiore della data di raccolta
-    if (new Date(expiryDate) <= new Date(harvestDate)) {
-      alert("Expiry Date must be after Harvest Date");
+    if (new Date(harvestDate) <= new Date(sowingDate)) {
+      alert("Harvest Date must be after Sowing Date");
       return;
     }
     // Crea un oggetto con tutti i dati del prodotto
@@ -142,21 +155,20 @@ const AddProduct = () => {
       ID: id,
       Name: name,
       Manufacturer: manufacturer,
+      SowingDate: sowingDate,
       HarvestDate: harvestDate,
-      ExpiryDate: expiryDate,
       Nutritional_information: nutritionalInformation,
       CountryOfOrigin: countryOfOrigin,
       Ingredients: ingredients,
       Allergens: allergens,
       PesticideUse: pesticideUse,
       FertilizerUse: fertilizerUse,
+      Certifications: [],
+      SensorData: sensorData,
       CustomObject: customFields.reduce((obj, field) => {
         if (field.key.trim()) obj[field.key] = field.value;
         return obj;
       }, {}),
-      // Movements: [],
-      // SensorData: [],
-      // Certifications: []
     };
     // Funzione per recuperare il Blob da un URL e convertirlo in base64
     const convertFileToBase64 = async (glbFile) => {
@@ -276,6 +288,7 @@ const AddProduct = () => {
       BatchNumber: batchNumber,
       Quantity: quantity,
       ProductionDate: productionDate,
+      State: state,
       CustomObject: customBatchFields.reduce((obj, field) => {
         if (field.key.trim()) obj[field.key] = field.value;
         return obj;
@@ -311,7 +324,7 @@ const AddProduct = () => {
   };
 
   // ----------------- CSV Product -----------------
-  const handleCsvChange = (e) => {
+  /*const handleCsvChange = (e) => {
     setCsvFile(e.target.files[0]);
   };
 
@@ -329,14 +342,16 @@ const AddProduct = () => {
             ID: row[0],
             Name: row[1],
             Manufacturer: manufacturer,
-            HarvestDate: row[2],
-            ExpiryDate: row[3],
+            SowingDate: row[2],
+            HarvestDate: row[3],
             Nutritional_information: row[4],
             CountryOfOrigin: row[5],
             Ingredients: row[6],
             Allergens: row[7],
             PesticideUse: row[8],
             FertilizerUse: row[9],
+            Certifications: [],
+            SensorData: [],
             CustomObject: JSON.parse(row[10] || "{}"), // Assicurati che sia JSON valido
           };
 
@@ -359,7 +374,7 @@ const AddProduct = () => {
       },
       header: false, // Il CSV non contiene intestazioni
     });
-  };
+  };*/
 
   // ----------------- CSV Batch -----------------
   const handleCsvBatchChange = (e) => {
@@ -386,7 +401,8 @@ const AddProduct = () => {
             BatchNumber: row[2],
             Quantity: row[3],
             ProductionDate: row[4],
-            CustomObject: JSON.parse(row[5] || "{}"), // Assicurati che sia JSON valido
+            State: row[5],
+            CustomObject: JSON.parse(row[6] || "{}"), // Assicurati che sia JSON valido
           };
 
           try {
@@ -669,7 +685,29 @@ const AddProduct = () => {
                           required
                         />
                       </Form.Group>
-                      {/*Harvest Date Field*/}
+                      {/*Sowing Date Field*/}
+                      <Form.Group
+                        controlId="sowingDate"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                           <span
+                            title="Con Production Start Date si intende la data di semina oppure, in generale, la data di inizio della produzione di quell'annata del prodotto."
+                            style={{ marginLeft: '6px', cursor: 'help' }}
+                            >
+                              ℹ️
+                          </span>Production Start Date
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          value={sowingDate}
+                          onChange={(e) => setSowingDate(e.target.value)}
+                        />
+                      </Form.Group>
+                      {/* Harvest Date Field*/}
                       <Form.Group
                         controlId="harvestDate"
                         className="d-flex align-items-center mb-3"
@@ -684,23 +722,6 @@ const AddProduct = () => {
                           type="date"
                           value={harvestDate}
                           onChange={(e) => setHarvestDate(e.target.value)}
-                        />
-                      </Form.Group>
-                      {/* Expire Date Field*/}
-                      <Form.Group
-                        controlId="expiryDate"
-                        className="d-flex align-items-center mb-3"
-                      >
-                        <Form.Label
-                          style={{ width: inputWidth }}
-                          className="me-3"
-                        >
-                          Expiry Date
-                        </Form.Label>
-                        <Form.Control
-                          type="date"
-                          value={expiryDate}
-                          onChange={(e) => setExpiryDate(e.target.value)}
                           required
                         />
                       </Form.Group>
@@ -930,14 +951,52 @@ const AddProduct = () => {
                           }}
                         />
                       </div>
+{/* ----------------------------- SENSOR DATA ----------------------------- */}
+<div className="text-center mt-4">
+  <h5>Sensors 🌡️</h5>
+  <p style={{ color: "grey" }}>
+                    ℹ️ Sensor data are processed and extracted from the Databoom server. To retrieve it, you need to enter the sowing date and harvest date
+                    <br />
+                  </p>
+    <Button
+    variant="outline-success"
+    onClick={() => setShowAddSensor(!showAddSensor)}
+    className="mb-3"
+    disabled={!harvestDate || !sowingDate}
+  >
+    {showAddSensor ? "Cancel" : "+ Add Sensor Data"}
+  </Button>
+  {showAddSensor && (
+    <AddSensorData productId={id} sowingDate={sowingDate} harvestDate={harvestDate} onAddSensorData={(data) => setSensorData(data)} />
+  )}
+</div>
+
+{/* --------------------------- CERTIFICATIONS --------------------------- */}
+<div className="text-center mt-4">
+  <h5>Certifications ✅</h5>
+  <p style={{ color: "grey" }}>
+                    ℹ️ In order to insert certifications, the product must already have been uploaded
+                    <br />
+                  </p>
+  <Button
+    variant="outline-primary"
+    onClick={() => setShowAddCertification(!showAddCertification)}
+    className="mb-3"
+  >
+    {showAddCertification ? "Cancel" : "+ Add Certification"}
+  </Button>
+  {showAddCertification && (
+    <AddCertification productId={id} onAddCertification={(data) => console.log("Certification added:", data)} />
+  )}
+</div>
                       <Button
                         variant="primary"
                         type="submit"
                         disabled={
                           !id ||
                           !name ||
-                          !expiryDate ||
                           !harvestDate ||
+                          !sowingDate ||
                           !ingredients ||
                           !nutritionalInformation ||
                           !allergens ||
@@ -1193,6 +1252,27 @@ const AddProduct = () => {
                           placeholder={placeholderText}
                         />
                       </Form.Group>
+                      <Form.Group
+                        controlId="state"
+                        className="d-flex align-items-center mb-3"
+                      >
+                        <Form.Label
+                          style={{ width: inputWidth }}
+                          className="me-3"
+                        >
+                          Status
+                        </Form.Label>
+                        <Form.Select
+                          value={state}
+                          onChange={(e) => setState(e.target.value)} required
+                        >
+                          <option value="" disabled>-- Select Status --</option>
+                          <option value="Shipped">Shipped</option>
+                          <option value="Delivered">Delivered</option>
+                          <option value="Retired">Retired</option>
+                          <option value="Reported">Reported</option>
+                      </Form.Select>
+                      </Form.Group>
                       {/* Separator */}
                       <div
                         style={{
@@ -1371,5 +1451,6 @@ const AddProduct = () => {
     </div>
   );
 };
+
 
 export default AddProduct;

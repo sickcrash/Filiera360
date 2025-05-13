@@ -45,13 +45,13 @@ function ScanProduct() {
       <ProductList 
         onProductSelect={setSelectedProduct} 
         onBatchSelect={setSelectedBatch}/>
-      {/* {selectedProduct && (
+      {selectedProduct && (
         <div className="mt-4" id="customForm">
-          <DataSensors productId={selectedProduct} />
-          <ProductMovements productId={selectedProduct} />
+          {/*<DataSensors productId={selectedProduct} />
+          <ProductMovements productId={selectedProduct} />*/}
           <Certifications productId={selectedProduct} />
         </div>
-      )} */}
+      )} 
       <br />
       <br />
       {selectedProduct ?
