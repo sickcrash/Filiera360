@@ -690,344 +690,354 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
           </div>
         </div>
 
-        {/* Explore Products */}
-        <div style={{ marginTop: "45px" }}>
-          <div className="row justify-content-center">
-            <div className="col-md-6">
-              <div className="card shadow mt-1">
-                <div className="card-header bg-light">
-                  <h4 className="mb-2">Explore 🔎</h4>
-                  <p className="text-muted mb-3">🔗 Insert manufacturer's name</p>
-                </div>
-                <div className="card-body">
-                  <Explore />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
 
       </form>
+      {/* Explore Products */}
 
-      {/* Display product details if the product is found */}
-      {product && (
-        <div className="row justify-content-center mt-5">
-          <div className="col-md-8">
-            <div className="card shadow">
+      <div style={{ marginTop: "45px" }}>
+        <div className="row justify-content-center">
+          <div className="col-md-6">
+            <div className="card shadow mt-1">
               <div className="card-body">
-                <h4 className="card-title">General Information ℹ️</h4>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <div></div> {/* Empty div for flex spacing */}
-                  <button
-                    className={`btn ${liked ? 'btn-danger' : 'btn-outline-danger'}`}
-                    onClick={handleLikeToggle}
-                    title={liked ? "Unlike this product" : "Like this product"}
-                  >
-                    <ion-icon name={liked ? "heart" : "heart-outline"}></ion-icon>
-                    {liked ? ' Liked' : ' Like'}
-                  </button>
+                <div className="card-header">
+                  <h4>Explore 🔎</h4>
+                  <p style={{ color: "grey" }}>
+                  🔗 Insert manufacturer's name
+                </p>
+              </div>
+              <br />
+              <Explore />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+      {/* Display product details if the product is found */ }
+  {
+    product && (
+      <div className="row justify-content-center mt-5">
+        <div className="col-md-8">
+          <div className="card shadow">
+            <div className="card-body">
+              <h4 className="card-title">General Information ℹ️</h4>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div></div> {/* Empty div for flex spacing */}
+                <button
+                  className={`btn ${liked ? 'btn-danger' : 'btn-outline-danger'}`}
+                  onClick={handleLikeToggle}
+                  title={liked ? "Unlike this product" : "Like this product"}
+                >
+                  <ion-icon name={liked ? "heart" : "heart-outline"}></ion-icon>
+                  {liked ? ' Liked' : ' Like'}
+                </button>
+              </div>
+              {glbFile ? (
+                <div style={{ marginBlock: "2vw" }}>
+                  <Viewer3D externalGlbFile={glbFile} />
                 </div>
-                {glbFile ? (
-                  <div style={{ marginBlock: "2vw" }}>
-                    <Viewer3D externalGlbFile={glbFile} />
-                  </div>
-                ) : (
-                  <p style={{ color: "grey" }}>no 3D preview available</p>
-                )}
-                <Table striped bordered hover>
-                  <tbody>
-                    {product.Name && (
-                      <tr>
-                        <th>Name</th>
-                        <td>{product.Name}</td>
-                      </tr>
-                    )}
-                    {product.ID && (
-                      <tr>
-                        <th>ID</th>
-                        <td>{product.ID}</td>
-                      </tr>
-                    )}
-                    {product.Manufacturer && (
-                      <tr>
-                        <th>Manufacturer</th>
-                        <td>{product.Manufacturer}</td>
-                      </tr>
-                    )}
-                    {product.ExpiryDate && (
-                      <tr>
-                        <th>Expiry Date</th>
-                        <td>{product.ExpiryDate}</td>
-                      </tr>
-                    )}
+              ) : (
+                <p style={{ color: "grey" }}>no 3D preview available</p>
+              )}
+              <Table striped bordered hover>
+                <tbody>
+                  {product.Name && (
+                    <tr>
+                      <th>Name</th>
+                      <td>{product.Name}</td>
+                    </tr>
+                  )}
+                  {product.ID && (
+                    <tr>
+                      <th>ID</th>
+                      <td>{product.ID}</td>
+                    </tr>
+                  )}
+                  {product.Manufacturer && (
+                    <tr>
+                      <th>Manufacturer</th>
+                      <td>{product.Manufacturer}</td>
+                    </tr>
+                  )}
+                  {product.ExpiryDate && (
+                    <tr>
+                      <th>Expiry Date</th>
+                      <td>{product.ExpiryDate}</td>
+                    </tr>
+                  )}
 
-                    {product.Ingredients && (
-                      <tr>
-                        <th>Ingredients</th>
-                        <td>{product.Ingredients}</td>
-                      </tr>
-                    )}
-                    {product.Nutritional_information && (
-                      <tr>
-                        <th>Nutritional Information</th>
-                        <td>{product.Nutritional_information}</td>
-                      </tr>
-                    )}
-                    {product.Allergens && (
-                      <tr>
-                        <th>Allergens</th>
-                        <td>{product.Allergens}</td>
-                      </tr>
-                    )}
+                  {product.Ingredients && (
+                    <tr>
+                      <th>Ingredients</th>
+                      <td>{product.Ingredients}</td>
+                    </tr>
+                  )}
+                  {product.Nutritional_information && (
+                    <tr>
+                      <th>Nutritional Information</th>
+                      <td>{product.Nutritional_information}</td>
+                    </tr>
+                  )}
+                  {product.Allergens && (
+                    <tr>
+                      <th>Allergens</th>
+                      <td>{product.Allergens}</td>
+                    </tr>
+                  )}
 
-                    {product.PesticideUse && (
-                      <tr>
-                        <th>Pesticide Use</th>
-                        <td>{product.PesticideUse}</td>
-                      </tr>
-                    )}
-                    {product.FertilizerUse && (
-                      <tr>
-                        <th>Fertilizer Use</th>
-                        <td>{product.FertilizerUse}</td>
-                      </tr>
-                    )}
-                    {product.CountryOfOrigin && (
-                      <tr>
-                        <th>Country Of Origin</th>
-                        <td>{product.CountryOfOrigin}</td>
-                      </tr>
-                    )}
-                    {product.CustomObject && product.CustomObject && Object.entries(product.CustomObject).map(([key, value]) => (
-                      <tr key={key}>
-                        <th>{key}</th>
-                        <td>{value}</td>
-                      </tr>
-                    ))}
+                  {product.PesticideUse && (
+                    <tr>
+                      <th>Pesticide Use</th>
+                      <td>{product.PesticideUse}</td>
+                    </tr>
+                  )}
+                  {product.FertilizerUse && (
+                    <tr>
+                      <th>Fertilizer Use</th>
+                      <td>{product.FertilizerUse}</td>
+                    </tr>
+                  )}
+                  {product.CountryOfOrigin && (
+                    <tr>
+                      <th>Country Of Origin</th>
+                      <td>{product.CountryOfOrigin}</td>
+                    </tr>
+                  )}
+                  {product.CustomObject && product.CustomObject && Object.entries(product.CustomObject).map(([key, value]) => (
+                    <tr key={key}>
+                      <th>{key}</th>
+                      <td>{value}</td>
+                    </tr>
+                  ))}
 
 
-                    {/*
+                  {/*
                     <tr>
                       <th>Status</th>
                       <td>{status || 'No status available'}</td>
                     </tr>
                     */}
-                    <tr>
-                      <th>N. Updates *</th>
-                      <td>{productHistory.length}</td>
-                    </tr>
-                    <tr>
-                      <th>Last Date *</th>
-                      <td>{getLastUpdate() || 'No updates available'}</td>
-                    </tr>
-                    <tr>
-                      <th>First Update *</th>
-                      <td>{getFirstUpdate() || 'No updates available'}</td>
-                    </tr>
-                  </tbody>
-                </Table>
-                <br />
-                <QRCodeCanvas value={product.ID} style={{ marginBottom: "2vw" }} />
-                <p>
-                  Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
-                  ensuring transparency and reliability.
-                  These values are not provided by the manufacturer.
-                </p>
-                <button
-                  className="btn btn-primary mt-3"
-                  onClick={handleDownloadHistoryLog}
-                >
-                  Click here to see all the product updates
-                </button>
-              </div>
+                  <tr>
+                    <th>N. Updates *</th>
+                    <td>{productHistory.length}</td>
+                  </tr>
+                  <tr>
+                    <th>Last Date *</th>
+                    <td>{getLastUpdate() || 'No updates available'}</td>
+                  </tr>
+                  <tr>
+                    <th>First Update *</th>
+                    <td>{getFirstUpdate() || 'No updates available'}</td>
+                  </tr>
+                </tbody>
+              </Table>
+              <br />
+              <QRCodeCanvas value={product.ID} style={{ marginBottom: "2vw" }} />
+              <p>
+                Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
+                ensuring transparency and reliability.
+                These values are not provided by the manufacturer.
+              </p>
+              <button
+                className="btn btn-primary mt-3"
+                onClick={handleDownloadHistoryLog}
+              >
+                Click here to see all the product updates
+              </button>
             </div>
           </div>
-          {isProducer && product.Manufacturer == localStorage.getItem("manufacturer") &&
-            <UpdateProduct
-              productId={itemCode}
-              productType={{ "Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate }}
-              onProductUpdate={handleScan}
-            />}
         </div>
-      )}
+        {isProducer && product.Manufacturer == localStorage.getItem("manufacturer") &&
+          <UpdateProduct
+            productId={itemCode}
+            productType={{ "Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate }}
+            onProductUpdate={handleScan}
+          />}
+      </div>
+    )
+  }
 
-      {/* Display batch details if the batch is found */}
-      {batch && (
-        <div className="row justify-content-center mt-5">
-          <div className="col-md-8">
-            <div className="card shadow">
-              <div className="card-body">
-                <h4 className="card-title">General Information ℹ️</h4>
-                <Table striped bordered hover>
-                  <tbody>
-                    {batch.ID && (
-                      <tr>
-                        <th>ID</th>
-                        <td>{batch.ID}</td>
-                      </tr>
-                    )}
-                    {batch.ProductId && (
-                      <tr>
-                        <th>Product Id</th>
-                        <td>{batch.ProductId}</td>
-                      </tr>
-                    )}
-
-                    {batch.Operator && (
-                      <tr>
-                        <th>Operator</th>
-                        <td>{batch.Operator}</td>
-                      </tr>
-                    )}
-
-                    {batch.BatchNumber && (
-                      <tr>
-                        <th>Batch Number</th>
-                        <td>{batch.BatchNumber}</td>
-                      </tr>
-                    )}
-                    {batch.Quantity && (
-                      <tr>
-                        <th>Quantity</th>
-                        <td>{batch.Quantity}</td>
-                      </tr>
-                    )}
-                    {batch.ProductionDate && (
-                      <tr>
-                        <th>Production Date</th>
-                        <td>{batch.ProductionDate}</td>
-                      </tr>
-                    )}
-
-                    {batch.CustomObject && Object.entries(batch.CustomObject).map(([key, value]) => (
-                      <tr key={key}>
-                        <th>{key}</th>
-                        <td>{value}</td>
-                      </tr>
-                    ))}
-
-
-
+  {/* Display batch details if the batch is found */ }
+  {
+    batch && (
+      <div className="row justify-content-center mt-5">
+        <div className="col-md-8">
+          <div className="card shadow">
+            <div className="card-body">
+              <h4 className="card-title">General Information ℹ️</h4>
+              <Table striped bordered hover>
+                <tbody>
+                  {batch.ID && (
                     <tr>
-                      <th>Status</th>
-                      <td>{status || 'No status available'}</td>
+                      <th>ID</th>
+                      <td>{batch.ID}</td>
                     </tr>
+                  )}
+                  {batch.ProductId && (
                     <tr>
-                      <th>N. Updates *</th>
-                      <td>{batchHistory.length}</td>
+                      <th>Product Id</th>
+                      <td>{batch.ProductId}</td>
                     </tr>
+                  )}
+
+                  {batch.Operator && (
                     <tr>
-                      <th>Last Date *</th>
-                      <td>{getLastUpdateBatch() || 'No updates available'}</td>
+                      <th>Operator</th>
+                      <td>{batch.Operator}</td>
                     </tr>
+                  )}
+
+                  {batch.BatchNumber && (
                     <tr>
-                      <th>First Update *</th>
-                      <td>{getFirstUpdateBatch() || 'No updates available'}</td>
+                      <th>Batch Number</th>
+                      <td>{batch.BatchNumber}</td>
                     </tr>
-                  </tbody>
-                </Table>
-                <br />
-                <QRCodeCanvas value={batch.ID} style={{ marginBottom: "2vw" }} />
-                <p>
-                  Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
-                  ensuring transparency and reliability.
-                  These values are not provided by the operator.
-                </p>
-                <button
-                  className="btn btn-primary mt-3"
-                  onClick={handleDownloadHistoryLogBatch}
-                >
-                  Click here to see all the batch updates
-                </button>
-              </div>
+                  )}
+                  {batch.Quantity && (
+                    <tr>
+                      <th>Quantity</th>
+                      <td>{batch.Quantity}</td>
+                    </tr>
+                  )}
+                  {batch.ProductionDate && (
+                    <tr>
+                      <th>Production Date</th>
+                      <td>{batch.ProductionDate}</td>
+                    </tr>
+                  )}
+
+                  {batch.CustomObject && Object.entries(batch.CustomObject).map(([key, value]) => (
+                    <tr key={key}>
+                      <th>{key}</th>
+                      <td>{value}</td>
+                    </tr>
+                  ))}
+
+
+
+                  <tr>
+                    <th>Status</th>
+                    <td>{status || 'No status available'}</td>
+                  </tr>
+                  <tr>
+                    <th>N. Updates *</th>
+                    <td>{batchHistory.length}</td>
+                  </tr>
+                  <tr>
+                    <th>Last Date *</th>
+                    <td>{getLastUpdateBatch() || 'No updates available'}</td>
+                  </tr>
+                  <tr>
+                    <th>First Update *</th>
+                    <td>{getFirstUpdateBatch() || 'No updates available'}</td>
+                  </tr>
+                </tbody>
+              </Table>
+              <br />
+              <QRCodeCanvas value={batch.ID} style={{ marginBottom: "2vw" }} />
+              <p>
+                Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
+                ensuring transparency and reliability.
+                These values are not provided by the operator.
+              </p>
+              <button
+                className="btn btn-primary mt-3"
+                onClick={handleDownloadHistoryLogBatch}
+              >
+                Click here to see all the batch updates
+              </button>
             </div>
           </div>
-          {batchProduct && (
-            <div className="row justify-content-center mt-5">
-              <div className="col-md-8">
-                <div className="card shadow">
-                  <div className="card-body">
-                    <h4 className="card-title">Product Information ℹ️</h4>
-                    {glbFile ? (
-                      <div style={{ marginBlock: "2vw" }}>
-                        <Viewer3D externalGlbFile={glbFile} />
-                      </div>
-                    ) : (
-                      <p style={{ color: "grey" }}>no 3D preview available</p>
-                    )}
-                    <Table striped bordered hover>
-                      <tbody>
-                        {batchProduct.Name && (
-                          <tr>
-                            <th>Name</th>
-                            <td>{batchProduct.Name}</td>
-                          </tr>
-                        )}
-                        {true && (
-                          <tr>
-                            <th>ID</th>
-                            <td>{batchProduct.ID}</td>
-                          </tr>
-                        )}
-                        {batchProduct.Manufacturer && (
-                          <tr>
-                            <th>Manufacturer</th>
-                            <td>{batchProduct.Manufacturer}</td>
-                          </tr>
-                        )}
+        </div>
+        {batchProduct && (
+          <div className="row justify-content-center mt-5">
+            <div className="col-md-8">
+              <div className="card shadow">
+                <div className="card-body">
+                  <h4 className="card-title">Product Information ℹ️</h4>
+                  {glbFile ? (
+                    <div style={{ marginBlock: "2vw" }}>
+                      <Viewer3D externalGlbFile={glbFile} />
+                    </div>
+                  ) : (
+                    <p style={{ color: "grey" }}>no 3D preview available</p>
+                  )}
+                  <Table striped bordered hover>
+                    <tbody>
+                      {batchProduct.Name && (
+                        <tr>
+                          <th>Name</th>
+                          <td>{batchProduct.Name}</td>
+                        </tr>
+                      )}
+                      {true && (
+                        <tr>
+                          <th>ID</th>
+                          <td>{batchProduct.ID}</td>
+                        </tr>
+                      )}
+                      {batchProduct.Manufacturer && (
+                        <tr>
+                          <th>Manufacturer</th>
+                          <td>{batchProduct.Manufacturer}</td>
+                        </tr>
+                      )}
 
-                        {batchProduct.ExpiryDate && (
-                          <tr>
-                            <th>Expiry Date</th>
-                            <td>{batchProduct.ExpiryDate}</td>
-                          </tr>
-                        )}
+                      {batchProduct.ExpiryDate && (
+                        <tr>
+                          <th>Expiry Date</th>
+                          <td>{batchProduct.ExpiryDate}</td>
+                        </tr>
+                      )}
 
-                        {batchProduct.Ingredients && (
-                          <tr>
-                            <th>Ingredients</th>
-                            <td>{batchProduct.Ingredients}</td>
-                          </tr>
-                        )}
-                        {batchProduct.Nutritional_information && (
-                          <tr>
-                            <th>Nutritional Information</th>
-                            <td>{batchProduct.Nutritional_information}</td>
-                          </tr>
-                        )}
-                        {batchProduct.Allergens && (
-                          <tr>
-                            <th>Allergens</th>
-                            <td>{batchProduct.Allergens}</td>
-                          </tr>
-                        )}
+                      {batchProduct.Ingredients && (
+                        <tr>
+                          <th>Ingredients</th>
+                          <td>{batchProduct.Ingredients}</td>
+                        </tr>
+                      )}
+                      {batchProduct.Nutritional_information && (
+                        <tr>
+                          <th>Nutritional Information</th>
+                          <td>{batchProduct.Nutritional_information}</td>
+                        </tr>
+                      )}
+                      {batchProduct.Allergens && (
+                        <tr>
+                          <th>Allergens</th>
+                          <td>{batchProduct.Allergens}</td>
+                        </tr>
+                      )}
 
-                        {batchProduct.PesticideUse && (
-                          <tr>
-                            <th>Pesticide Use</th>
-                            <td>{batchProduct.PesticideUse}</td>
-                          </tr>
-                        )}
-                        {batchProduct.FertilizerUse && (
-                          <tr>
-                            <th>Fertilizer Use</th>
-                            <td>{batchProduct.FertilizerUse}</td>
-                          </tr>
-                        )}
-                        {batchProduct.CountryOfOrigin && (
-                          <tr>
-                            <th>Country Of Origin</th>
-                            <td>{batchProduct.CountryOfOrigin}</td>
-                          </tr>
-                        )}
-                        {batchProduct.CustomObject && Object.entries(batchProduct.CustomObject).map(([key, value]) => (
-                          <tr key={key}>
-                            <th>{key}</th>
-                            <td>{value}</td>
-                          </tr>
-                        ))}
-                        {/* <tr>
+                      {batchProduct.PesticideUse && (
+                        <tr>
+                          <th>Pesticide Use</th>
+                          <td>{batchProduct.PesticideUse}</td>
+                        </tr>
+                      )}
+                      {batchProduct.FertilizerUse && (
+                        <tr>
+                          <th>Fertilizer Use</th>
+                          <td>{batchProduct.FertilizerUse}</td>
+                        </tr>
+                      )}
+                      {batchProduct.CountryOfOrigin && (
+                        <tr>
+                          <th>Country Of Origin</th>
+                          <td>{batchProduct.CountryOfOrigin}</td>
+                        </tr>
+                      )}
+                      {batchProduct.CustomObject && Object.entries(batchProduct.CustomObject).map(([key, value]) => (
+                        <tr key={key}>
+                          <th>{key}</th>
+                          <td>{value}</td>
+                        </tr>
+                      ))}
+                      {/* <tr>
                       <th>Status</th>
                       <td>{status || 'No status available'}</td>
                     </tr>
@@ -1043,138 +1053,143 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                       <th>First Update *</th>
                       <td>{getFirstUpdate() || 'No updates available'}</td>
                     </tr> */}
-                      </tbody>
-                    </Table>
-                    <br />
-                    <QRCodeCanvas value={batchProduct.ID} style={{ marginBottom: "2vw" }} />
-                  </div>
+                    </tbody>
+                  </Table>
+                  <br />
+                  <QRCodeCanvas value={batchProduct.ID} style={{ marginBottom: "2vw" }} />
                 </div>
               </div>
-
             </div>
-          )}
-          {batch.Operator == localStorage.getItem("manufacturer") &&
-            <UpdateBatch
-              productId={batch.ProductId}
-              batchId={batch.ID}
-              // batchType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
-              onBatchUpdate={handleScanBatch}
-            />}
-        </div>
-      )}
 
-      <br />
-
-      {/* Recently Scanned Products Section */}
-      {recentlyScanned.length > 0 && (
-        <div className="row mt-4 mb-4">
-          <div className="col-12">
-            <p style={{ fontWeight: "bold" }}>Recent uploads/scans 🕒</p>
-            <Row xs={1} md={2} lg={3} className="g-4">
-              {recentlyScanned.map((scannedProduct) => (
-                <Col key={scannedProduct.ID}>
-                  <Card className="h-100 shadow-sm">
-                    <Card.Body>
-                      <Card.Title>{scannedProduct.Name}</Card.Title>
-                      <Card.Text>
-                        <small className="text-muted">ID: {scannedProduct.ID}</small><br />
-                        <small className="text-muted">Manufacturer: {scannedProduct.Manufacturer}</small><br />
-                        <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
-                      </Card.Text>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => {
-                            setItemCode(scannedProduct.ID);
-                            try { document.getElementById("itemCode").value = scannedProduct.ID; }
-                            catch { }
-                            window.scrollTo({ top: 0, behavior: 'smooth' })
-                          }}
-                        >
-                          View Details
-                        </button>
-                        <small className="text-muted">
-                          {new Date(scannedProduct.timestamp).toLocaleDateString()}
-                        </small>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
           </div>
+        )}
+        {batch.Operator == localStorage.getItem("manufacturer") &&
+          <UpdateBatch
+            productId={batch.ProductId}
+            batchId={batch.ID}
+            // batchType={{"Ingredients": product.Ingredients, "HarvestDate": product.HarvestDate}}
+            onBatchUpdate={handleScanBatch}
+          />}
+      </div>
+    )
+  }
+
+  <br />
+
+  {/* Recently Scanned Products Section */ }
+  {
+    recentlyScanned.length > 0 && (
+      <div className="row mt-4 mb-4">
+        <div className="col-12">
+          <p style={{ fontWeight: "bold" }}>Recent uploads/scans 🕒</p>
+          <Row xs={1} md={2} lg={3} className="g-4">
+            {recentlyScanned.map((scannedProduct) => (
+              <Col key={scannedProduct.ID}>
+                <Card className="h-100 shadow-sm">
+                  <Card.Body>
+                    <Card.Title>{scannedProduct.Name}</Card.Title>
+                    <Card.Text>
+                      <small className="text-muted">ID: {scannedProduct.ID}</small><br />
+                      <small className="text-muted">Manufacturer: {scannedProduct.Manufacturer}</small><br />
+                      <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
+                    </Card.Text>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => {
+                          setItemCode(scannedProduct.ID);
+                          try { document.getElementById("itemCode").value = scannedProduct.ID; }
+                          catch { }
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
+                      >
+                        View Details
+                      </button>
+                      <small className="text-muted">
+                        {new Date(scannedProduct.timestamp).toLocaleDateString()}
+                      </small>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
         </div>
-      )}
+      </div>
+    )
+  }
 
-      {/* Liked Products Section */}
-      {likedProducts.length > 0 && (
-        <div className="row mt-4 mb-4">
-          <div className="col-12">
-            <p style={{ fontWeight: "bold" }}>Your Liked Products ❤️</p>
-            {/* Griglia responsive - 1 column on small screens, 3 on large */}
-            <Row xs={1} md={2} lg={3} className="g-4">
-              {likedProducts.map((likedProduct) => (
-                <Col key={likedProduct.ID}>
-                  {/* Card per ogni prodotto preferito */}
-                  <Card className="h-100 shadow-sm">
-                    <Card.Body>
-                      <Card.Title>{likedProduct.Name}</Card.Title>
-                      <Card.Text>
-                        <small className="text-muted">ID: {likedProduct.ID}</small><br />
-                        <small className="text-muted">Manufacturer: {likedProduct.Manufacturer}</small><br />
-                        <small className="text-muted">Created: {likedProduct.CreationDate}</small>
-                      </Card.Text>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => {
-                            setItemCode(likedProduct.ID);
-                            document.getElementById("itemCode").value = likedProduct.ID;
-                            window.scrollTo({ top: 0, behavior: 'smooth' })
-                          }}
-                        >
-                          View Details
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={async () => {
-                            // Get user ID from localStorage
-                            const userId = localStorage.getItem('email') || 'default';
+  {/* Liked Products Section */ }
+  {
+    likedProducts.length > 0 && (
+      <div className="row mt-4 mb-4">
+        <div className="col-12">
+          <p style={{ fontWeight: "bold" }}>Your Liked Products ❤️</p>
+          {/* Griglia responsive - 1 column on small screens, 3 on large */}
+          <Row xs={1} md={2} lg={3} className="g-4">
+            {likedProducts.map((likedProduct) => (
+              <Col key={likedProduct.ID}>
+                {/* Card per ogni prodotto preferito */}
+                <Card className="h-100 shadow-sm">
+                  <Card.Body>
+                    <Card.Title>{likedProduct.Name}</Card.Title>
+                    <Card.Text>
+                      <small className="text-muted">ID: {likedProduct.ID}</small><br />
+                      <small className="text-muted">Manufacturer: {likedProduct.Manufacturer}</small><br />
+                      <small className="text-muted">Created: {likedProduct.CreationDate}</small>
+                    </Card.Text>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => {
+                          setItemCode(likedProduct.ID);
+                          document.getElementById("itemCode").value = likedProduct.ID;
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
+                      >
+                        View Details
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={async () => {
+                          // Get user ID from localStorage
+                          const userId = localStorage.getItem('email') || 'default';
 
-                            try {
-                              // Call the backend to unlike the product
-                              const response = await axios.delete(`/api/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
-                                headers: {
-                                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                                  'Content-Type': 'application/json',
-                                }
-                              });
+                          try {
+                            // Call the backend to unlike the product
+                            const response = await axios.delete(`/api/unlikeProduct?productId=${likedProduct.ID}&userId=${userId}`, {
+                              headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                'Content-Type': 'application/json',
+                              }
+                            });
 
-                              console.log(`Product ${likedProduct.ID} removed from favorites`, response.data);
+                            console.log(`Product ${likedProduct.ID} removed from favorites`, response.data);
 
-                              // Update the list of liked products in state
-                              const updatedProducts = likedProducts.filter(p => p.ID !== likedProduct.ID);
-                              setLikedProducts(updatedProducts);
+                            // Update the list of liked products in state
+                            const updatedProducts = likedProducts.filter(p => p.ID !== likedProduct.ID);
+                            setLikedProducts(updatedProducts);
 
-                              // If this is the currently displayed product, update its liked status
-                              if (product && product.ID === likedProduct.ID) setLiked(false);
-                            } catch (error) {
-                              console.error("Error removing product from favorites:", error);
-                            }
-                          }}
-                        >
-                          <ion-icon name="heart-dislike-outline"></ion-icon>
-                        </button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </div>
+                            // If this is the currently displayed product, update its liked status
+                            if (product && product.ID === likedProduct.ID) setLiked(false);
+                          } catch (error) {
+                            console.error("Error removing product from favorites:", error);
+                          }
+                        }}
+                      >
+                        <ion-icon name="heart-dislike-outline"></ion-icon>
+                      </button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
         </div>
-      )}
-    </div>
+      </div>
+    )
+  }
+    </div >
   );
 };
 

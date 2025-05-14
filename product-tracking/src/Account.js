@@ -73,13 +73,14 @@ const Account = ({ setIsLoggedIn }) => {
         </div>
       </div>}
 
-      <div style={{ width: '580px', margin: '0 auto', marginBottom: '100px' }}>
-        <div className="row justify-content-center">
-          <div className="card shadow mt-4">
-            <div className="card-header bg-light">
-              <h4 className="mb-2">My Products 🛒</h4>
-            </div>
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card shadow mt-1">
             <div className="card-body">
+              <div className="card-header">
+                <h4>My Products 🛒</h4>
+              </div>
+              <br />
               <MyProducts />
             </div>
           </div>
