@@ -61,7 +61,8 @@ const Explore = ({ onProductsSelect }) => {
                   borderRadius: '8px',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
                   backgroundColor: '#fff',
-                  margin: '0 auto'
+                  margin: '0 auto',
+                  marginBottom: '20px'
                 }}
               >
                 <h3>{product.Name}</h3>
