@@ -54,6 +54,8 @@ const AddProduct = () => {
   const [lastAddedProduct, setLastAddedProduct] = useState("");
   const [lastAddedBatch, setLastAddedBatch] = useState("");
   const [role, setRole] = useState("");
+  const [showInfo, setShowInfo] = useState(false);
+
   // ----------------- LOAD LOCALSTORAGE -----------------
   useEffect(() => {
     setManufacturer(localStorage.getItem("manufacturer") || "");
@@ -695,11 +697,17 @@ const AddProduct = () => {
                           className="me-3"
                         >
                            <span
-                            title="Con Production Start Date si intende la data di semina oppure, in generale, la data di inizio della produzione di quell'annata del prodotto."
+                            title="Production Start Date refers to the sowing date or, more generally, the date when the production for that year’s product begins"
                             style={{ marginLeft: '6px', cursor: 'help' }}
+                            onClick={() => setShowInfo(prev => !prev)}
                             >
                               ℹ️
                           </span>Production Start Date
+                          {showInfo && (
+                            <div style={{ marginLeft: '10px', fontSize: '0.9em', color: 'grey' }}>
+                              Production Start Date refers to the sowing date or, more generally, the date when the production for that year’s product begins
+                            </div>
+                          )}
                         </Form.Label>
                         <Form.Control
                           type="date"
@@ -989,6 +997,36 @@ const AddProduct = () => {
     <AddCertification productId={id} onAddCertification={(data) => console.log("Certification added:", data)} />
   )}
 </div>
+{/* Separator */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          margin: "20px 0",
+                        }}
+                      >
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                        <span
+                          style={{
+                            margin: "0 10px",
+                            color: "#666",
+                            fontWeight: "bold",
+                          }}
+                        ></span>
+                        <hr
+                          style={{
+                            flex: 1,
+                            border: "none",
+                            borderTop: "1px solid #666",
+                          }}
+                        />
+                      </div>
                       <Button
                         variant="primary"
                         type="submit"
