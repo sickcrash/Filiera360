@@ -13,7 +13,7 @@ const Explore = ({ onProductsSelect }) => {
 
 const handleSearchProducts = async () => {
     try {
-      const response = await axios.get(`/api/getProductByManufacturer?manufacturer=${manufacturer}`);
+      const response = await axios.get(`/api/ExploreProducts?manufacturer=${manufacturer}`);
 
       if (response.status === 200) {
         const data = response.data;

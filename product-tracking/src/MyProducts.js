@@ -17,6 +17,8 @@ const MyProducts = ({ onProductsSelect }) => {
     }
   }, []);
 
+
+
   // ✅ Chiama l’API quando manufacturer è disponibile
   useEffect(() => {
     if (manufacturer) {
@@ -29,7 +31,7 @@ const MyProducts = ({ onProductsSelect }) => {
         `/api/getProductsByManufacturer?manufacturer=${manufacturer}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`, // Usa la variabile "token"
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
           }
         }
@@ -46,23 +48,24 @@ const MyProducts = ({ onProductsSelect }) => {
             : [];
 
         setProducts(productsData);
-      }
 
-      if (response.status === 200) {
-        const productsData = Array.isArray(response.data) ? response.data : [];
-        setProducts(productsData);
-        setMessage('');
-        if (onProductsSelect) onProductsSelect(manufacturer);
+        if (productsData.length === 0) {
+          setMessage('No products found for this manufacturer');
+        } else {
+          setMessage('');
+          if (onProductsSelect) onProductsSelect(manufacturer);
+        }
       } else {
         setProducts([]);
         setMessage('No products found for this manufacturer');
       }
     } catch (error) {
       console.error('Errore durante la ricerca:', error);
-      setMessage('Error fetching products. Please try again later.');
       setProducts([]);
+      setMessage('There are currently no products available.');
     }
   };
+
 
   return (
     <div className="search-product-container">
@@ -113,7 +116,17 @@ const MyProducts = ({ onProductsSelect }) => {
       </div>
 
 
-      {message && <p className="mt-3 text-danger">{message}</p>}
+      {message && (
+        <p
+          style={{
+            color: message === 'There are currently no products available.' ? 'black' : 'red',
+            textAlign: 'center',
+            marginTop: '0px'
+          }}
+        >
+          {message}
+        </p>
+      )}
     </div>
   );
 };

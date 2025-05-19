@@ -53,8 +53,7 @@
             "user": false
         },
         "operators": [
-            "ofootball95@gmail.com",
-            "s94512381@gmail.com"
+            "ofootball95@gmail.com"
         ]
     },
     "fierroalessandra6@gmail.com": {
@@ -158,5 +157,16 @@
             "user": false
         },
         "operators": "Mulino"
+    },
+    "lellolellolello03@gmail.com": {
+        "manufacturer": "sdsdsdsdaddsadad",
+        "password": "$2b$12$408a7d8XF49YfYClcPea0.oeZ8bHuWClp2it9GjvoBZ42caFvEd0u",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
     }
 }

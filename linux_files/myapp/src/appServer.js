@@ -457,8 +457,10 @@ app.get('/readProductsByManufacturer', async (req, res) => {
     console.log(`Received request for manufacturer: ${manufacturer}`);
 
     if (!manufacturer || manufacturer.trim() === '') {
-        return res.status(422).json({ error: 'Manufacturer parameter is required' });
+        return jsonfiy({'error': 'Missing manufacturer parameter'}), 422
     }
+
+
 
     try {
         const network = gateway.getNetwork(channelName);

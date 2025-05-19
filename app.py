@@ -533,7 +533,7 @@ def get_product():
         return jsonify({'message': 'Failed to get product.'}), 500
     
 
-@app.route('/getProductByManufacturer', methods=['GET'])
+@app.route('/ExploreProducts', methods=['GET'])
 def get_product_by_manufacturer():
     manufacturer = request.args.get('manufacturer')
     print(f"Received request for manufacturer: {manufacturer}")  # Log per vedere il parametro
@@ -596,28 +596,31 @@ def get_products_by_manufacturer():
     user = users.get(get_jwt_identity())
     role = user.get("role")
     print('role' + role)
+    manufacturer= None
     if role =="producer":
-      print('ciao sono dentro')
       manufacturer = request.args.get('manufacturer')
-      print('ecco il manufacturer'+ manufacturer)
+      print("ciaoooooooooooooooo")
+      if not manufacturer:
+            return jsonify({'error': 'Missing manufacturer parameter'}), 400
+      print('🏭 Manufacturer (producer):', manufacturer)
 
-    if role=="operator":
+    elif role=="operator":
      manufacturer = user.get("operators", [])
+     print('ciaoooo', manufacturer)
+     if not manufacturer:
+        return jsonify({'error': 'Operator does not have an associated manufacturer'}), 400
 
-    print("ciao belli"+ manufacturer)
     print(f"Received request for manufacturer: {manufacturer}")  # Log per vedere il parametro
     
     if not manufacturer:
         return jsonify({'error': 'Missing manufacturer parameter'}), 400
     
     try:
-        print("io sono gabri"+manufacturer)
         # Chiama il middleware Node.js
         response = requests.get(f'http://middleware:3000/readProductsByManufacturer?manufacturer={manufacturer}')
         
         if response.status_code == 200:
             return jsonify(response.json()), 200
-            print("ciao response"+ response)
         else:
             print(f"Node.js returned error: {response.status_code}")  # Log per vedere il codice di risposta di Node.js
             return jsonify({'error': 'Failed to retrieve products'}), 500
