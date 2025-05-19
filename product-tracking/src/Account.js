@@ -74,7 +74,7 @@ const Account = ({ setIsLoggedIn }) => {
       </div>}
 
 
-     <div className="row justify-content-center">
+     {(role === 'producer' || role === 'operator') && <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="card shadow mt-1">
             <div className="card-body">
@@ -86,7 +86,7 @@ const Account = ({ setIsLoggedIn }) => {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
 
     </div>
