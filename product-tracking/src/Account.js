@@ -73,7 +73,8 @@ const Account = ({ setIsLoggedIn }) => {
         </div>
       </div>}
 
-      <div className="row justify-content-center">
+
+     <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="card shadow mt-1">
             <div className="card-body">

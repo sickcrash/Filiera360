@@ -11,9 +11,9 @@ const Explore = ({ onProductsSelect }) => {
   const [products, setProducts] = useState([]);
   const [message, setMessage] = useState('');
 
-  const handleSearchProduct = async () => {
+const handleSearchProducts = async () => {
     try {
-      const response = await axios.get(`/api/getProductsByManufacturer?manufacturer=${manufacturer}`);
+      const response = await axios.get(`/api/getProductByManufacturer?manufacturer=${manufacturer}`);
 
       if (response.status === 200) {
         const data = response.data;
@@ -44,46 +44,46 @@ const Explore = ({ onProductsSelect }) => {
 
       <button
         className="btn btn-primary w-100 mt-3"
-        onClick={handleSearchProduct}
+        onClick={handleSearchProducts}
       >
         Search Products
       </button>
 
       {(products.length > 0 || message) && (
         <div style={{ marginTop: '20px' }}>
-            {products.map((product, index) => (
-              <div
-                key={index}
-                style={{
-                  border: '1px solid #ccc',
-                  padding: '10px',
-                  width: '280px',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                  backgroundColor: '#fff',
-                  margin: '0 auto',
-                  marginBottom: '20px'
+          {products.map((product, index) => (
+            <div
+              key={index}
+              style={{
+                border: '1px solid #ccc',
+                padding: '10px',
+                width: '280px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                backgroundColor: '#fff',
+                margin: '0 auto',
+                marginBottom: '20px'
+              }}
+            >
+              <h3>{product.Name}</h3>
+              <p><strong>Id:</strong> {product.ID}</p>
+              <p><strong>Expiry Date:</strong> {product.ExpiryDate}</p>
+              <p><strong>Ingredients:</strong> {product.Ingredients}</p>
+
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => {
+                  setItemCode(product.ID);
+                  try {
+                    document.getElementById("itemCode").value = product.ID;
+                  } catch { }
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               >
-                <h3>{product.Name}</h3>
-                <p><strong>Id:</strong> {product.ID}</p>
-                <p><strong>Expiry Date:</strong> {product.ExpiryDate}</p>
-                <p><strong>Ingredients:</strong> {product.Ingredients}</p>
-
-                <button
-                  className="btn btn-sm btn-outline-primary"
-                  onClick={() => {
-                    setItemCode(product.ID);
-                    try {
-                      document.getElementById("itemCode").value = product.ID;
-                    } catch { }
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                >
-                  View Details
-                </button>
-              </div>
-            ))}
+                View Details
+              </button>
+            </div>
+          ))}
 
           {message && products.length === 0 && (
             <p className="text-danger text-center mt-4">{message}</p>
@@ -95,4 +95,3 @@ const Explore = ({ onProductsSelect }) => {
 };
 
 export default Explore;
-

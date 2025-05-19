@@ -196,6 +196,7 @@ def forgot_password():
     
     return jsonify({"message": "Password reset email sent"}), 200
 
+
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     email = verify_reset_token(token)
@@ -294,10 +295,6 @@ def save_invite_tokens(tokens):
     with open("./jsondb/invite_tokens.json", "w") as file:
         json.dump(tokens, file, indent=4)
 
-# Salvataggio degli utenti in un file JSON
-def save_users(users):
-    with open("./jsondb/users.json", "w") as file:
-        json.dump(users, file, indent=4)
 
 # Verifichiamo se un token è valido e non scaduto
 def is_valid_invite_token(token):
@@ -487,6 +484,11 @@ def add_operator():
         return jsonify({"message": "Operator already added."}), 409
 
     user["operators"].append(operator_email)
+    manufacturer = user.get("manufacturer")
+    if manufacturer:
+        operator["operators"] = manufacturer
+    else:
+        operator["operators"] = user.get("email")
     save_users(users)
 
     return jsonify({"message": "Operator added successfully."}), 201
@@ -530,9 +532,9 @@ def get_product():
         print("Failed to get product:", e)
         return jsonify({'message': 'Failed to get product.'}), 500
     
-    
-@app.route('/getProductsByManufacturer', methods=['GET'])
-def get_products_by_manufacturer():
+
+@app.route('/getProductByManufacturer', methods=['GET'])
+def get_product_by_manufacturer():
     manufacturer = request.args.get('manufacturer')
     print(f"Received request for manufacturer: {manufacturer}")  # Log per vedere il parametro
     
@@ -545,6 +547,77 @@ def get_products_by_manufacturer():
         
         if response.status_code == 200:
             return jsonify(response.json()), 200
+        else:
+            print(f"Node.js returned error: {response.status_code}")  # Log per vedere il codice di risposta di Node.js
+            return jsonify({'error': 'Failed to retrieve products'}), 500
+    
+    except Exception as e:
+        print(f"Error while getting products: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+
+
+@app.route('/getMyProducer', methods=['GET'])
+def get_my_producer():
+    operator_email = request.args.get('email')
+    if not operator_email:
+        return jsonify({ "error": "Missing email parameter" }), 400
+
+
+
+    try:
+        with open('./jsondb/users.json', 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print("Errore nel leggere users.json:", e)
+        return jsonify({ "error": "Server error reading users file" }), 500
+
+    # Cerca il produttore che contiene quell'operatore
+    for producer_email, user_data in users.items():
+        print(f"Controllando produttore {producer_email} con operatori: {user_data.get('operators', [])}")
+        if user_data.get("flags", {}).get("producer") and \
+           operator_email in user_data.get("operators", []):
+            manufacturer = user_data.get("manufacturer")
+            print(f"Trovato producer: {producer_email}, manufacturer: {manufacturer}")
+            return jsonify({ "manufacturer": manufacturer })
+
+    print(f"Nessun producer trovato per l'operatore: {operator_email}")
+    return jsonify({ "error": "Producer not found for this operator" }), 404
+    
+@app.route('/getProductsByManufacturer', methods=['GET'])
+@jwt_required()
+def get_products_by_manufacturer():
+    print("✅ Sono dentro la funzione get_products_by_manufacturer")
+    if not required_permissions(get_jwt_identity(), ['producer','operator']):
+        return jsonify({"error": "Forbidden"}), 403
+
+    
+    user = users.get(get_jwt_identity())
+    role = user.get("role")
+    print('role' + role)
+    if role =="producer":
+      print('ciao sono dentro')
+      manufacturer = request.args.get('manufacturer')
+      print('ecco il manufacturer'+ manufacturer)
+
+    if role=="operator":
+     manufacturer = user.get("operators", [])
+
+    print("ciao belli"+ manufacturer)
+    print(f"Received request for manufacturer: {manufacturer}")  # Log per vedere il parametro
+    
+    if not manufacturer:
+        return jsonify({'error': 'Missing manufacturer parameter'}), 400
+    
+    try:
+        print("io sono gabri"+manufacturer)
+        # Chiama il middleware Node.js
+        response = requests.get(f'http://middleware:3000/readProductsByManufacturer?manufacturer={manufacturer}')
+        
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+            print("ciao response"+ response)
         else:
             print(f"Node.js returned error: {response.status_code}")  # Log per vedere il codice di risposta di Node.js
             return jsonify({'error': 'Failed to retrieve products'}), 500

@@ -52,7 +52,10 @@
             "operator": false,
             "user": false
         },
-        "operators": []
+        "operators": [
+            "ofootball95@gmail.com",
+            "s94512381@gmail.com"
+        ]
     },
     "fierroalessandra6@gmail.com": {
         "manufacturer": "Luca",
@@ -75,5 +78,85 @@
             "user": false
         },
         "operators": []
+    },
+    "ofootball95@gmail.com": {
+        "manufacturer": "luca",
+        "password": "$2b$12$OstsBq7Cvv8YJxHOMXva1.aVorWoEM/xDCwHkhWLgJJ28y29Lkim.",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": "Mulino",
+        "owner": "Mulino"
+    },
+    "gabriele.letuelezioni@gmail.com": {
+        "manufacturer": "gabri",
+        "password": "$2b$12$3wjIOziW6DcuE3Nq1ANyvegWz.1/FLFklK0ya4CFtLR7.ekqddFQS",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": []
+    },
+    "s14079710@gmail.com": {
+        "manufacturer": "sddss",
+        "password": "$2b$12$GQ9bsgIaOMIKOTxY8jyTb.dUjOtCNFaHY8TawTl5pxkhIPZuvqZbq",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": []
+    },
+    "fehgilzofmunqznxvq@nespf.com": {
+        "manufacturer": "sdsdkd",
+        "password": "$2b$12$Us.e/4CpzXSFWUR8u.qyvOjOZixglVtTKE6I588bhEm5akrO8y112",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": []
+    },
+    "poset39657@jazipo.com": {
+        "manufacturer": "sdsdsd",
+        "password": "$2b$12$gOf3INoA43TPUxeV7EX9ee7G//iQdgNCE3U/bg8Xd2CLIHx.JEaT2",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": [],
+        "Owner": null
+    },
+    "4c225akoj6@wyoxafp.com": {
+        "manufacturer": "dsdsdsd",
+        "password": "$2b$12$PTU3j4iRAGV3ScNSAfl8duFzOtp6nYZiqzO.Symc4SxFnEW.yCplG",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": [],
+        "Owner": null
+    },
+    "s94512381@gmail.com": {
+        "manufacturer": "sddsdsdsd",
+        "password": "$2b$12$USyne22OgcKxwpoBUffMQeD3VFU8ggxIsB/BUUlHJHR8daSH22zuW",
+        "role": "operator",
+        "flags": {
+            "producer": false,
+            "operator": true,
+            "user": false
+        },
+        "operators": "Mulino"
     }
 }

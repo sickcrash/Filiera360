@@ -23,12 +23,34 @@ const MyProducts = ({ onProductsSelect }) => {
       handleSearchProduct();
     }
   }, [manufacturer]);
-
   const handleSearchProduct = async () => {
     try {
-      const response = await axios.get(`/api/getProductsByManufacturer?manufacturer=${manufacturer}`);
+      const response = await axios.get(
+        `/api/getProductsByManufacturer?manufacturer=${manufacturer}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`, // Usa la variabile "token"
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
       if (response.status === 200) {
-        setProducts(response.data);
+        const data = response.data;
+        console.log('📦 Dati ricevuti:', data);
+
+        const productsData = Array.isArray(data)
+          ? data
+          : typeof data === 'string'
+            ? JSON.parse(data)
+            : [];
+
+        setProducts(productsData);
+      }
+
+      if (response.status === 200) {
+        const productsData = Array.isArray(response.data) ? response.data : [];
+        setProducts(productsData);
         setMessage('');
         if (onProductsSelect) onProductsSelect(manufacturer);
       } else {
@@ -38,6 +60,7 @@ const MyProducts = ({ onProductsSelect }) => {
     } catch (error) {
       console.error('Errore durante la ricerca:', error);
       setMessage('Error fetching products. Please try again later.');
+      setProducts([]);
     }
   };
 

@@ -177,6 +177,8 @@ async function newSigner() {
     return signers.newPrivateKeySigner(privateKey);
 }
 
+
+
 /**
  * This type of transaction would typically only be run once by an application the first time it was started after its
  * initial deployment. A new version of the chaincode deployed later would likely not need to run an "init" function.
@@ -213,141 +215,141 @@ async function createProductDefault(contract) {
     console.log('*** Transaction committed successfully');
 } */
 
-    async function createProduct(contract, productData) {
-        console.log('\n--> Submit Transaction: CreateProduct, creates new product with provided arguments');
-        if (!productData) {
-            console.error("❌ ERRORE: productData è undefined o nullo!");
-            return;
-        }
-        console.log('productData non è undefined');
-        console.log("📌 Dati ricevuti:", productData);
-        
-        const { 
-            ID = "",
-            Name = "",
-            Manufacturer = "",
-            ExpiryDate = "",
-            Ingredients = "",
-            Allergens = "",
-            Nutritional_information = "",
-            HarvestDate = "",
-            PesticideUse = "",
-            FertilizerUse = "",
-            CountryOfOrigin = "",
-            CustomObject = {}  // Corretta destrutturazione
-        } = productData;
-    
-        console.log("📌 CustomObject ricevuto:", CustomObject);
-    
-        // Verifica la struttura di CustomObject
-        if (typeof CustomObject !== 'object') {
-            console.error("❌ ERRORE: CustomObject non è un oggetto valido!", CustomObject);
-            return;
-        }
-    
-        // Assicurati che CustomObject venga serializzato correttamente
-        try {
-            const customObjectJson = JSON.stringify(CustomObject);
-            console.log("📌 CustomObject dopo JSON.stringify:", customObjectJson);
-        } catch (error) {
-            console.error("❌ ERRORE nella serializzazione di CustomObject:", error);
-            return;
-        }
-    
-        console.log('\n--> Sto facendo partire la funzione per il submit');
-    
-        try {
-            // Aggiungi logging per verificare i parametri
-            console.log("📌 Parametri passati alla transazione:", {
-                ID, Name, Manufacturer, ExpiryDate, Ingredients, Allergens, Nutritional_information,
-                HarvestDate, PesticideUse, FertilizerUse, CountryOfOrigin, CustomObject
-            });
-    
-            // Submit della transazione
-            await contract.submitTransaction(
-                'createProduct',
-                ID,
-                Name,
-                Manufacturer,
-                ExpiryDate,
-                Ingredients,
-                Allergens,
-                Nutritional_information,
-                HarvestDate,
-                PesticideUse,
-                FertilizerUse,
-                CountryOfOrigin,
-                JSON.stringify(CustomObject)  // Corretta conversione JSON
-            );
-    
-            console.log('✅ *** Transaction committed successfully ***');
-        } catch (error) {
-            console.error('❌ Errore nella submitTransaction:', error);
-        }
+async function createProduct(contract, productData) {
+    console.log('\n--> Submit Transaction: CreateProduct, creates new product with provided arguments');
+    if (!productData) {
+        console.error("❌ ERRORE: productData è undefined o nullo!");
+        return;
     }
-    
-    async function createBatch(contract, batchData) {
-        console.log('\n--> Submit Transaction: CreateBatch, creates new batch with provided arguments');
-        if (!batchData) {
-            console.error("❌ ERRORE: batchData è undefined o nullo!");
-            return;
-        }
-        console.log('batchData non è undefined');
-        console.log("📌 Dati ricevuti:", batchData);
-        
-        const { 
-            ID = "",
-            ProductId = "",
-            Operator = "",
-            BatchNumber = "",
-            Quantity = "",
-            ProductionDate = "",
-            CustomObject = {}  // Corretta destrutturazione
-        } = batchData;
-    
-        console.log("📌 CustomObject ricevuto:", CustomObject);
-    
-        // Verifica la struttura di CustomObject
-        if (typeof CustomObject !== 'object') {
-            console.error("❌ ERRORE: CustomObject non è un oggetto valido!", CustomObject);
-            return;
-        }
-    
-        // Assicurati che CustomObject venga serializzato correttamente
-        try {
-            const customObjectJson = JSON.stringify(CustomObject);
-            console.log("📌 CustomObject dopo JSON.stringify:", customObjectJson);
-        } catch (error) {
-            console.error("❌ ERRORE nella serializzazione di CustomObject:", error);
-            return;
-        }
-    
-        console.log('\n--> Sto facendo partire la funzione per il submit');
-    
-        try {
-            // Aggiungi logging per verificare i parametri
-            console.log("📌 Parametri passati alla transazione:", {
-                ID, ProductId, Operator, BatchNumber, Quantity, ProductionDate, CustomObject
-            });
-    
-            // Submit della transazione
-            await contract.submitTransaction(
-                'createBatch',
-                ID,
-                ProductId,
-                Operator,
-                BatchNumber,
-                Quantity,
-                ProductionDate,
-                JSON.stringify(CustomObject)  // Corretta conversione JSON
-            );
-    
-            console.log('✅ *** Transaction committed successfully ***');
-        } catch (error) {
-            console.error('❌ Errore nella submitTransaction:', error);
-        }
-    }   
-    
+    console.log('productData non è undefined');
+    console.log("📌 Dati ricevuti:", productData);
+
+    const {
+        ID = "",
+        Name = "",
+        Manufacturer = "",
+        ExpiryDate = "",
+        Ingredients = "",
+        Allergens = "",
+        Nutritional_information = "",
+        HarvestDate = "",
+        PesticideUse = "",
+        FertilizerUse = "",
+        CountryOfOrigin = "",
+        CustomObject = {}  // Corretta destrutturazione
+    } = productData;
+
+    console.log("📌 CustomObject ricevuto:", CustomObject);
+
+    // Verifica la struttura di CustomObject
+    if (typeof CustomObject !== 'object') {
+        console.error("❌ ERRORE: CustomObject non è un oggetto valido!", CustomObject);
+        return;
+    }
+
+    // Assicurati che CustomObject venga serializzato correttamente
+    try {
+        const customObjectJson = JSON.stringify(CustomObject);
+        console.log("📌 CustomObject dopo JSON.stringify:", customObjectJson);
+    } catch (error) {
+        console.error("❌ ERRORE nella serializzazione di CustomObject:", error);
+        return;
+    }
+
+    console.log('\n--> Sto facendo partire la funzione per il submit');
+
+    try {
+        // Aggiungi logging per verificare i parametri
+        console.log("📌 Parametri passati alla transazione:", {
+            ID, Name, Manufacturer, ExpiryDate, Ingredients, Allergens, Nutritional_information,
+            HarvestDate, PesticideUse, FertilizerUse, CountryOfOrigin, CustomObject
+        });
+
+        // Submit della transazione
+        await contract.submitTransaction(
+            'createProduct',
+            ID,
+            Name,
+            Manufacturer,
+            ExpiryDate,
+            Ingredients,
+            Allergens,
+            Nutritional_information,
+            HarvestDate,
+            PesticideUse,
+            FertilizerUse,
+            CountryOfOrigin,
+            JSON.stringify(CustomObject)  // Corretta conversione JSON
+        );
+
+        console.log('✅ *** Transaction committed successfully ***');
+    } catch (error) {
+        console.error('❌ Errore nella submitTransaction:', error);
+    }
+}
+
+async function createBatch(contract, batchData) {
+    console.log('\n--> Submit Transaction: CreateBatch, creates new batch with provided arguments');
+    if (!batchData) {
+        console.error("❌ ERRORE: batchData è undefined o nullo!");
+        return;
+    }
+    console.log('batchData non è undefined');
+    console.log("📌 Dati ricevuti:", batchData);
+
+    const {
+        ID = "",
+        ProductId = "",
+        Operator = "",
+        BatchNumber = "",
+        Quantity = "",
+        ProductionDate = "",
+        CustomObject = {}  // Corretta destrutturazione
+    } = batchData;
+
+    console.log("📌 CustomObject ricevuto:", CustomObject);
+
+    // Verifica la struttura di CustomObject
+    if (typeof CustomObject !== 'object') {
+        console.error("❌ ERRORE: CustomObject non è un oggetto valido!", CustomObject);
+        return;
+    }
+
+    // Assicurati che CustomObject venga serializzato correttamente
+    try {
+        const customObjectJson = JSON.stringify(CustomObject);
+        console.log("📌 CustomObject dopo JSON.stringify:", customObjectJson);
+    } catch (error) {
+        console.error("❌ ERRORE nella serializzazione di CustomObject:", error);
+        return;
+    }
+
+    console.log('\n--> Sto facendo partire la funzione per il submit');
+
+    try {
+        // Aggiungi logging per verificare i parametri
+        console.log("📌 Parametri passati alla transazione:", {
+            ID, ProductId, Operator, BatchNumber, Quantity, ProductionDate, CustomObject
+        });
+
+        // Submit della transazione
+        await contract.submitTransaction(
+            'createBatch',
+            ID,
+            ProductId,
+            Operator,
+            BatchNumber,
+            Quantity,
+            ProductionDate,
+            JSON.stringify(CustomObject)  // Corretta conversione JSON
+        );
+
+        console.log('✅ *** Transaction committed successfully ***');
+    } catch (error) {
+        console.error('❌ Errore nella submitTransaction:', error);
+    }
+}
+
 async function readProductByIDdefault(contract) {
     console.log(
         '\n--> Evaluate Transaction: ReadProduct, function returns product attributes'
@@ -393,6 +395,7 @@ async function readProductByID(contract, productId) {
 
 async function readProductByManufacturer(contract, manufacturer) {
     console.log('\n--> Evaluate Transaction: ReadProductsByManufacturer, function returns product attributes');
+    console.log('🚚 Manufacturer passato al chaincode:', manufacturer);
     const resultBytes = await contract.evaluateTransaction('ReadProductsByManufacturer', manufacturer);
     const resultJson = utf8Decoder.decode(resultBytes);
     const result = JSON.parse(resultJson);
@@ -425,9 +428,37 @@ async function getBatchHistoryByID(contract, batchId) {
     return result;
 }
 
-app.get('/readProductsByManufacturer', async (req, res) => { 
+app.get('/readProductByManufacturer', async (req, res) => { 
     const { manufacturer } = req.query;
     console.log(`Received request for manufacturer: ${manufacturer}`);
+
+    try {
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
+        console.log("Contract and network loaded successfully");
+
+        const result = await readProductByManufacturer(contract, manufacturer);
+        console.log("Result from Hyperledger:", result);
+
+        if (result) {
+            res.json(result);
+        } else {
+            console.error("No products found for manufacturer");
+            res.status(404).json({ error: 'No products found' });
+        }
+    } catch (error) {
+        console.error('Error reading product by manufacturer:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/readProductsByManufacturer', async (req, res) => {
+    const { manufacturer } = req.query;
+    console.log(`Received request for manufacturer: ${manufacturer}`);
+
+    if (!manufacturer || manufacturer.trim() === '') {
+        return res.status(422).json({ error: 'Manufacturer parameter is required' });
+    }
 
     try {
         const network = gateway.getNetwork(channelName);
@@ -594,17 +625,17 @@ app.post('/api/product/updateProduct', async (req, res) => {
         console.log("Dati inviati al chaincode:", productData);
 
         await contract.submitTransaction('UpdateProduct',
-            productData.ID, 
-            productData.Name, 
-            productData.Manufacturer,  
-            productData.ExpiryDate, 
-            productData.Ingredients, 
-            productData.Allergens, 
-            productData.Nutritional_information, 
-            productData.HarvestDate, 
-            productData.PesticideUse, 
-            productData.FertilizerUse, 
-            productData.CountryOfOrigin, 
+            productData.ID,
+            productData.Name,
+            productData.Manufacturer,
+            productData.ExpiryDate,
+            productData.Ingredients,
+            productData.Allergens,
+            productData.Nutritional_information,
+            productData.HarvestDate,
+            productData.PesticideUse,
+            productData.FertilizerUse,
+            productData.CountryOfOrigin,
             JSON.stringify(productData.CustomObject));
         res.status(200).json({ message: `product updated` });
     }
@@ -628,12 +659,12 @@ app.post('/api/batch/updateBatch', async (req, res) => {
         console.log("Dati inviati al chaincode:", batchData);
 
         await contract.submitTransaction('UpdateBatch',
-            batchData.ID, 
-            batchData.ProductId, 
-            batchData.Operator,  
-            batchData.BatchNumber, 
-            batchData.Quantity, 
-            batchData.ProductionDate, 
+            batchData.ID,
+            batchData.ProductId,
+            batchData.Operator,
+            batchData.BatchNumber,
+            batchData.Quantity,
+            batchData.ProductionDate,
             JSON.stringify(batchData.CustomObject));
         res.status(200).json({ message: `batch updated` });
     }
