@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
 
 const MyProducts = ({ onProductsSelect }) => {
   const [manufacturer, setManufacturer] = useState('');
@@ -7,6 +9,9 @@ const MyProducts = ({ onProductsSelect }) => {
   const [products, setProducts] = useState([]);
   const [message, setMessage] = useState('');
   const [visibleCount, setVisibleCount] = useState(3); // Mostra inizialmente 3
+  const navigate = useNavigate();
+
+
 
 
   // ✅ Recupera manufacturer da localStorage o altro metodo
@@ -109,6 +114,7 @@ const MyProducts = ({ onProductsSelect }) => {
                   document.getElementById("itemCode").value = product.ID;
                 } catch { }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                navigate('/scan-product');
               }}
             >
               View Details
