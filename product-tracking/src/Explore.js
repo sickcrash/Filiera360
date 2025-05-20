@@ -10,14 +10,16 @@ const Explore = ({ onProductsSelect }) => {
   const [itemCode, setItemCode] = useState('');
   const [products, setProducts] = useState([]);
   const [message, setMessage] = useState('');
+  const [visibleCount, setVisibleCount] = useState(3);
 
-const handleSearchProducts = async () => {
+  const handleSearchProducts = async () => {
     try {
       const response = await axios.get(`/api/ExploreProducts?manufacturer=${manufacturer}`);
 
       if (response.status === 200) {
         const data = response.data;
         setProducts(data);
+        setVisibleCount(3);
         setMessage('');
         onProductsSelect(manufacturer);
       } else {
@@ -51,7 +53,7 @@ const handleSearchProducts = async () => {
 
       {(products.length > 0 || message) && (
         <div style={{ marginTop: '20px' }}>
-          {products.map((product, index) => (
+          {products.slice(0, visibleCount).map((product, index) => (
             <div
               key={index}
               style={{
@@ -84,6 +86,18 @@ const handleSearchProducts = async () => {
               </button>
             </div>
           ))}
+
+          {visibleCount < products.length && (
+            <div className="text-center mt-3">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setVisibleCount(prev => prev + 3)}
+              >
+                Load More
+              </button>
+            </div>
+          )}
+
 
           {message && products.length === 0 && (
             <p className="text-danger text-center mt-4">{message}</p>

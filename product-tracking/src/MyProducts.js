@@ -6,6 +6,8 @@ const MyProducts = ({ onProductsSelect }) => {
   const [itemCode, setItemCode] = useState('');
   const [products, setProducts] = useState([]);
   const [message, setMessage] = useState('');
+  const [visibleCount, setVisibleCount] = useState(3); // Mostra inizialmente 3
+
 
   // ✅ Recupera manufacturer da localStorage o altro metodo
   useEffect(() => {
@@ -81,7 +83,7 @@ const MyProducts = ({ onProductsSelect }) => {
           padding: '20px'
         }}
       >
-        {products.map((product, index) => (
+        {products.slice(0, visibleCount).map((product, index) => (
           <div
             key={index}
             style={{
@@ -114,6 +116,15 @@ const MyProducts = ({ onProductsSelect }) => {
           </div>
         ))}
       </div>
+      {visibleCount < products.length && (
+        <button
+          className="btn btn-secondary mt-3"
+          onClick={() => setVisibleCount(prev => prev + 5)} // Mostra altri 3
+        >
+          Load More
+        </button>
+      )}
+
 
 
       {message && (
