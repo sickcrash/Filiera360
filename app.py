@@ -22,6 +22,75 @@ from werkzeug.security import check_password_hash
 
 import prompts_variables_storage
 
+from database_mongo.setup_indexes import setup_indexes
+setup_indexes()  # Setup indici MongoDB
+# Import CRUD utenti
+from database_mongo.queries.users_queries import (
+    create_user,
+    get_user_by_email,
+    get_user_by_manufacturer,
+    get_user_by_id,
+    update_user
+)
+
+# Import CRUD OTP
+from database_mongo.queries.otp_queries import (
+    create_otp,
+    get_otp_by_user_id,
+    delete_otp_by_user_id
+)
+
+# Import CRUD token invito
+from database_mongo.queries.token_queries import (
+    create_token,
+    get_token,
+    mark_token_as_used,
+    get_tokens_by_inviter,
+    get_tokens_used_by
+)
+
+# Import CRUD prodotti
+from database_mongo.queries.products_queries import (
+    create_product,
+    get_product_by_id,
+    get_product_by_blockchain_id,
+    update_product_by_blockchain_id
+)
+
+# Import CRUD modelli 3D
+from database_mongo.queries.models_queries import (
+    create_model,
+    get_model_by_id,
+    get_model_by_blockchain_id,
+    get_models_by_user,
+    update_model,
+    delete_model
+)
+
+# Import CRUD liked products
+from database_mongo.queries.liked_queries import (
+    like_a_product,
+    unlike_a_product,
+    get_liked_products_by_user,
+    get_users_who_liked_product
+)
+
+# Import CRUD cronologia prodotti
+from database_mongo.queries.history_queries import (
+    add_history_entry,
+    delete_history_entry,
+    get_history_by_blockchain_id,
+    get_history_by_user,
+    get_last_history_entry
+)
+
+# Import CRUD ricerche recenti
+from database_mongo.queries.recently_searched_queries import (
+    add_recently_searched,
+    get_recently_searched
+)
+from database_mongo.mongo_client import users as users_collection
+
 # Update the CORS configuration to allow all methods
 app = Flask(__name__, instance_relative_config=True)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -67,40 +136,14 @@ otp_lifetime = timedelta(minutes=5)
 
 # @app.route('/send-otp', methods=['POST'])
 def send_otp(email):
-    # email = request.json.get('email')
-
-    # Verifica che l'email sia registrata nel sistema
-    if email not in users:
+    user = get_user_by_email(email)
+    if not user:
         return jsonify({"message": "User not found."}), 404
 
     otp = generate_otp()
-    expiration_time = (datetime.now() + otp_lifetime).strftime("%Y-%m-%d %H:%M")  # Formatta scadenza
-
-    try:
-        # Prova a leggere il file JSON esistente
-        with open(otp_store_file, 'r') as f:
-            otp_store = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        otp_store = {}  # Se il file non esiste o è vuoto, inizializza un dizionario vuoto
-
-    # Salva l'OTP e la sua scadenza
-    otp_store[email] = {
-        "otp": otp,
-        "expiration": expiration_time  # Salviamo la data come stringa
-    }
-
-    try:
-        # Scrive i dati aggiornati nel file JSON
-        with open(otp_store_file, "w") as file:
-            json.dump(otp_store, file, indent=4)
-
-    except Exception as e:
-        print(f"Errore nel salvataggio dell'OTP: {e}")
-        return jsonify({"message": "Error saving OTP."}), 500
-
-    # Invia l'OTP via email
-
-    return send_otp_email(email, otp)
+    create_otp(user["_id"], str(otp))
+    send_otp_email(email, otp)
+    return jsonify({"message": "OTP sent to your email."})
 
 """     if send_otp_email(email, otp):
         return jsonify({"message": "OTP sent to your email."})
@@ -182,7 +225,7 @@ def verify_reset_token(token):
 def forgot_password():
     email = request.json.get('email')
     
-    if email not in users:
+    if not get_user_by_email(email):
         return jsonify({"message": "Email not found"}), 404
 
     token = generate_reset_token(email)
@@ -215,15 +258,14 @@ def reset_password(token):
 
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-        users[email]["password"] = hashed_password
-        save_users(users)
+        update_user(get_user_by_email(email)["_id"], {"password": hashed_password})
 
         return jsonify({"message": "Password updated successfully"}), 200
 
     return jsonify({"message": "Token is valid, proceed with password reset"}), 200
 
 # Carica gli utenti dal file JSON (database utenti)
-def load_users():
+'''def load_users():
     try:
         with open('./jsondb/users.json', 'r') as f:
             return json.load(f)
@@ -250,7 +292,7 @@ def save_models(models):
 
 # Carica i database all'avvio del server
 users = load_users()
-models = load_models()
+models = load_models()'''
 
 # questa funzione va chiamata solamente alla prima scrittura
 # della rete o dopo suoi eventuali reset
@@ -282,7 +324,7 @@ def init_ledger():
         return jsonify({"message": "Ledger initialized successfully with sample data."})
 
 # Caricamento token
-def load_invite_tokens():
+'''def load_invite_tokens():
     try:
         with open("./jsondb/invite_tokens.json", "r") as file:
             return json.load(file)
@@ -292,7 +334,7 @@ def load_invite_tokens():
 # Salvataggio token aggiornati
 def save_invite_tokens(tokens):
     with open("./jsondb/invite_tokens.json", "w") as file:
-        json.dump(tokens, file, indent=4)
+        json.dump(tokens, file, indent=4)'''
 
 # Salvataggio degli utenti in un file JSON
 def save_users(users):
@@ -300,7 +342,7 @@ def save_users(users):
         json.dump(users, file, indent=4)
 
 # Verifichiamo se un token è valido e non scaduto
-def is_valid_invite_token(token):
+'''def is_valid_invite_token(token):
     tokens = load_invite_tokens()
     if token not in tokens:
         return False, "Invalid invitation token."
@@ -315,7 +357,7 @@ def is_valid_invite_token(token):
     if token_data.get("used", False): 
         return False, "Invitation token already used."
 
-    return True, "Valid token."
+    return True, "Valid token."'''
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -331,11 +373,11 @@ def signup():
         return jsonify({"message": "All fields are required"}), 400
     
     # Controlla se l'email è già registrata
-    if email in users:
+    if get_user_by_email(email):
         return jsonify({"message": "Email already exists"}), 409
     
     # Controlla se il manufacturer è già registrato
-    if any(user["manufacturer"] == manufacturer for user in users.values()):
+    if get_user_by_manufacturer(manufacturer):
         return jsonify({"message": "Manufacturer already exists"}), 409
 
     # Controlla il token di invito per i produttori
@@ -343,33 +385,20 @@ def signup():
         if not invite_token:
             return jsonify({"message": "The invite token is required for producers."}), 400
 
-        is_valid, message = is_valid_invite_token(invite_token)
-        if not is_valid:
-            return jsonify({"message": message}), 403
-
+        token_doc = get_token(invite_token)
+        if not token_doc:
+            return jsonify({"message": "Invalid invitation token."}), 403
+        if token_doc.get("used"):
+            return jsonify({"message": "Invitation token already used."}), 403
     # Crea un hash della password con bcrypt
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
-    # Aggiungi l'utente al dizionario degli utenti
-    users[email] = {
-        "manufacturer": manufacturer,
-        "password": hashed_password,
-        "role": role,
-        "flags": {
-            "producer": role == "producer",
-            "operator": role == "operator",
-            "user": role == "user" 
-        },
-        "operators": []
-    }
-
-    save_users(users)
+    # DOPO MODIFICA: Aggiungi l'utente al DB (Aggiungi l'utente al dizionario degli utenti)
+    create_user(email, hashed_password, manufacturer, role)
 
     # Se il token è stato usato, viene segnato come utilizzato
     if role == "producer" and invite_token:
-        tokens = load_invite_tokens()
-        tokens[invite_token]["used"] = True
-        save_invite_tokens(tokens)
+        mark_token_as_used(invite_token, email)
 
     return jsonify({"message": "User registered successfully"}), 201
 
@@ -380,10 +409,11 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
-    # Carica gli utenti
-    users = load_users()
+    user = get_user_by_email(email)
 
-    user = users.get(email)
+    # Verifica se l'utente esiste e la password è corretta
+    if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+        return jsonify({"message": "Invalid email or password"}), 401
 
     # Verifica se l'utente esiste e la password è corretta
     if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
@@ -417,39 +447,27 @@ def login():
 # Endpoint per la verifica dell'OTP
 @app.route('/verify-otp', methods=['POST'])
 def verify_otp():
-    email = request.json.get('email')
-    otp = request.json.get('otp')
+    data = request.get_json()
+    email = data.get('email')
+    otp = data.get('otp')
 
-    try:
-        with open(otp_store_file, 'r') as f:
-            otp_store = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return jsonify({"message": "OTP has expired or is invalid."}), 400
+    user = get_user_by_email(email)
+    if not user:
+        return jsonify({"message": "User not found."}), 404
 
-    if email not in otp_store:
-        return jsonify({"message": "OTP has expired or is invalid."}), 400
+    otp_entry = get_otp_by_user_id(user["_id"])
+    if not otp_entry or otp_entry["otp"] != str(otp):
+        return jsonify({"message": "Invalid or expired OTP."}), 400
 
-    otp_data = otp_store[email]
-
-    try:
-        stored_otp = int(otp_data['otp'])  
-        expiration_time = datetime.strptime(otp_data['expiration'], "%Y-%m-%d %H:%M")
-        otp_present = 'otp' in otp_data  
-        otp_expired = expiration_time < datetime.now()
-
-        if otp_present and stored_otp == otp and not otp_expired:
-            print("OTP validato con successo")
-            user = users.get(email)
-            token = create_access_token(email)
-            return jsonify({"message": "OTP validated successfully.", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
-            # return jsonify({"message": "OTP validated successfully.", "token": "JWT_Token"})
-        else:
-            print("OTP non valido o scaduto")  
-            return jsonify({"message": "Invalid OTP."}), 400
-    except Exception as e:
-        print(f"Errore nella verifica dell'OTP: {e}")
-        traceback.print_exc()  
-        return jsonify({"message": "Errore nella verifica dell'OTP."}), 500 
+    delete_otp_by_user_id(user["_id"])
+    token = create_access_token(email)
+    return jsonify({
+        "message": "OTP validated successfully.",
+        "access_token": token,
+        "role": user['role'],
+        "manufacturer": user['manufacturer'],
+        "email": email
+    })
 
 
 @app.route('/operators', methods=['GET'])
@@ -458,7 +476,7 @@ def get_operators():
     if not required_permissions(get_jwt_identity(), ['producer']):
         return jsonify({"operators": None})
 
-    user = users.get(get_jwt_identity())
+    user = get_user_by_email(get_jwt_identity())
     operators = user.get("operators", [])
 
     return jsonify({"operators": operators})
@@ -474,20 +492,21 @@ def add_operator():
     operator_email = data.get("email")
     if not operator_email:
         return jsonify({"message": "Email is required."}), 400
-    
-    operator = users.get(operator_email)
+
+    operator = get_user_by_email(operator_email)
     if not operator:
         return jsonify({"message": "Operator not found."}), 404
 
-    if not operator.get("flags", {}).get("operator"):
+    if not operator.get("flags", [])[1]:  # flags[1] == operator
         return jsonify({"message": "User is not an operator and cannot be added."}), 400
 
-    user = users.get(get_jwt_identity())
-    if operator_email in user.get("operators", []):
+    user = get_user_by_email(get_jwt_identity())
+    if any(op["email"] == operator_email for op in user.get("operators", [])):
         return jsonify({"message": "Operator already added."}), 409
 
-    user["operators"].append(operator_email)
-    save_users(users)
+    # Aggiorna la lista operatori su MongoDB
+    user["operators"].append({"operatorId": operator["_id"], "email": operator_email})
+    update_user(user["_id"], {"operators": user["operators"]})
 
     return jsonify({"message": "Operator added successfully."}), 201
 
@@ -503,12 +522,13 @@ def remove_operator():
     if not operator_email:
         return jsonify({"message": "Email is required."}), 400
 
-    user = users.get(get_jwt_identity())
-    if operator_email not in user.get("operators", []):
+    user = get_user_by_email(get_jwt_identity())
+    if not any(op["email"] == operator_email for op in user.get("operators", [])):
         return jsonify({"message": "Operator not found."}), 404
 
-    user["operators"].remove(operator_email)
-    save_users(users)
+    # Aggiorna la lista operatori su MongoDB
+    user["operators"] = [op for op in user["operators"] if op["email"] != operator_email]
+    update_user(user["_id"], {"operators": user["operators"]})
 
     return jsonify({"message": "Operator removed successfully."})
 
@@ -585,35 +605,31 @@ def get_batch_history():
         print("Failed to get batch history:", e)
         return jsonify({'message': 'Failed to get batch history.'}), 500
 
-def find_producer_by_operator(operator):
-    for email, user in users.items():
-        if operator in user.get("operators", []):
-            return user
-    
-    return None
+def find_producer_by_operator(operator_email):
+    return users_collection.find_one({
+        "operators": {
+            "$elemMatch": {"email": operator_email}
+        }
+    })
 
 def required_permissions(manufacturer, roles):
     print("chiamata a required permissions")
-    user = [user for user in users.items() if user[0] == manufacturer]
-    user = user[0] if user else None
-    print(user)
-
+    user = get_user_by_email(manufacturer)
     if not user:
         return False
 
+    role_map = {"producer": 0, "operator": 1, "user": 2}
     for role in roles:
-        if user[1]["flags"].get(role):
-            print(user[1]["flags"].get(role))
+        if user["flags"][role_map[role]]:
             return True
-
     return False
 
 def verify_product_authorization(email, product_id):
-    user = users.get(email)
+    user = get_user_by_email(email)
     if not user or not product_id:
         return False
 
-    if user["flags"].get("operator", False):
+    if user["flags"][1]:  # flags[1] == operator
         user = find_producer_by_operator(email)
         if not user:
             return False
@@ -638,7 +654,7 @@ def upload_product():
 
     print("Sono arrivata al backend")
     product_data = request.json
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
+    real_manufacturer = get_user_by_email(get_jwt_identity())["manufacturer"]
     print("manufacturer authenticated: " + real_manufacturer)
     client_manufacturer = product_data.get("Manufacturer")
     print("upload request by: " + client_manufacturer)
@@ -679,7 +695,7 @@ def uploadBatch():
     if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductId")):
         return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
 
-    real_operator = users.get(get_jwt_identity())["manufacturer"]
+    real_operator = get_user_by_email(get_jwt_identity())["manufacturer"]
     print("operator authenticated: " + real_operator)
     client_operator = batch_data.get("Operator")
     print("upload request by: " + client_operator)
@@ -717,7 +733,7 @@ def upload_model():
     try:
         product_data = request.json
         # log del manufacturer che effettua la richiesta di upload
-        real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
+        real_manufacturer = get_user_by_email(get_jwt_identity())["manufacturer"]
         print("Manufacturer authenticated: ", real_manufacturer)
 
         # prendo l'id del prodotto dalla richiesta POST
@@ -738,12 +754,8 @@ def upload_model():
         if not glbFile:
             return jsonify({"message": "missing GLB file"}), 400
         print("Uploading 3D model...")
-        
-        # Aggiungi il file Base64 al dizionario dei modelli
-        models[product_id] = glbFile
-        
-        # Salva il risultato nel file JSON
-        save_models(models)
+            
+        create_model(product_id, glbFile, get_user_by_email(get_jwt_identity())["_id"])
         return jsonify({"message": "Model uploaded successfully"}), 201
 
     except Exception as e:
@@ -758,13 +770,11 @@ def get_model():
     if not productId:
         return jsonify({"message": "Product ID is required."}), 400
     
-    # prendo il file GLB associato al prodotto
-    glbFile = models.get(productId)
-    if not glbFile:
+    model = get_model_by_blockchain_id(productId)
+    if not model:
         return jsonify({"message": "No model found for the provided product ID."}), 404
 
-    # Se il file esiste, lo restituiamo come risposta
-    return jsonify({"ModelBase64": glbFile}), 200
+    return jsonify({"ModelBase64": model["modelString"]}), 200
 
 
 # già usata su frontend + autenticazione jwt
@@ -775,7 +785,7 @@ def update_product():
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
     product_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
+    real_manufacturer = get_user_by_email(get_jwt_identity())["manufacturer"]
     print("Manufacturer authenticated:", real_manufacturer)
 
     product_id = product_data.get("ID")
@@ -823,7 +833,7 @@ def update_batch():
     if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductId")):
         return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
 
-    real_operator = users.get(get_jwt_identity())["manufacturer"]
+    real_operator = get_user_by_email(get_jwt_identity())["manufacturer"]
     print("operator authenticated: " + real_operator)
     client_operator = batch_data.get("Operator")
     print("upload request by: " + client_operator)
@@ -861,7 +871,7 @@ def update_batch():
 def add_sensor_data():
     sensor_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
+    real_manufacturer = get_user_by_email(get_jwt_identity())["manufacturer"]
     print("Manufacturer authenticated:", real_manufacturer)
 
     product_id = sensor_data.get("id")
@@ -891,7 +901,7 @@ def add_sensor_data():
 def add_movement_data():
     movement_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
+    real_manufacturer = get_user_by_email(get_jwt_identity())["manufacturer"]
     print("Manufacturer authenticated:", real_manufacturer)
 
     product_id = movement_data.get("id")
@@ -921,7 +931,7 @@ def add_movement_data():
 def add_certification_data():
     certification_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
+    real_manufacturer = get_user_by_email(get_jwt_identity())["manufacturer"]
     print("Manufacturer authenticated:", real_manufacturer)
 
     product_id = certification_data.get("id")
@@ -932,7 +942,7 @@ def add_certification_data():
     verification_result = verify_manufacturer(product_id, real_manufacturer)
     if verification_result:
         return verification_result  # Restituisce l'errore se la verifica non è passata
-
+    
 # NON UTILIZZATA
 @app.route('/verifyProductCompliance', methods=['POST'])
 def verify_product_compliance():
@@ -1253,7 +1263,7 @@ def ask():
 # Managing Liked Products Per User Account
 
 # Modify the liked products structure to be user-specific
-def load_liked_products():
+'''def load_liked_products():
     try:
         with open('liked_products.json', 'r') as f:
             data = json.load(f)
@@ -1266,82 +1276,60 @@ def load_liked_products():
         # If file doesn't exist, create it with an empty object
         save_liked_products({})
         return {}
-
+'''
 # Update the likeProduct endpoint to handle user-specific likes
 @app.route('/likeProduct', methods=['POST', 'OPTIONS'])
 @jwt_required()
 def like_product():
-    # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
         response = jsonify({'message': 'OK'})
         response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Methods', 'POST')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         return response
-        
-    # Handle actual POST request
+
     data = request.json
     product_data = data.get('product')
-    user_id = data.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    global liked_products
-    liked_products = load_liked_products()
-    
-    # Initialize user's liked products list if it doesn't exist
-    if user_id not in liked_products:
-        liked_products[user_id] = []
-    
-    # Check if product already exists in user's liked products
-    for product in liked_products[user_id]:
-        if product['ID'] == product_data['ID']:
-            return jsonify({"message": "Product already liked"}), 200
-    
-    # Add to user's liked products
-    liked_products[user_id].append(product_data)
+    user_id = data.get('userId', None)
+    if not user_id or not product_data or not product_data.get('ID'):
+        return jsonify({"message": "Missing userId or product data"}), 400
+
+    # Controllo duplicato (puoi anche toglierlo se l'indice unico è già sul DB)
+    already_liked = get_liked_products_by_user(user_id)
+    if any(p["blockchainProductId"] == product_data["ID"] for p in already_liked):
+        return jsonify({"message": "Product already liked"}), 200
+
+    like_a_product(user_id, product_data["ID"])
+    return jsonify({"message": "Product added to liked products"}), 201
     
     # Save to JSON file
-    save_liked_products(liked_products)
+'''    save_liked_products(liked_products)
     
     print(f"Product {product_data['ID']} added to liked products for user {user_id}. Total: {len(liked_products[user_id])}")
-    return jsonify({"message": "Product added to liked products"}), 201
+    return jsonify({"message": "Product added to liked products"}), 201'''
 
 # Update the unlikeProduct endpoint for user-specific unlikes
 @app.route('/unlikeProduct', methods=['DELETE'])
 @jwt_required()
 def unlike_product():
-    # Handle preflight OPTIONS request
-    """ if request.method == 'OPTIONS':
-        response = jsonify({'message': 'OK'})
+    product_id = request.args.get('productId')
+    user_id = request.args.get('userId', None)
+    if not user_id or not product_id:
+        response = jsonify({"message": "Missing userId or productId"})
         response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Methods', 'DELETE')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response """
-        
-    product_id = request.args.get('productId')
-    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    global liked_products
-    # Reload liked products from file to ensure we have the latest data
-    liked_products = load_liked_products()
-    
-    # Check if user exists in liked products
-    if user_id not in liked_products:
-        return jsonify({"message": "User has no liked products"}), 404
-    
-    # Remove from user's liked products
-    original_length = len(liked_products[user_id])
-    liked_products[user_id] = [p for p in liked_products[user_id] if p['ID'] != product_id]
-    
-    # Check if any product was actually removed
-    if len(liked_products[user_id]) == original_length:
-        print(f"Product {product_id} not found in user {user_id}'s liked products")
-    else:
-        print(f"Product {product_id} removed from liked products for user {user_id}. Remaining: {len(liked_products[user_id])}")
-    
-    # Save to JSON file
-    save_liked_products(liked_products)
-    
-    # Set CORS headers manually for this response
+        return response, 400
+
+    liked = get_liked_products_by_user(user_id)
+    if not any(p["blockchainProductId"] == product_id for p in liked):
+        response = jsonify({"message": "Product not found in liked products"})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'DELETE')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response, 404
+
+    unlike_a_product(user_id, product_id)
     response = jsonify({"message": "Product removed from liked products"})
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Methods', 'DELETE')
@@ -1351,17 +1339,15 @@ def unlike_product():
 # Update the getLikedProducts endpoint for user-specific retrieval
 @app.route('/getLikedProducts', methods=['GET'])
 @jwt_required()
+@app.route('/getLikedProducts', methods=['GET'])
+@jwt_required()
 def get_liked_products():
-    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    global liked_products
-    liked_products = load_liked_products()
-    
-    # Return empty list if user has no liked products
-    if user_id not in liked_products:
+    user_id = request.args.get('userId', None)
+    if not user_id:
         return jsonify([])
-    
-    return jsonify(liked_products[user_id])
+
+    liked = get_liked_products_by_user(user_id)
+    return jsonify(liked)
 
 # Add this function to save liked products to JSON file
 def save_liked_products(products):
@@ -1369,7 +1355,7 @@ def save_liked_products(products):
         json.dump(products, f, indent=4)
 
 # Initialize the liked_products variable
-liked_products = load_liked_products()
+#liked_products = load_liked_products()
 
 
 
@@ -1377,60 +1363,27 @@ liked_products = load_liked_products()
 
 @app.route('/addRecentlySearched', methods=['POST'])
 @jwt_required()
-def add_recently_searched():
-    # Handle preflight OPTIONS request
-    """ if request.method == 'OPTIONS':
-        response = jsonify({'message': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response """
-    
+def add_recently_searched_route():
     data = request.json
-    product = data.get('product')
-    user_id = data.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    # Add timestamp if not present
-    if 'timestamp' not in product:
-        product['timestamp'] = datetime.now().isoformat()
-    
-    # Load recently searched products
-    recently_searched = load_recently_searched()
-    
-    # Initialize user's list if it doesn't exist
-    if user_id not in recently_searched:
-        recently_searched[user_id] = []
-    
-    # Remove the product if it already exists in the list
-    recently_searched[user_id] = [p for p in recently_searched[user_id] if p['ID'] != product['ID']]
-    
-    # Add the product to the beginning of the list
-    recently_searched[user_id].insert(0, product)
-    
-    # Keep only the 5 most recent products
-    recently_searched[user_id] = recently_searched[user_id][:5]
-    
-    # Save to JSON file
-    save_recently_searched(recently_searched)
-    
-    response = jsonify({"message": "Product added to recently searched"})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+    user_id = data.get('userId')
+    blockchain_product_id = data.get('blockchainProductId')
+    if not user_id or not blockchain_product_id:
+        return jsonify({"message": "Missing userId or product data"}), 400
 
-@app.route('/getRecentlySearched', methods=['GET'])
+    add_recently_searched(user_id, blockchain_product_id)
+    return jsonify({"message": "Product added to recently searched"})
+
+@app.route('/getRecentlySeached', methods=['GET'])
 @jwt_required()
-def get_recently_searched():
-    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    recently_searched = load_recently_searched()
-    
-    # Return empty list if user has no recently searched products
-    if user_id not in recently_searched:
+def get_recently_searched_route():
+    user_id = request.args.get('userId')
+    if not user_id:
         return jsonify([])
-    
-    return jsonify(recently_searched[user_id])
 
-def load_recently_searched():
+    products = get_recently_searched(user_id)
+    return jsonify(products)
+
+'''def load_recently_searched():
     try:
         with open('recently_searched.json', 'r') as f:
             data = json.load(f)
@@ -1446,7 +1399,7 @@ def load_recently_searched():
 
 def save_recently_searched(products):
     with open('recently_searched.json', 'w') as f:
-        json.dump(products, f, indent=4)
+        json.dump(products, f, indent=4)'''
 
 
 # Make sure the if __name__ block is inside the code
