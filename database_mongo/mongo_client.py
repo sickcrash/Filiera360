@@ -1,8 +1,8 @@
+import os
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
-# Uri ricavata da MongoDB Atlas
-uri = ""
+uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 client = MongoClient(uri, server_api=ServerApi('1'))
 
 # Ping per confermare la connessione

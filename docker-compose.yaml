@@ -47,6 +47,17 @@ services:
     networks:
       - filiera360_default
 
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - filiera360_default
+
 networks:
   filiera360_default:
     driver: bridge
@@ -57,3 +68,6 @@ networks:
           gateway: "172.19.0.1"
   fabric_test:
     external: true
+
+volumes:
+  mongo_data:
