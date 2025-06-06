@@ -11,6 +11,8 @@ services:
       - filiera360_default
     expose:
       - "5000"             # visto solo dagli altri container
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
 
   frontend:
     build:
