@@ -6,7 +6,8 @@ ENV PYTHONUNBUFFERED=1 \
     FLASK_ENV=development \
     FLASK_DEBUG=1
 
-COPY app.py requirements.txt prompts_variables_storage.py ./
+COPY app.py requirements.txt ./ 
+COPY database_mongo/ ./database_mongo/
 
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
