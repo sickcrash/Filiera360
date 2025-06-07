@@ -413,10 +413,6 @@ def login():
     if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
         return jsonify({"message": "Invalid email or password"}), 401
 
-    # Verifica se l'utente esiste e la password è corretta
-    if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-        return jsonify({"message": "Invalid email or password"}), 401
-
     """ # Se la 2FA è abilitata, invia il codice OTP
     if user.get('two_factor_enabled', False):
         secret = user.get('2fa_secret', None)
@@ -429,7 +425,7 @@ def login():
         # In un'app reale, invieresti l'OTP via email o SMS, ma per ora lo restituiamo nel corpo della risposta
         return jsonify({"message": "2FA required", "otp": otp})  # Solo per scopi di sviluppo """
 
-    if user["flags"]["user"]:
+    if user["flags"][2]: # flags[2] == user
         token = create_access_token(email)
         return jsonify({"message": "Login successful", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
     else:
