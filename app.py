@@ -1263,8 +1263,6 @@ def unlike_product():
 # Update the getLikedProducts endpoint for user-specific retrieval
 @app.route('/getLikedProducts', methods=['GET'])
 @jwt_required()
-@app.route('/getLikedProducts', methods=['GET'])
-@jwt_required()
 def get_liked_products():
     user_id = request.args.get('userId', None)
     if not user_id:
