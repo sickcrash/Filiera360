@@ -218,6 +218,30 @@ def verify_reset_token(token):
     except JWTExtendedException as e:
         print(f"Errore nel token: {e}")
         return None
+    
+@app.route('/change-password', methods=['POST'])
+@jwt_required()
+def change_password():
+    data = request.get_json()
+    current_password = data.get('currentPassword')
+    new_password = data.get('newPassword')
+
+    if not current_password or not new_password:
+        return jsonify({"message": "Both current and new password are required."}), 400
+
+    user = get_user_by_email(get_jwt_identity())
+    if not user:
+        return jsonify({"message": "User not found."}), 404
+
+    # Verifica la password attuale
+    if not bcrypt.checkpw(current_password.encode('utf-8'), user['password'].encode('utf-8')):
+        return jsonify({"message": "Current password is incorrect."}), 401
+
+    # Aggiorna la password
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    update_user(user["_id"], {"password": hashed_password})
+
+    return jsonify({"message": "Password changed successfully."}), 200
 
 @app.route('/forgot-password', methods=['POST'])
 def forgot_password():
@@ -335,9 +359,9 @@ def save_invite_tokens(tokens):
         json.dump(tokens, file, indent=4)'''
 
 # Salvataggio degli utenti in un file JSON
-def save_users(users):
+'''def save_users(users):
     with open("./jsondb/users.json", "w") as file:
-        json.dump(users, file, indent=4)
+        json.dump(users, file, indent=4)'''
 
 # Verifichiamo se un token è valido e non scaduto
 '''def is_valid_invite_token(token):

@@ -27,9 +27,9 @@ const Account = ({ setIsLoggedIn }) => {
     navigate("/login");
   };
 
-  const handleForgotPassword = () => {
-    navigate("/forgot-password");
-  };
+  const handleChangePassword = () => {
+  navigate("/change-password");
+};
 
   return (
     <div className="container mt-5">
@@ -52,8 +52,8 @@ const Account = ({ setIsLoggedIn }) => {
                   role: <b>{role}</b>
                 </h4>
                 <hr/>
-                <Button onClick={handleForgotPassword} className="btn btn-secondary w-100" >
-                  Reset password
+                <Button onClick={handleChangePassword} className="btn btn-secondary w-100" >
+                  Change password
                 </Button>
                 <Button onClick={handleLogout} className="btn btn-primary my-3 w-100">
                   Logout

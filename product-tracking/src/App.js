@@ -16,6 +16,7 @@ import About from "./components/About";
 import ResetPassword from "./components/ResetPassword";
 import AccessDenied from "./components/AccessDenied";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ChangePassword from "./components/ChangePassword";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -78,6 +79,7 @@ function App() {
           element={<Navigate to={isLoggedIn ? "/add-product" : "/login"} />}
         />
         <Route path="/access-denied" element={<AccessDenied />} />
+        <Route path="/change-password" element={<ChangePassword />} />
       </Routes>
     </Router>
   );
