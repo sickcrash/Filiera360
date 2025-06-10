@@ -129,6 +129,32 @@ const AddProduct = () => {
   };
   // ----------------- UPLOAD PRODUCT -----------------
 
+  const addToRecentlyScanned = async (productData) => {
+  try {
+    const scannedProduct = {
+      ID: productData.ID,
+      Name: productData.Name || "Batch",
+      Manufacturer: productData.Manufacturer,
+      CreationDate: productData.CreationDate,
+      timestamp: new Date().toISOString()
+    };
+
+    await axios.post('/api/addRecentlySearched', {
+      blockchainProductId: scannedProduct.ID
+    }, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    // Aggiorna lo stato locale se vuoi mostrare la lista anche qui
+    // (opzionale, puoi rimuovere se non serve in AddProduct)
+  } catch (error) {
+    console.error("Error updating recently searched products:", error);
+  }
+};
+
   const handleUploadProduct = async (e) => {
     e.preventDefault();
 
@@ -205,7 +231,7 @@ const AddProduct = () => {
       console.log("invio dati al backend", productData);
       await axios.post(
         "/api/uploadProduct",
-        JSON.stringify(productData),
+        productData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -214,24 +240,20 @@ const AddProduct = () => {
         }
       );
       setMessageProduct("Product uploaded successfully!");
-      addToRecentlyScanned(productData);
-      setLastAddedProduct(productData.ID);
-      //Fai il resei dei dati del Form Product
-      resetProductForm();
-
-      //Nascondere i form di inserimento manuale che mostri solo quando l'utente clicca su "+ New Product" o "+ New Batch".
-      setViewProduct(false);
-
-      // nasconde il form Batch
-      setViewBatch(false);
-
-      //Resetta lo stato del file CSV caricato per i Product, svuotando il campo file.
-      setCsvFile(null);
     } catch (error) {
       setMessageProduct(
         error.response?.data?.message || "Failed to upload product."
       );
+      return; // esci subito se errore
     }
+
+    // Tutto il resto va fuori dal try/catch
+    addToRecentlyScanned(productData);
+    setLastAddedProduct(productData.ID);
+    resetProductForm();
+    setViewProduct(false);
+    setViewBatch(false);
+    setCsvFile(null);
     if (glbFile) {
       try {
         const base64File = await convertFileToBase64(glbFile);
@@ -422,7 +444,7 @@ const AddProduct = () => {
   });
 
   // Funzione per aggiungere un prodotto alla cronologia dei prodotti scansionati
-  const addToRecentlyScanned = async (productData) => {
+ /* const addToRecentlyScanned = async (productData) => {
     try {
       // Get user ID from localStorage (set during login)
       const userId = localStorage.getItem('email') || 'default';
@@ -456,7 +478,7 @@ const AddProduct = () => {
     } catch (error) {
       console.error("Error updating recently searched products:", error);
     }
-  };
+  };*/
 
   // Add useEffect to fetch recently searched products
   useEffect(() => {

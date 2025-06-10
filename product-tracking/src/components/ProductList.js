@@ -428,42 +428,42 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
     console.error("QR code scan error:", err);
   };
 
-  // Funzione per aggiungere un prodotto alla cronologia dei prodotti scansionati
-  const addToRecentlyScanned = async (productData) => {
-    try {
-      // Get user ID from localStorage (set during login)
-      const userId = localStorage.getItem('email') || 'default';
+// Funzione per aggiungere un prodotto alla cronologia dei prodotti scansionati
+const addToRecentlyScanned = async (productData) => {
+  try {
+    // Get user ID from localStorage (set during login)
+    // const userId = localStorage.getItem('email') || 'default'; // NON SERVE PIÙ
 
-      // Crea un oggetto con solo le informazioni essenziali
-      const scannedProduct = {
-        ID: productData.ID,
-        Name: productData.Name || "Batch",
-        Manufacturer: productData.Manufacturer,
-        CreationDate: productData.CreationDate,
-        timestamp: new Date().toISOString() // Aggiungi timestamp per ordinare per data di scansione
-      };
+    // Crea un oggetto con solo le informazioni essenziali
+    const scannedProduct = {
+      ID: productData.ID,
+      Name: productData.Name || "Batch",
+      Manufacturer: productData.Manufacturer,
+      CreationDate: productData.CreationDate,
+      timestamp: new Date().toISOString() // Aggiungi timestamp per ordinare per data di scansione
+    };
 
-      // Send to backend
-      await axios.post('/api/addRecentlySearched', {
-        product: scannedProduct,
-        userId: userId
-      }, {
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+    // Send to backend
+    // Ora invia solo l'ID del prodotto, l'utente viene ricavato dal token JWT
+    await axios.post('/api/addRecentlySearched', {
+      blockchainProductId: scannedProduct.ID
+    }, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem('token')}`
+      }
+    });
 
-      // Update local state
-      // Rimuovi il prodotto se già presente nella lista
-      const filteredHistory = recentlyScanned.filter(p => p.ID !== scannedProduct.ID);
-      // Aggiungi il prodotto all'inizio della lista
-      const updatedHistory = [scannedProduct, ...filteredHistory].slice(0, 5); // Mantieni solo gli ultimi 5 prodotti
-      setRecentlyScanned(updatedHistory);
-    } catch (error) {
-      console.error("Error updating recently searched products:", error);
-    }
-  };
+    // Update local state
+    // Rimuovi il prodotto se già presente nella lista
+    const filteredHistory = recentlyScanned.filter(p => p.ID !== scannedProduct.ID);
+    // Aggiungi il prodotto all'inizio della lista
+    const updatedHistory = [scannedProduct, ...filteredHistory].slice(0, 5); // Mantieni solo gli ultimi 5 prodotti
+    setRecentlyScanned(updatedHistory);
+  } catch (error) {
+    console.error("Error updating recently searched products:", error);
+  }
+};
 
   // Add useEffect to fetch recently searched products
   useEffect(() => {

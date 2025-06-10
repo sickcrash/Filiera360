@@ -492,11 +492,17 @@ def verify_otp():
 @jwt_required()
 def get_operators():
     if not required_permissions(get_jwt_identity(), ['producer']):
-        return jsonify({"operators": None})
+        return jsonify({"operators": []})  # Utente non autorizzato
 
     user = get_user_by_email(get_jwt_identity())
-    operators = user.get("operators", [])
+    if not user:
+        return jsonify({"operators": []}), 404  # Utente non trovato
 
+    operators = user.get("operators") or []
+    # Serializza ObjectId in stringa
+    for op in operators:
+        if "operatorId" in op and not isinstance(op["operatorId"], str):
+            op["operatorId"] = str(op["operatorId"])
     return jsonify({"operators": operators})
 
 @app.route('/operators/add', methods=['POST'])
@@ -688,6 +694,13 @@ def upload_product():
         print("Faccio la chiamata all'AppServer")
         response = requests.post(f'http://middleware:3000/uploadProduct', json=product_data)
         if response.status_code == 200:
+            # Salvataggio su mongoDB dei metadati
+            user = get_user_by_email(get_jwt_identity())
+            try:
+                create_product(product_data["ID"], user["_id"])
+                print("Prodotto salvato su MongoDB")
+            except Exception as e:
+                print("Errore salvataggio MongoDB:", e)
             return jsonify({'message': response.json().get('message', 'Product uploaded successfully!')})
         else:
             return jsonify({'message': response.json().get('message', 'Failed to upload product.')}), response.status_code
@@ -795,6 +808,29 @@ def get_model():
     return jsonify({"ModelBase64": model["modelString"]}), 200
 
 
+# Funzione di utilità per confrontare i dati vecchi e nuovi e restituire le modifiche effettive
+def get_product_changes(old_data, new_data):
+    changes = []
+    for key in new_data:
+        if key == "CustomObject":
+            old_custom = old_data.get("CustomObject", {})
+            new_custom = new_data.get("CustomObject", {})
+            for subkey in new_custom:
+                if old_custom.get(subkey) != new_custom.get(subkey):
+                    changes.append({
+                        "field": f"CustomObject.{subkey}",
+                        "oldValue": old_custom.get(subkey),
+                        "newValue": new_custom.get(subkey)
+                    })
+        else:
+            if old_data.get(key) != new_data.get(key):
+                changes.append({
+                    "field": key,
+                    "oldValue": old_data.get(key),
+                    "newValue": new_data.get(key)
+                })
+    return changes
+
 # già usata su frontend + autenticazione jwt
 @app.route('/updateProduct', methods=['POST'])
 @jwt_required()
@@ -825,6 +861,31 @@ def update_product():
     try:
         response = requests.post(f'http://middleware:3000/api/product/updateProduct', json=product_data)
         if response.status_code == 200:
+            # --- INIZIO AGGIUNTA SALVATAGGIO MODIFICHE SU DB ---
+            # Recupera l'ultima modifica (se esiste) dalla history
+            last_history = get_last_history_entry(product_id)
+            old_data = {}
+            if last_history and last_history.get("changes"):
+                # Ricostruisci lo stato precedente a partire dalle ultime modifiche
+                for change in last_history["changes"]:
+                    field = change["field"]
+                    if field.startswith("CustomObject."):
+                        # Gestione campi annidati in CustomObject
+                        _, subkey = field.split(".", 1)
+                        if "CustomObject" not in old_data:
+                            old_data["CustomObject"] = {}
+                        old_data["CustomObject"][subkey] = change["newValue"]
+                    else:
+                        old_data[field] = change["newValue"]
+            # Calcola le modifiche effettive rispetto all'ultima entry
+            changes = get_product_changes(old_data, product_data)
+            if changes:
+                user = get_user_by_email(get_jwt_identity())
+                add_history_entry(product_id, user["_id"], changes)
+                print("Modifiche salvate nella cronologia:", changes)
+            else:
+                print("Nessuna modifica reale da salvare in history.")
+            # --- FINE AGGIUNTA SALVATAGGIO MODIFICHE SU DB ---
             return jsonify({'message': 'Product updated successfully!'})
         else:
             return jsonify({'message': 'Failed to update product.'}), 500
@@ -1310,11 +1371,17 @@ def save_liked_products(products):
 @app.route('/addRecentlySearched', methods=['POST'])
 @jwt_required()
 def add_recently_searched_route():
+    print("HEADERS:", dict(request.headers))
+    print("BODY:", request.data)
+    print("JSON:", request.json)
     data = request.json
-    user_id = data.get('userId')
     blockchain_product_id = data.get('blockchainProductId')
+    user_email = get_jwt_identity()  # Prende l'email dal token JWT
+    user = get_user_by_email(user_email)
+    user_id = user["_id"]
+
     if not user_id or not blockchain_product_id:
-        return jsonify({"message": "Missing userId or product data"}), 400
+        return jsonify({"message": "Missing user or product data"}), 400
 
     add_recently_searched(user_id, blockchain_product_id)
     return jsonify({"message": "Product added to recently searched"})
