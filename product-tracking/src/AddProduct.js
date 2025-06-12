@@ -331,7 +331,172 @@ const AddProduct = () => {
       );
     }
   };
+// Funzione di normalizzazione per ogni prodotto
+const normalizeProduct = (item) => ({
+  ID: item.ID || item.id || "",
+  Name: item.Name || item.name || "",
+  Manufacturer: manufacturer,
+  HarvestDate: item.HarvestDate || item.harvestDate || "",
+  ExpiryDate: item.ExpiryDate || item.expiryDate || "",
+  Nutritional_information: item.Nutritional_information || item.nutritionalInformation || "",
+  CountryOfOrigin: item.CountryOfOrigin || item.countryOfOrigin || "",
+  Ingredients: item.Ingredients || item.ingredients || "",
+  Allergens: item.Allergens || item.allergens || "",
+  PesticideUse: item.PesticideUse || item.pesticideUse || "",
+  FertilizerUse: item.FertilizerUse || item.fertilizerUse || "",
+  CustomObject: item.CustomObject || {},
+});
 
+const handleMultiFileUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  const uploadProducts = async (products) => {
+    const token = localStorage.getItem("token");
+    for (let postData of products) {
+      try {
+        await axios.post(
+          "/api/uploadProduct",
+          postData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        setMessageProduct("Product uploaded successfully!");
+        setLastAddedProduct(postData.ID);
+        setViewProduct(false);
+        break; // Mostra solo il primo QR code, puoi rimuovere se vuoi batch
+      } catch (error) {
+        setMessageProduct(
+          error.response?.data?.message || `Failed to upload product ${postData.ID}.`
+        );
+        setLastAddedProduct(""); // Nascondi QR se errore
+        break; // Mostra solo il primo errore
+      }
+    }
+  };
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const raw = evt.target.result;
+    let products = [];
+
+    if (ext === "csv") {
+      Papa.parse(raw, {
+        complete: (result) => {
+          for (let row of result.data) {
+            if (!row[0]) continue; // skip empty
+            // Prendi i primi 10 campi fissi
+            const [
+              ID, Name, HarvestDate, ExpiryDate, Nutritional_information,
+              CountryOfOrigin, Ingredients, Allergens, PesticideUse, FertilizerUse,
+              ...customFieldsArr
+            ] = row;
+
+            // Unisci tutti i custom field extra in un oggetto
+            let customObj = {};
+            customFieldsArr.forEach((field, idx) => {
+              try {
+                // Se il campo è un JSON valido, uniscilo
+                const parsed = JSON.parse(field);
+                Object.assign(customObj, parsed);
+              } catch {
+                if (field && field.trim()) customObj[`custom${idx+1}`] = field;
+              }
+            });
+
+            products.push({
+              ID,
+              Name,
+              Manufacturer: manufacturer,
+              HarvestDate,
+              ExpiryDate,
+              Nutritional_information,
+              CountryOfOrigin,
+              Ingredients,
+              Allergens,
+              PesticideUse,
+              FertilizerUse,
+              CustomObject: customObj,
+            });
+          }
+          uploadProducts(products);
+        },
+        header: false,
+        skipEmptyLines: true,
+      });
+    } else if (ext === "json") {
+  try {
+    const data = JSON.parse(raw);
+    const arr = Array.isArray(data) ? data : [data];
+    // Merge all CustomObject* fields
+    const mergeCustomObjects = (item) => {
+      let customObj = {};
+      Object.keys(item).forEach(key => {
+        if (key.toLowerCase().startsWith("customobject")) {
+          try {
+            Object.assign(customObj, typeof item[key] === "string" ? JSON.parse(item[key]) : item[key]);
+          } catch {
+            customObj[key] = item[key];
+          }
+        }
+      });
+      return customObj;
+    };
+    products = arr.map((item) => ({
+      ...normalizeProduct(item),
+      CustomObject: mergeCustomObjects(item)
+    }));
+    uploadProducts(products);
+  } catch (err) {
+    setMessageProduct("Invalid JSON file.");
+  }
+} else if (ext === "xml") {
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(raw, "text/xml");
+    const items = Array.from(xmlDoc.getElementsByTagName("Product"));
+    products = items.map((item) => {
+      const get = (tag) => item.getElementsByTagName(tag)[0]?.textContent || "";
+      // Merge all <CustomObject> tags
+      let customObj = {};
+      const customTags = Array.from(item.getElementsByTagName("CustomObject"));
+      customTags.forEach((el, idx) => {
+        try {
+          Object.assign(customObj, JSON.parse(el.textContent));
+        } catch {
+          customObj[`custom${idx+1}`] = el.textContent;
+        }
+      });
+      return normalizeProduct({
+        ID: get("ID"),
+        Name: get("Name"),
+        HarvestDate: get("HarvestDate"),
+        ExpiryDate: get("ExpiryDate"),
+        Nutritional_information: get("Nutritional_information"),
+        CountryOfOrigin: get("CountryOfOrigin"),
+        Ingredients: get("Ingredients"),
+        Allergens: get("Allergens"),
+        PesticideUse: get("PesticideUse"),
+        FertilizerUse: get("FertilizerUse"),
+        CustomObject: customObj,
+      });
+    });
+    uploadProducts(products);
+  } catch (err) {
+    setMessageProduct("Invalid XML file.");
+  }
+} else {
+      setMessageProduct("Unsupported file type.");
+    }
+  };
+  reader.readAsText(file);
+};
   // ----------------- CSV Product -----------------
   const handleCsvChange = (e) => {
     setCsvFile(e.target.files[0]);
@@ -546,6 +711,27 @@ const AddProduct = () => {
                     + New Product
                   </button>
                 )}
+                {!viewProduct && (
+                  <>
+                    {messageProduct && (
+                      <p style={{ color: "red", marginTop: "1vw" }}>{messageProduct}</p>
+                    )}
+                    <button
+                      style={{backgroundColor:"#6c757d", border:"1px solid #6c757d", color:"white", marginTop:"10px", width:"100%"}}
+                      className="btn mt-2"
+                      onClick={() => document.getElementById("multiFileInput").click()}
+                    >
+                      📁 or upload CSV/JSON/XML
+                    </button>
+                    <input
+                      id="multiFileInput"
+                      type="file"
+                      accept=".csv,.json,.xml"
+                      style={{ display: "none" }}
+                      onChange={handleMultiFileUpload}
+                    />
+                  </>
+                )}                
                 {viewProduct && (
                   <Card.Body>
                     {/* CSV File Upload */}

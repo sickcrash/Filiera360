@@ -2,10 +2,24 @@ from bson import ObjectId
 from database_mongo.mongo_client import models
 from database_mongo.models.models_model import create_model_model
 
-def create_model(blockchain_product_id, model_string, uploaded_by):
-    model_data = create_model_model(blockchain_product_id, model_string, uploaded_by)
-    result = models.insert_one(model_data)
-    return result.inserted_id
+# Update || Insert
+def upsert_model_for_product(blockchain_product_id, model_string, uploaded_by):
+    existing = models.find_one({"blockchainProductId": blockchain_product_id})
+    model_doc = create_model_model(blockchain_product_id, model_string, uploaded_by)
+    if existing:
+        # Aggiorna solo i campi modificabili, mantieni uploadedAt aggiornato
+        models.update_one(
+            {"_id": existing["_id"]},
+            {"$set": {
+                "modelString": model_string,
+                "uploadedBy": ObjectId(uploaded_by),
+                "uploadedAt": model_doc["uploadedAt"]
+            }}
+        )
+        return existing["_id"]
+    else:
+        result = models.insert_one(model_doc)
+        return result.inserted_id
 
 def get_model_by_id(model_id):
     if isinstance(model_id, str):

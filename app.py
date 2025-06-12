@@ -57,7 +57,7 @@ from database_mongo.queries.products_queries import (
 
 # Import CRUD modelli 3D
 from database_mongo.queries.models_queries import (
-    create_model,
+    upsert_model_for_product,
     get_model_by_id,
     get_model_by_blockchain_id,
     get_models_by_user,
@@ -786,7 +786,7 @@ def upload_model():
             return jsonify({"message": "missing GLB file"}), 400
         print("Uploading 3D model...")
             
-        create_model(product_id, glbFile, get_user_by_email(get_jwt_identity())["_id"])
+        upsert_model_for_product(product_id, glbFile, get_user_by_email(get_jwt_identity())["_id"])
         return jsonify({"message": "Model uploaded successfully"}), 201
 
     except Exception as e:
