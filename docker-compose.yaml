@@ -60,6 +60,18 @@ services:
     networks:
       - filiera360_default
 
+  test:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.test
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+    networks:
+      - filiera360_default
+    depends_on:
+      - backend
+      - mongodb
+
 networks:
   filiera360_default:
     driver: bridge
