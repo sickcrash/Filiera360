@@ -31,10 +31,11 @@ MYSQL_HOST = os.getenv("MYSQL_HOST", "mysql")
 MYSQL_USER = os.getenv("MYSQL_USER", "root")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 MYSQL_DB = os.getenv("MYSQL_DB", "filiera360")
-max_retries = 10
+def get_db_connection():
+    max_retries = 10
 
-for attempt in range(max_retries):
-    try:
+    for attempt in range(max_retries):
+     try:
         connection = pymysql.connect(
             host=MYSQL_HOST,
             user=MYSQL_USER,
@@ -43,12 +44,11 @@ for attempt in range(max_retries):
             port=3306,
             cursorclass=pymysql.cursors.DictCursor
         )
-        print("Connection to MySQL successful!")
-        break
-    except pymysql.MySQLError as e:
+        return connection
+    
+     except pymysql.MySQLError as e:
         print(f"Connection failed on attempt {attempt + 1}/{max_retries}: {e}")
         time.sleep(2)
-else:
     raise Exception("Could not connect to MySQL after several retries.")
 
 # Update the CORS configuration to allow all methods
@@ -103,7 +103,8 @@ def send_otp(email):
     expiration_time = (datetime.now(local_tz) + otp_lifetime).strftime("%Y-%m-%d %H:%M:%S")
 
     try:
-        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
             # Controlla se l'utente esiste
             cursor.execute("SELECT email FROM users WHERE email = %s", (email,))
             if not cursor.fetchone():
@@ -117,6 +118,7 @@ def send_otp(email):
             """, (email, otp, expiration_time))
         
         connection.commit()  
+        connection.close()
 
     except Exception as e:
         print(f"[OTP ERROR] {e}")
@@ -203,20 +205,32 @@ def verify_reset_token(token):
 @app.route('/forgot-password', methods=['POST'])
 def forgot_password():
     email = request.json.get('email')
-    
-    if email not in users:
-        return jsonify({"message": "Email not found"}), 404
+    try:
+        # Query al database per verificare se l'email esiste
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = "SELECT email FROM users WHERE email = %s"
+            cursor.execute(sql, (email,))
+            user = cursor.fetchone()
 
-    token = generate_reset_token(email)
+        if not user:
+            return jsonify({"message": "Email not found"}), 404
 
-    reset_url = f"/api/reset-password/{token}"
-    msg = Message('Password Reset Request',
-                  sender='noreply@example.com',
-                  recipients=[email])
-    msg.body = f"To reset your password, visit the following link: {reset_url}"
-    mail.send(msg)
+        token = generate_reset_token(email)
+        reset_url = f"/api/reset-password/{token}"
+
+        msg = Message('Password Reset Request',
+                      sender='noreply@example.com',
+                      recipients=[email])
+        msg.body = f"To reset your password, visit the following link: {reset_url}"
+        mail.send(msg)
+
+        return jsonify({"message": "Password reset email sent"}), 200
     
-    return jsonify({"message": "Password reset email sent"}), 200
+    except Exception as e:
+        print("Error while handling forgot-password request:", e)
+        return jsonify({"message": "Internal server error", "error": str(e)}), 500
+
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
@@ -237,16 +251,25 @@ def reset_password(token):
 
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-        users[email]["password"] = hashed_password
-        save_users(users)
+        try:
+            connection = get_db_connection()
+            with connection.cursor() as cursor:
+                sql = "UPDATE users SET password = %s WHERE email = %s"
+                cursor.execute(sql, (hashed_password, email))
+                connection.commit()
 
-        return jsonify({"message": "Password updated successfully"}), 200
+            return jsonify({"message": "Password updated successfully"}), 200
+
+        except Exception as e:
+            print("Database error while updating password:", e)
+            return jsonify({"message": "Database error", "error": str(e)}), 500
 
     return jsonify({"message": "Token is valid, proceed with password reset"}), 200
 
 ###################
 # Carica dal db
 def load_users():
+    connection = get_db_connection()
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM users")
         users = cursor.fetchall()
@@ -256,6 +279,7 @@ def load_users():
 # Carica i modelli 3D dal db
 def load_models():
     try:
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM models")
             models = cursor.fetchall()
@@ -267,6 +291,7 @@ def load_models():
  #################   
 # Salva gli utenti nel db
 def save_users(users):
+    connection = get_db_connection()
     with connection.cursor() as cursor:
         for email, user in users.items():
             cursor.execute("""
@@ -290,6 +315,7 @@ def save_users(users):
 # Salva i modelli nel DB
 def save_models(models):
     try:
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             for product_id, glbFile in models.items():
                 cursor.execute("""
@@ -331,41 +357,34 @@ def init_ledger():
     else:
         return jsonify({"message": "Ledger initialized successfully with sample data."})
 
-# Caricamento token
-def load_invite_tokens():
-    try:
-        with open("./jsondb/invite_tokens.json", "r") as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return {}
-
-# Salvataggio token aggiornati
-def save_invite_tokens(tokens):
-    with open("./jsondb/invite_tokens.json", "w") as file:
-        json.dump(tokens, file, indent=4)
-
-# Salvataggio degli utenti in un file JSON
-"""def save_users(users):
-    with open("./jsondb/users.json", "w") as file:
-        json.dump(users, file, indent=4)"""
-
-# Verifichiamo se un token è valido e non scaduto
 def is_valid_invite_token(token):
-    tokens = load_invite_tokens()
-    if token not in tokens:
-        return False, "Invalid invitation token."
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            # Recupera il token dal DB
+            sql = "SELECT code, expires_at, used FROM invite_token WHERE code = %s"
+            cursor.execute(sql, (token,))
+            token_data = cursor.fetchone()
 
-    token_data = tokens[token]
-    expiration_date = datetime.fromisoformat(token_data["expires_at"])
+            if not token_data:
+                return False, "Invalid invitation token."
 
-    if datetime.now() > expiration_date:
-        return False, "Expired invitation token."
-        
-    # Se il token è già usato
-    if token_data.get("used", False): 
-        return False, "Invitation token already used."
+            expires_at = token_data["expires_at"]
+            used = token_data["used"]
 
-    return True, "Valid token."
+            # Verifica scadenza
+            if datetime.now() > expires_at:
+                return False, "Expired invitation token."
+
+            # Verifica se è già usato
+            if used:
+                return False, "Invitation token already used."
+
+            return True, "Valid token."
+
+    except Exception as e:
+        print("Database error while validating token:", e)
+        return False, "Internal error during token validation."
 
 ###########
 @app.route('/signup', methods=['POST'])
@@ -383,6 +402,7 @@ def signup():
     
     #Controlla se l'email è già presente nel database
     try:
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT email FROM users WHERE email = %s", (email,))
             if cursor.fetchone():  # Se l'email esiste già nel DB
@@ -419,12 +439,17 @@ def signup():
             connection.commit()
 
             #Se il token è stato usato, viene segnato come utilizzato
-            if role == "producer" and invite_token:
-                tokens = load_invite_tokens()
-                tokens[invite_token]["used"] = True
-                save_invite_tokens(tokens)
-
-            return jsonify({"message": "User registered successfully"}), 201
+        if role == "producer" and invite_token:
+         try:
+            connection = get_db_connection()
+            with connection.cursor() as cursor:
+             sql = "UPDATE invite_token SET used = TRUE WHERE code = %s"
+             cursor.execute(sql, (invite_token,))
+            connection.commit()
+         except Exception as e:
+          print("Errore durante l'aggiornamento dello stato del token:", e)
+          return jsonify({"message": "Database error while updating token status"}), 500
+        return jsonify({"message": "User registered successfully"}), 201
 
     except pymysql.MySQLError as e:
         print(f"Error: {e}")
@@ -440,6 +465,7 @@ def login():
     password = data.get("password")
 
     try:
+        connection = get_db_connection()
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:  
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
@@ -481,6 +507,7 @@ def verify_otp():
         return jsonify({"message": "Email and OTP are required."}), 400
 
     try:
+        connection = get_db_connection()
         with connection.cursor() as cursor:
         
             cursor.execute("SELECT otp, expiration FROM otp_codes WHERE email = %s", (email,))
@@ -529,7 +556,7 @@ def get_operators():
 
     if not required_permissions(user_email, ['producer']):
         return jsonify({"operators": None}), 403
-
+    connection = get_db_connection()
     with connection.cursor() as cursor:
         cursor.execute("SELECT operators FROM users WHERE email = %s", (user_email,))
         result = cursor.fetchone()
@@ -552,7 +579,7 @@ def add_operator():
     operator_email = data.get("email")
     if not operator_email:
         return jsonify({"message": "Email is required."}), 400
-
+    connection = get_db_connection()
     with connection.cursor() as cursor:
         #verifica se l'utente da aggiungere è un operatore
         cursor.execute("SELECT role FROM users WHERE email = %s", (operator_email,))
@@ -591,7 +618,7 @@ def remove_operator():
     operator_email = data.get("email")
     if not operator_email:
         return jsonify({"message": "Email is required."}), 400
-
+    connection = get_db_connection()
     with connection.cursor() as cursor:
         cursor.execute("SELECT operators FROM users WHERE email = %s", (user_email,))
         user = cursor.fetchone()
@@ -686,6 +713,7 @@ def get_batch_history():
         return jsonify({'message': 'Failed to get batch history.'}), 500
 
 def find_producer_by_operator(operator_email):
+    connection = get_db_connection()
     with connection.cursor() as cursor:
         cursor.execute("SELECT email, operators FROM users WHERE role = 'producer'")
         producers = cursor.fetchall()
@@ -696,6 +724,7 @@ def find_producer_by_operator(operator_email):
     return None
 
 def required_permissions(email, allowed_roles):
+    connection = get_db_connection()
     with connection.cursor() as cursor:
         cursor.execute("SELECT role FROM users WHERE email = %s", (email,))
         result = cursor.fetchone()
@@ -707,6 +736,7 @@ def verify_product_authorization(email, product_id):
         return False
 
     try:
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT role, manufacturer, operators FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
@@ -752,6 +782,7 @@ def upload_product():
 
    # ottengo manufacturer dal DB in base all'utente loggato
     try:
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
@@ -808,8 +839,25 @@ def uploadBatch():
     if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductId")):
         return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
 
-    real_operator = users.get(get_jwt_identity())["manufacturer"]
-    print("operator authenticated: " + real_operator)
+    identity = get_jwt_identity()
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = "SELECT manufacturer FROM users WHERE email = %s"
+            cursor.execute(sql, (identity,))
+            user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        real_operator = user["manufacturer"]
+        print("operator authenticated: " + real_operator)
+
+    except Exception as e:
+        print("Database error while fetching user:", e)
+        return jsonify({"message": "Database error", "error": str(e)}), 500
+
     client_operator = batch_data.get("Operator")
     print("upload request by: " + client_operator)
     # Reject operation if the authenticated manufacturer doesn't match the one in the request
@@ -848,6 +896,7 @@ def upload_model():
         product_data = request.json
         
        #  produttore autenticato dal DB
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
@@ -887,6 +936,7 @@ def upload_model():
         print("Uploading 3D model...")
         
        # salva il modello nella tabella 'models'
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO models (id, stringa)
@@ -909,6 +959,7 @@ def get_model():
         return jsonify({"message": "Product ID is required."}), 400
     try:
         # prendo il file GLB dal database
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT stringa FROM models WHERE id = %s", (productId,))
             result = cursor.fetchone()
@@ -934,6 +985,7 @@ def update_product():
     product_data  = request.json
    # Recupera il manufacturer dell'utente loggato
     try:
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
             result = cursor.fetchone()
@@ -989,9 +1041,23 @@ def update_batch():
     print("batch_data.get(\"ProductId\"):", batch_data.get("ProductId"))
     if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductId")):
         return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
+    identity = get_jwt_identity()
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = "SELECT manufacturer FROM users WHERE email = %s"
+            cursor.execute(sql, (identity,))
+            user = cursor.fetchone()
 
-    real_operator = users.get(get_jwt_identity())["manufacturer"]
-    print("operator authenticated: " + real_operator)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        real_operator = user["manufacturer"]
+        print("operator authenticated: " + real_operator)
+
+    except Exception as e:
+        print("Database error while fetching user:", e)
+        return jsonify({"message": "Database error", "error": str(e)}), 500
     client_operator = batch_data.get("Operator")
     print("upload request by: " + client_operator)
     # Reject operation if the authenticated manufacturer doesn't match the one in the request
@@ -1028,8 +1094,26 @@ def update_batch():
 def add_sensor_data():
     sensor_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
-    print("Manufacturer authenticated:", real_manufacturer)
+    identity = get_jwt_identity()
+
+    try:
+        # query al database per ottenere il manufacturer dell'utente autenticato
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = "SELECT manufacturer FROM users WHERE email = %s"
+            cursor.execute(sql, (identity,))
+            user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        real_manufacturer = user["manufacturer"]
+        print("Manufacturer authenticated:", real_manufacturer)
+
+    except Exception as e:
+        print("Database error while fetching user:", e)
+        return jsonify({"message": "Database error", "error": str(e)}), 500
+
 
     product_id = sensor_data.get("id")
     if not product_id:
@@ -1058,8 +1142,25 @@ def add_sensor_data():
 def add_movement_data():
     movement_data  = request.json
     # log del manufacturer che effettua la richiesta di update
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
-    print("Manufacturer authenticated:", real_manufacturer)
+    identity = get_jwt_identity()
+
+    try:
+        # query al database per ottenere il manufacturer dell'utente autenticato
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = "SELECT manufacturer FROM users WHERE email = %s"
+            cursor.execute(sql, (identity,))
+            user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        real_manufacturer = user["manufacturer"]
+        print("Manufacturer authenticated:", real_manufacturer)
+
+    except Exception as e:
+        print("Database error while fetching user:", e)
+        return jsonify({"message": "Database error", "error": str(e)}), 500
 
     product_id = movement_data.get("id")
     if not product_id:
@@ -1088,6 +1189,7 @@ def add_movement_data():
 def add_certification_data():
     email = get_jwt_identity()
     try:
+        connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
             result = cursor.fetchone()
@@ -1426,203 +1528,169 @@ def ask():
 
 
 
-# Managing Liked Products Per User Account
 
-# Modify the liked products structure to be user-specific
-def load_liked_products():
-    try:
-        with open('liked_products.json', 'r') as f:
-            data = json.load(f)
-            # Ensure the structure is an object with user IDs as keys
-            if isinstance(data, list):
-                # Convert old format to new format if needed
-                return {"default": data}
-            return data
-    except (FileNotFoundError, json.JSONDecodeError):
-        # If file doesn't exist, create it with an empty object
-        save_liked_products({})
-        return {}
-
-# Update the likeProduct endpoint to handle user-specific likes
-@app.route('/likeProduct', methods=['POST', 'OPTIONS'])
+@app.route('/likeProduct', methods=['POST'])
 @jwt_required()
 def like_product():
-    # Handle preflight OPTIONS request
-    if request.method == 'OPTIONS':
-        response = jsonify({'message': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        return response
-        
-    # Handle actual POST request
-    data = request.json
-    product_data = data.get('product')
-    user_id = data.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    global liked_products
-    liked_products = load_liked_products()
-    
-    # Initialize user's liked products list if it doesn't exist
-    if user_id not in liked_products:
-        liked_products[user_id] = []
-    
-    # Check if product already exists in user's liked products
-    for product in liked_products[user_id]:
-        if product['ID'] == product_data['ID']:
-            return jsonify({"message": "Product already liked"}), 200
-    
-    # Add to user's liked products
-    liked_products[user_id].append(product_data)
-    
-    # Save to JSON file
-    save_liked_products(liked_products)
-    
-    print(f"Product {product_data['ID']} added to liked products for user {user_id}. Total: {len(liked_products[user_id])}")
-    return jsonify({"message": "Product added to liked products"}), 201
+    user_email = get_jwt_identity()
+    data = request.get_json()
+    product = data.get('product')
 
-# Update the unlikeProduct endpoint for user-specific unlikes
+    required_fields = ['ID', 'Name', 'Manufacturer']
+    if not product or not all(field in product for field in required_fields):
+        return jsonify({"message": "Missing required product fields."}), 400
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            # Verifica se il like esiste già
+            cursor.execute("""
+                SELECT COUNT(*) as cnt FROM liked_products
+                WHERE user_email = %s AND ID = %s
+            """, (user_email, product['ID']))
+            result = cursor.fetchone()
+
+            if result['cnt'] > 0:
+                return jsonify({"message": "Product already liked"}), 200
+
+            # Inserisci nella tabella liked_products
+            cursor.execute("""
+                INSERT INTO liked_products (ID, Name, Manufacturer, timestamp, user_email)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                product['ID'],
+                product['Name'],
+                product['Manufacturer'],
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                user_email
+            ))
+            connection.commit()
+
+        return jsonify({"message": "Product liked successfully"}), 201
+
+    except Exception as e:
+        print("Errore nel likeProduct:", e)
+        return jsonify({"message": f"Database error: {str(e)}"}), 500
+
+
 @app.route('/unlikeProduct', methods=['DELETE'])
 @jwt_required()
 def unlike_product():
-    # Handle preflight OPTIONS request
-    """ if request.method == 'OPTIONS':
-        response = jsonify({'message': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'DELETE')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response """
-        
+    user_email = get_jwt_identity()
     product_id = request.args.get('productId')
-    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    global liked_products
-    # Reload liked products from file to ensure we have the latest data
-    liked_products = load_liked_products()
-    
-    # Check if user exists in liked products
-    if user_id not in liked_products:
-        return jsonify({"message": "User has no liked products"}), 404
-    
-    # Remove from user's liked products
-    original_length = len(liked_products[user_id])
-    liked_products[user_id] = [p for p in liked_products[user_id] if p['ID'] != product_id]
-    
-    # Check if any product was actually removed
-    if len(liked_products[user_id]) == original_length:
-        print(f"Product {product_id} not found in user {user_id}'s liked products")
-    else:
-        print(f"Product {product_id} removed from liked products for user {user_id}. Remaining: {len(liked_products[user_id])}")
-    
-    # Save to JSON file
-    save_liked_products(liked_products)
-    
-    # Set CORS headers manually for this response
-    response = jsonify({"message": "Product removed from liked products"})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Methods', 'DELETE')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    return response, 200
 
-# Update the getLikedProducts endpoint for user-specific retrieval
+    if not product_id:
+        return jsonify({"message": "Product ID is required."}), 400
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM liked_products
+                WHERE user_email = %s AND ID = %s
+            """, (user_email, product_id))
+            connection.commit()
+
+        return jsonify({"message": "Product unliked successfully"}), 200
+
+    except Exception as e:
+        print("Errore nel unlikeProduct:", e)
+        return jsonify({"message": f"Database error: {str(e)}"}), 500
+
+
 @app.route('/getLikedProducts', methods=['GET'])
 @jwt_required()
 def get_liked_products():
-    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    global liked_products
-    liked_products = load_liked_products()
-    
-    # Return empty list if user has no liked products
-    if user_id not in liked_products:
-        return jsonify([])
-    
-    return jsonify(liked_products[user_id])
+    user_email = get_jwt_identity()
 
-# Add this function to save liked products to JSON file
-def save_liked_products(products):
-    with open('liked_products.json', 'w') as f:
-        json.dump(products, f, indent=4)
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ID, Name, Manufacturer, CreationDate, timestamp FROM liked_products
+                WHERE user_email = %s
+            """, (user_email,))
+            results = cursor.fetchall()
 
-# Initialize the liked_products variable
-liked_products = load_liked_products()
+        return jsonify(results), 200
+
+    except Exception as e:
+        print("Errore nel getLikedProducts:", e)
+        return jsonify({"message": f"Database error: {str(e)}"}), 500
+
 
 
 
 # Add these new routes for recently searched products
 
 @app.route('/addRecentlySearched', methods=['POST'])
-@jwt_required()
 def add_recently_searched():
-    # Handle preflight OPTIONS request
-    """ if request.method == 'OPTIONS':
-        response = jsonify({'message': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response """
-    
     data = request.json
     product = data.get('product')
-    user_id = data.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    # Add timestamp if not present
-    if 'timestamp' not in product:
-        product['timestamp'] = datetime.now().isoformat()
-    
-    # Load recently searched products
-    recently_searched = load_recently_searched()
-    
-    # Initialize user's list if it doesn't exist
-    if user_id not in recently_searched:
-        recently_searched[user_id] = []
-    
-    # Remove the product if it already exists in the list
-    recently_searched[user_id] = [p for p in recently_searched[user_id] if p['ID'] != product['ID']]
-    
-    # Add the product to the beginning of the list
-    recently_searched[user_id].insert(0, product)
-    
-    # Keep only the 5 most recent products
-    recently_searched[user_id] = recently_searched[user_id][:5]
-    
-    # Save to JSON file
-    save_recently_searched(recently_searched)
-    
-    response = jsonify({"message": "Product added to recently searched"})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+    user_email = data.get('userEmail') or data.get('userId')
+
+    if not product or not user_email:
+        return jsonify({"error": "Missing product or userEmail"}), 400
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM searches
+                WHERE user_email = %s AND product_id = %s
+            """, (user_email, product.get('ID')))
+
+            cursor.execute("""
+                INSERT INTO searches (product_id, Name, Manufacturer, CreationDate, timestamp, user_email)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                product.get('ID'),
+                product.get('Name'),
+                product.get('Manufacturer'),
+                product.get('CreationDate'),
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                user_email
+            ))
+
+            cursor.execute("""
+                DELETE FROM searches
+                WHERE user_email = %s AND ID NOT IN (
+                    SELECT ID FROM (
+                        SELECT ID FROM searches
+                        WHERE user_email = %s
+                        ORDER BY timestamp DESC
+                        LIMIT 5
+                    ) AS recent
+                )
+            """, (user_email, user_email))
+
+            connection.commit()
+        return jsonify({"message": "Product added to recently searched"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/getRecentlySearched', methods=['GET'])
-@jwt_required()
 def get_recently_searched():
-    user_id = request.args.get('userId', 'default')  # Use 'default' if no user ID provided
-    
-    recently_searched = load_recently_searched()
-    
-    # Return empty list if user has no recently searched products
-    if user_id not in recently_searched:
-        return jsonify([])
-    
-    return jsonify(recently_searched[user_id])
+    user_email = request.args.get('userEmail') or request.args.get('userId')
 
-def load_recently_searched():
+    if not user_email:
+        return jsonify({"error": "Missing userEmail"}), 400
+
     try:
-        with open('recently_searched.json', 'r') as f:
-            data = json.load(f)
-            # Ensure the structure is an object with user IDs as keys
-            if isinstance(data, list):
-                # Convert old format to new format if needed
-                return {"default": data}
-            return data
-    except (FileNotFoundError, json.JSONDecodeError):
-        # If file doesn't exist, create it with an empty object
-        save_recently_searched({})
-        return {}
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT product_id AS ID, Name, Manufacturer, CreationDate, timestamp
+                FROM searches
+                WHERE user_email = %s
+                ORDER BY timestamp DESC
+                LIMIT 5
+            """, (user_email,))
+            results = cursor.fetchall()
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-def save_recently_searched(products):
-    with open('recently_searched.json', 'w') as f:
-        json.dump(products, f, indent=4)
 
 
 # Make sure the if __name__ block is inside the code
