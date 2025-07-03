@@ -8,4 +8,5 @@ recently_searched.json
 .venv
 ./linux_files/fabric-samples/
 .env
+node_modules/
 
