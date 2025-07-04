@@ -20,22 +20,23 @@ CREATE TABLE `otp_codes` (
 );
 
 CREATE TABLE `liked_products` (
-  `ID` INT PRIMARY KEY,
+  `ID` INT NOT NULL,
   `Name` VARCHAR(255) NOT NULL,
   `Manufacturer` VARCHAR(255) NOT NULL,
   `CreationDate` DATE NULL,
   `timestamp` DATETIME NOT NULL,
-  `user_email` VARCHAR(255) NOT NULL
+  `user_email` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`user_email`, `ID`) 
 );
 
-CREATE TABLE 'searches' (
-  'ID' INT AUTO_INCREMENT PRIMARY KEY,  
-  'product_id' VARCHAR(255) NOT NULL,        
-  'Name' VARCHAR(255) NOT NULL,
-  'Manufacturer' VARCHAR(255),
-  'CreationDate' DATE NULL,
-  'timestamp' DATETIME NOT NULL,
-  'user_email' VARCHAR(255) NOT NULL
+CREATE TABLE `searches` (
+  `ID` INT AUTO_INCREMENT PRIMARY KEY,  
+  `product_id` VARCHAR(255) NOT NULL,        
+  `Name` VARCHAR(255) NOT NULL,
+  `Manufacturer` VARCHAR(255),
+  `CreationDate` DATE NULL,
+  `timestamp` DATETIME NOT NULL,
+  `user_email` VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE `invite_token` (
