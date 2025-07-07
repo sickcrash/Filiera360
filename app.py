@@ -126,10 +126,14 @@ def send_otp(email):
         return jsonify({"message": "Error saving OTP to database."}), 500
 
 
-    if send_otp_email(email, otp):
+    '''if send_otp_email(email, otp):
         return jsonify({"message": "OTP sent to your email."})
     else:
-        return jsonify({"message": "Failed to send OTP."}), 500
+        return jsonify({"message": "Failed to send OTP."}), 500'''
+    # CODICE AGGIUNTO PER LO STRESS TEST
+    print(f"[TEST] OTP generato per {email}: {otp} (non inviato)")
+    return jsonify({"message": f"OTP generated for {email} (simulato)."}), 200
+
 
 
 
@@ -546,7 +550,26 @@ def verify_otp():
         print(f"Errore nella verifica dell'OTP: {e}")
         return jsonify({"message": "Internal server error"}), 500
 
+ # CODICE AGGIUNTO PER LO STRESS TEST
+@app.route('/get-latest-otp', methods=['GET'])
+def get_latest_otp():
+    email = request.args.get('email')
+    if not email:
+        return jsonify({"message": "Email is required"}), 400
 
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT otp FROM otp_codes WHERE email = %s", (email,))
+            record = cursor.fetchone()
+
+            if not record:
+                return jsonify({"message": "OTP not found"}), 404
+
+            return jsonify({"otp": record['otp']})
+    except Exception as e:
+        print(f"Errore nel recupero OTP: {e}")
+        return jsonify({"message": "Internal server error"}), 500
 
 
 @app.route('/operators', methods=['GET'])
