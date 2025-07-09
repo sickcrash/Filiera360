@@ -1,0 +1,11 @@
+{
+  "name": "simple-cc",
+  "version": "1.0.0",
+  "main": "index.js",
+  "engines": {
+    "node": ">=12"
+  },
+  "dependencies": {
+    "fabric-contract-api": "^2.2.0"
+  }
+}
