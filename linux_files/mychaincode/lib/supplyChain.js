@@ -9,7 +9,7 @@ class SupplyChainContract extends Contract {
         const products = [
             {
                 "ID": "AGRI_X",
-                "Name": "Organic Carrots",
+                "Name": "Organic ",
                 "Manufacturer": "Green Farm Co.",
                 "ExpiryDate": "2023-05-01",
                 "Ingredients": "",
@@ -87,7 +87,7 @@ class SupplyChainContract extends Contract {
 
     }
 
-    async createProduct(ctx, id, name, manufacturer, expiryDate, ingredients, allergens, nutritionalInformation, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, customObject) {
+    async createProduct(ctx, id, name, manufacturer, expiryDate, ingredients, allergens, nutritionalInformation, harvestDate, pesticideUse, fertilizerUse, countryOfOrigin, producerInfo ,customObject) {
        console.log("Sono nella supplychain")
         console.log(`Creating product ${id}`);
         
@@ -108,6 +108,7 @@ class SupplyChainContract extends Contract {
             PesticideUse: pesticideUse,
             FertilizerUse: fertilizerUse,
             CountryOfOrigin: countryOfOrigin,
+            ProducerInfo: JSON.parse(producerInfo), //campo aggiuntivo
             CustomObject: JSON.parse(customObject) // Convertiamo il JSON in oggetto
         };
     

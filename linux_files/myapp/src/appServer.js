@@ -234,6 +234,7 @@ async function createProductDefault(contract) {
             PesticideUse = "",
             FertilizerUse = "",
             CountryOfOrigin = "",
+            ProducerInfo = {} ,
             CustomObject = {}  // Corretta destrutturazione
         } = productData;
     
@@ -260,9 +261,9 @@ async function createProductDefault(contract) {
             // Aggiungi logging per verificare i parametri
             console.log("📌 Parametri passati alla transazione:", {
                 ID, Name, Manufacturer, ExpiryDate, Ingredients, Allergens, Nutritional_information,
-                HarvestDate, PesticideUse, FertilizerUse, CountryOfOrigin, CustomObject
+                HarvestDate, PesticideUse, FertilizerUse, CountryOfOrigin, ProducerInfo ,CustomObject
             });
-    
+            console.log("Fino a qui arrivoooo")
             // Submit della transazione
             await contract.submitTransaction(
                 'createProduct',
@@ -277,6 +278,7 @@ async function createProductDefault(contract) {
                 PesticideUse,
                 FertilizerUse,
                 CountryOfOrigin,
+                JSON.stringify(ProducerInfo) ,
                 JSON.stringify(CustomObject)  // Corretta conversione JSON
             );
     

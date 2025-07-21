@@ -9,8 +9,12 @@ const SignUp = () => {
   const [role, setRole] = useState("user");
   const [inviteToken, setInviteToken] = useState("");
   const [message, setMessage] = useState("");
+  const [piva , setPiva] = useState("");
+  const [legaladderess , setLegalAddress] = useState("");
+  const [cap , setCap] = useState("");
+  const [description , setDescription] = useState("");
   const navigate = useNavigate();
-
+  
 
   const getPlaceholder = () => {
     switch (role) {
@@ -38,6 +42,10 @@ const SignUp = () => {
         password,
         role,
         inviteToken: role === "producer" ? inviteToken : null,
+        piva: role === "producer" ? piva : null,
+        legaladderess: role === "producer" ? legaladderess : null,
+        cap: role === "producer" ? cap : null,
+        description: role === "producer" ? description : null,
       });
       const data = response.data;
 
@@ -126,6 +134,7 @@ const SignUp = () => {
                 </div>
 
                 {role === "producer" && (
+                  <>
                   <div className="form-group mt-3">
                     <input
                       type="text"
@@ -135,7 +144,50 @@ const SignUp = () => {
                       onChange={(e) => setInviteToken(e.target.value)}
                       required
                     />
-                  </div>
+                    </div>
+                  <div className="form-group mt-3">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="P. IVA"
+                      value={piva}
+                      onChange={(e) => setPiva(e.target.value)}
+                      required
+                    />
+                    
+                    </div>
+
+                  <div className="form-group mt-3">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Legal Address"
+                      value={legaladderess}
+                      onChange={(e) => setLegalAddress(e.target.value)}
+                      required
+                    />
+                    </div>
+                    <div className="form-group mt-3">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="CAP"
+                      value={cap}
+                      onChange={(e) => setCap(e.target.value)}
+                      required
+                    />
+                    </div>
+                    <div className="form-group mt-3">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      required
+                    />
+                    </div>
+                  </>
                 )}
                 <button className="btn btn-primary mt-3 w-100" type="submit">Sign Up</button>
               </form>

@@ -1,0 +1,8 @@
+FROM mongo:6.0
+
+# (facoltativo) Copia un file di configurazione
+# COPY mongod.conf /etc/mongod.conf
+
+EXPOSE 27017
+
+CMD ["mongod"]

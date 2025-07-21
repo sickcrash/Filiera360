@@ -55,16 +55,24 @@ const Login = ({ setIsLoggedIn }) => {
         otp: parseInt(otp, 10),
       });
       const data = response.data;
+      
 
       if (data.message === "OTP validated successfully.") { //prima era if (data success)
         // Se OTP è corretto, redirigiamo l'utente
+        let producerInfo = data.producerInfo;
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("manufacturer", data.manufacturer);
         localStorage.setItem("email", data.email);
         // Store user ID for liked products
+        if (data.role === 'operator'){
+          producerInfo = {
+            manufacturer: data.manufacturer,
+          }
+        }
+        console.log(producerInfo)
         localStorage.setItem("userId", data.email);
         localStorage.setItem("role", data.role);
-
+        localStorage.setItem("producerInfo", JSON.stringify(producerInfo));
         setIsLoggedIn(true);
         navigate("/account");
       } else {

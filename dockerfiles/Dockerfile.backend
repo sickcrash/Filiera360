@@ -1,17 +1,17 @@
 FROM python:3.8-slim
 
 WORKDIR /app
+ENV PYTHONUNBUFFERED=1 \
+    FLASK_APP=app.py \
+    FLASK_ENV=development \
+    FLASK_DEBUG=1
 
-COPY app.py /app/app.py
-COPY requirements.txt /app/requirements.txt
-COPY prompts_variables_storage.py /app/prompts_variables_storage.py
-# COPY ./jsondb/invite_tokens.json /app/
-# COPY ./jsondb/users.json /app/
+COPY app.py requirements.txt prompts_variables_storage.py ./
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
 EXPOSE 5000
+CMD ["flask", "--app", "app.py", "run", "--host=0.0.0.0", "--debug", "--reload"]
 
-# Comando di avvio aggiornato per bind esterno
-CMD ["flask", "run", "--host=0.0.0.0"]
+ 

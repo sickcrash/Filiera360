@@ -2,13 +2,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY linux_files/myapp /app
+COPY linux_files/myapp .
 
-# Installa le dipendenze
-RUN npm install
+RUN npm ci            
 
-# Espone la porta corretta: 3000
 EXPOSE 3000
-
-# Avvia l'applicazione
 CMD ["npm", "start"]
+
+ 

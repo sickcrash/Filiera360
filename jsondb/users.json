@@ -31,5 +31,16 @@
             "user": false
         },
         "operators": []
+    },
+    "gg@gg.it": {
+        "manufacturer": "Dom",
+        "password": "$2b$12$r9PWy6x/I5xZnsCMdnmGAOcC0MqOULFSz2r7hrj5lFcSf59t1ixpW",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
     }
 }

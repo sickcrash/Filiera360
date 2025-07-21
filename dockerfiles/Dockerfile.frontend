@@ -1,18 +1,21 @@
-# Stage di build: installazione e build dell'applicazione
-FROM node:18-alpine as builder
+# dockerfiles/Dockerfile.frontend.dev
+FROM node:18-alpine
 
 WORKDIR /app
-# Copia dei file di package per sfruttare la cache
-COPY product-tracking/package*.json ./
+
+# Copia solo package.json per sfruttare la cache
+COPY product-tracking/package.json ./
+COPY product-tracking/package-lock.json ./
 RUN npm ci
 
-# Copia del codice sorgente e build dell'applicazione
+# Copia il resto del sorgente
 COPY product-tracking/ ./
-RUN npm run build
 
-# Stage finale: configurazione di nginx per servire i file statici
-FROM nginx:stable as runner
-# Rimuove la configurazione di default che potrebbe interferire
-RUN rm /etc/nginx/conf.d/default.conf
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY --from=builder /app/build /usr/share/nginx/html
+# Per la live‑reload su filesystem montato da host (opzionale)
+ENV CHOKIDAR_USEPOLLING=true \
+    HOST=0.0.0.0 \
+    PORT=3001
+
+EXPOSE 3001
+CMD ["npm", "start"]   
+ 

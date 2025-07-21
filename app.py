@@ -1,9 +1,16 @@
 import json
 import os
+import sys
 import random
 import secrets
 import traceback
 from datetime import datetime, timedelta
+from bson import json_util , ObjectId
+from bson.objectid import InvalidId
+
+from pymongo import MongoClient
+
+
 
 import bcrypt
 import jwt
@@ -24,6 +31,13 @@ import prompts_variables_storage
 
 # Update the CORS configuration to allow all methods
 app = Flask(__name__, instance_relative_config=True)
+
+#connessione al db mongo
+client =  MongoClient("mongodb://mongodb:27017/")
+
+db = client["filiera360"]
+
+users_collection = db["users"]
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
@@ -49,16 +63,16 @@ def create_jwt_token(email):
 
 # Funzione per inviare l'OTP tramite email
 def send_otp_email(email, otp):
-    try:
-        msg = Message('OTP Code',
-                  sender='noreply@example.com',
-                  recipients=[email])
-        msg.body = f"This is your OTP code: {otp}"
-        mail.send(msg)
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        return False
-    return True
+     try:
+         msg = Message('OTP Code',
+                   sender='noreply@example.com',
+                   recipients=[email])
+         msg.body = f"This is your OTP code: {otp}"
+         mail.send(msg)
+     except Exception as e:
+         print(f"Error sending email: {e}")
+         return False
+     return True
 
 
 otp_store_file = "./jsondb/users-otp.json"
@@ -68,12 +82,21 @@ otp_lifetime = timedelta(minutes=5)
 # @app.route('/send-otp', methods=['POST'])
 def send_otp(email):
     # email = request.json.get('email')
+    app.logger.info("1")
+
+    users = load_users() #carico gli utenti presenti nel db mongo
+    app.logger.info("2")
 
     # Verifica che l'email sia registrata nel sistema
-    if email not in users:
+    if not any(user.get("email" , "") == email for user in users):
+        app.logger.info("34")
+        app.logger.info(users)
         return jsonify({"message": "User not found."}), 404
+    
+    app.logger.info("3")
 
     otp = generate_otp()
+    app.logger.info(otp)
     expiration_time = (datetime.now() + otp_lifetime).strftime("%Y-%m-%d %H:%M")  # Formatta scadenza
 
     try:
@@ -89,6 +112,7 @@ def send_otp(email):
         "expiration": expiration_time  # Salviamo la data come stringa
     }
 
+
     try:
         # Scrive i dati aggiornati nel file JSON
         with open(otp_store_file, "w") as file:
@@ -99,6 +123,8 @@ def send_otp(email):
         return jsonify({"message": "Error saving OTP."}), 500
 
     # Invia l'OTP via email
+
+    app.logger.info("Ultimo Ok!")
 
     return send_otp_email(email, otp)
 
@@ -222,11 +248,11 @@ def reset_password(token):
 
     return jsonify({"message": "Token is valid, proceed with password reset"}), 200
 
-# Carica gli utenti dal file JSON (database utenti)
+# Carica gli utenti da MongoDB
 def load_users():
     try:
-        with open('./jsondb/users.json', 'r') as f:
-            return json.load(f)
+       doc = list(users_collection.find())
+       return doc
     except (FileNotFoundError, json.JSONDecodeError):
         return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
     
@@ -238,10 +264,10 @@ def load_models():
     except (FileNotFoundError, json.JSONDecodeError):
         return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
     
-# Salva gli utenti nel file JSON
+# Salva gli utenti nella collection Mongo
 def save_users(users):
-    with open('./jsondb/users.json', 'w') as f:
-        json.dump(users, f, indent=4)
+    users_collection.insert_one(users)
+    
 
 # Salva i modelli nel file JSON
 def save_models(models):
@@ -296,8 +322,7 @@ def save_invite_tokens(tokens):
 
 # Salvataggio degli utenti in un file JSON
 def save_users(users):
-    with open("./jsondb/users.json", "w") as file:
-        json.dump(users, file, indent=4)
+    users_collection.insert_one(users)
 
 # Verifichiamo se un token è valido e non scaduto
 def is_valid_invite_token(token):
@@ -319,12 +344,19 @@ def is_valid_invite_token(token):
 
 @app.route('/signup', methods=['POST'])
 def signup():
+    users = load_users()
     data = request.get_json()
     email = data.get('email')
     manufacturer = data.get('manufacturer')
     password = data.get('password')
     role = data.get('role', 'user') 
-    invite_token = data.get('inviteToken', None) 
+    invite_token = data.get('inviteToken', None)
+    piva = data.get('piva' , None)
+    legalAddress = data.get('legaladderess' , None)
+    cap = data.get('cap' , None)
+    description = data.get('description' , None)
+
+    print(data)
     
     # Verifica che tutti i campi siano forniti
     if not email or not manufacturer or not password:
@@ -334,8 +366,8 @@ def signup():
     if email in users:
         return jsonify({"message": "Email already exists"}), 409
     
-    # Controlla se il manufacturer è già registrato
-    if any(user["manufacturer"] == manufacturer for user in users.values()):
+    # Controlla se il manufacturer è già registrato 
+    if any(user.get("manufacturer") == manufacturer for user in users):
         return jsonify({"message": "Manufacturer already exists"}), 409
 
     # Controlla il token di invito per i produttori
@@ -351,7 +383,8 @@ def signup():
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # Aggiungi l'utente al dizionario degli utenti
-    users[email] = {
+    users = {
+        "email" : email,
         "manufacturer": manufacturer,
         "password": hashed_password,
         "role": role,
@@ -359,9 +392,16 @@ def signup():
             "producer": role == "producer",
             "operator": role == "operator",
             "user": role == "user" 
-        },
-        "operators": []
+        } 
     }
+    if role == "producer":
+        users['producerInfo'] =  {
+            "piva" : piva,
+            "legalAddress" : legalAddress,
+            "cap" : cap,
+            "description" : description,
+            "operators": []
+        }
 
     save_users(users)
 
@@ -373,7 +413,13 @@ def signup():
 
     return jsonify({"message": "User registered successfully"}), 201
 
-
+def getUserByEmail(email):
+    users = load_users()
+    for user in users:
+        if user.get("email") == email:
+            return user
+    return None
+    
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
@@ -381,12 +427,10 @@ def login():
     password = data.get("password")
 
     # Carica gli utenti
-    users = load_users()
-
-    user = users.get(email)
+    user = getUserByEmail(email)
 
     # Verifica se l'utente esiste e la password è corretta
-    if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+    if not user or not bcrypt.checkpw(password.encode('utf-8'), user.get("password").encode('utf-8')):
         return jsonify({"message": "Invalid email or password"}), 401
 
     """ # Se la 2FA è abilitata, invia il codice OTP
@@ -400,12 +444,17 @@ def login():
         otp = pyotp.TOTP(secret).now()  # Genera il codice OTP
         # In un'app reale, invieresti l'OTP via email o SMS, ma per ora lo restituiamo nel corpo della risposta
         return jsonify({"message": "2FA required", "otp": otp})  # Solo per scopi di sviluppo """
+    app.logger.info(user)
+   
 
     if user["flags"]["user"]:
         token = create_access_token(email)
         return jsonify({"message": "Login successful", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
     else:
+        app.logger.info("entraaa")
         if send_otp(email):
+            app.logger.info("manda otp")
+            
             return jsonify({"message": "OTP sent to your email."})
         else:
             return jsonify({"message": "Failed to send OTP."}), 500
@@ -438,10 +487,19 @@ def verify_otp():
         otp_expired = expiration_time < datetime.now()
 
         if otp_present and stored_otp == otp and not otp_expired:
-            print("OTP validato con successo")
-            user = users.get(email)
+            print("OTP validato con successoo")
+            user = getUserByEmail(email)  #prende l'utente con quella mail
             token = create_access_token(email)
-            return jsonify({"message": "OTP validated successfully.", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
+            #risposta in caso di user producer/operator -> passo anche la P.IVA
+            print("arrivo")
+            if user['role'] == 'producer':#producer passo informazioni riguradanti l'azienda al frontend
+                print("Entro se producer!")
+                print(user["producerInfo"])
+                return jsonify({"message": "OTP validated successfully.", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email , "producerInfo": user['producerInfo']})
+            else:
+                app.logger.info("entro dove non dovrei")
+                return jsonify({"message": "OTP validated successfully.", "access_token": token, "role": user['role'], "manufacturer": user['manufacturer'], "email": email})
+
             # return jsonify({"message": "OTP validated successfully.", "token": "JWT_Token"})
         else:
             print("OTP non valido o scaduto")  
@@ -592,20 +650,24 @@ def find_producer_by_operator(operator):
     
     return None
 
-def required_permissions(manufacturer, roles):
-    print("chiamata a required permissions")
-    user = [user for user in users.items() if user[0] == manufacturer]
-    user = user[0] if user else None
-    print(user)
+def required_permissions(email, roles):
+    print("chiamata a required_permissions con email:", email)
+
+    # Cerca l'utente nel database usando l'email
+    user = users_collection.find_one({"email": email})
+    print("Utente trovato:", user)
 
     if not user:
         return False
 
+    # Controlla se l'utente ha almeno uno dei ruoli richiesti
+    flags = user.get("flags", {})
     for role in roles:
-        if user[1]["flags"].get(role):
-            print(user[1]["flags"].get(role))
+        if flags.get(role):
+            print(f"[OK] l'utente ha il permesso '{role}'")
             return True
 
+    print(f"[NO] l'utente non ha nessuno dei permessi richiesti: {roles}")
     return False
 
 def verify_product_authorization(email, product_id):
@@ -633,36 +695,49 @@ def verify_product_authorization(email, product_id):
 @app.route('/uploadProduct', methods=['POST'])
 @jwt_required()
 def upload_product():
-    if not required_permissions(get_jwt_identity(), ['producer']):
+    print("AAAA!")
+    print("Headers:", dict(request.headers))
+    print("Data:", request.data)
+    print("JSON:", request.get_json())
+
+    identity = get_jwt_identity()
+
+    print("Ecco l'identity: " + identity)
+
+    # Controllo permessi
+    if not required_permissions(identity, ['producer']):
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
 
     print("Sono arrivata al backend")
     product_data = request.json
-    real_manufacturer = users.get(get_jwt_identity())["manufacturer"]
-    print("manufacturer authenticated: " + real_manufacturer)
+
+    user = users_collection.find_one({'email': identity})
+    if not user:
+        return jsonify({'message': 'Real User not Found'}), 404
+
+    real_manufacturer = user.get('manufacturer')
+    print("manufacturer authenticated: " + str(real_manufacturer))
+
     client_manufacturer = product_data.get("Manufacturer")
-    print("upload request by: " + client_manufacturer)
-    # Reject operation if the authenticated manufacturer doesn't match the one in the request
+    print("upload request by: " + str(client_manufacturer))
+
     if real_manufacturer != client_manufacturer:
         return jsonify({"message": "Unauthorized: Manufacturer mismatch."}), 403
-    print("Uploading new product data:", product_data)
+
     product_data["CustomObject"] = product_data.get("CustomObject", {})
+    print("Uploading new product data:", product_data)
     print("Uploading custom object:", product_data["CustomObject"])
 
     try:
-        # Send the cleaned product data to the external service
         print("Faccio la chiamata all'AppServer")
-        response = requests.post(f'http://middleware:3000/uploadProduct', json=product_data)
+        response = requests.post('http://middleware:3000/uploadProduct', json=product_data)
         if response.status_code == 200:
             return jsonify({'message': response.json().get('message', 'Product uploaded successfully!')})
         else:
             return jsonify({'message': response.json().get('message', 'Failed to upload product.')}), response.status_code
-
-        
     except Exception as e:
         print("Error uploading product:", e)
         return jsonify({'message': 'Error uploading product.', 'error': str(e)}), 500
-    # uploadBatch
 
 @app.route('/uploadBatch', methods=['POST'])
 @jwt_required()
@@ -1430,6 +1505,25 @@ def get_recently_searched():
     
     return jsonify(recently_searched[user_id])
 
+@app.route('/updateManufacturer', methods=['POST'])
+@jwt_required()
+def update_name():
+    identity = get_jwt_identity()  # ad esempio: email dell’utente
+    data = request.json
+    if not data:
+        return jsonify({"message": "Il nuovo nome è obbligatorio"}), 400
+
+    result = users_collection.update_one(
+        {"email": identity},
+        {"$set": {"manufacturer": data}}  # o "name": new_name
+    )
+
+    if result.matched_count == 0:
+        return jsonify({"message": "Utente non trovato"}), 404
+
+    return jsonify({"message": "Nome aggiornato con successo"}), 200
+
+
 def load_recently_searched():
     try:
         with open('recently_searched.json', 'r') as f:
@@ -1447,6 +1541,7 @@ def load_recently_searched():
 def save_recently_searched(products):
     with open('recently_searched.json', 'w') as f:
         json.dump(products, f, indent=4)
+
 
 
 # Make sure the if __name__ block is inside the code

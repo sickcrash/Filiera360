@@ -12,6 +12,7 @@ const AddProduct = () => {
   let navigate = useNavigate();
 
   const [manufacturer, setManufacturer] = useState("");
+  const [producerInfo , setProducerInfo] = useState({});
 
   const [id, setId] = useState("");
   const [name, setName] = useState("");
@@ -50,14 +51,28 @@ const AddProduct = () => {
   const [role, setRole] = useState("");
   // ----------------- LOAD LOCALSTORAGE -----------------
   useEffect(() => {
+    if (localStorage.getItem("role") === 'producer') {
+      const producerInfo = JSON.parse(localStorage.getItem("producerInfo"));
+      if (producerInfo) {
+        setProducerInfo(producerInfo);
+      }
+    }
+
+  } , [])
+
+  useEffect(() => {
     setManufacturer(localStorage.getItem("manufacturer") || "");
+    if (producerInfo?.piva){
+      console.log("Ecco le info producer: " + producerInfo.piva)
+    }
     const role = localStorage.getItem("role");
     if (role !== "producer" && role !== "operator") {
       navigate("/access-denied");
     }
     setRole(role || "");
     setOperator(localStorage.getItem("manufacturer") || ""); // Da sostituire con altro gruppo in futuro
-  }, []);
+  }, [producerInfo]);
+
 
   const resetProductForm = () => {
     setId("");
@@ -150,6 +165,7 @@ const AddProduct = () => {
       Allergens: allergens,
       PesticideUse: pesticideUse,
       FertilizerUse: fertilizerUse,
+      ProducerInfo: producerInfo,
       CustomObject: customFields.reduce((obj, field) => {
         if (field.key.trim()) obj[field.key] = field.value;
         return obj;
@@ -205,7 +221,7 @@ const AddProduct = () => {
       console.log("invio dati al backend", productData);
       await axios.post(
         "/api/uploadProduct",
-        JSON.stringify(productData),
+        productData,
         {
           headers: {
             Authorization: `Bearer ${token}`,

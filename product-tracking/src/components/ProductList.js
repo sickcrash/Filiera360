@@ -13,6 +13,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
   const isOperator = localStorage.getItem("role") === "operator";
   const isUser = localStorage.getItem("role") === "user";
 
+
+
   const [itemCode, setItemCode] = useState('');
   const [message, setMessage] = useState('');
   const [product, setProduct] = useState(null);
@@ -64,6 +66,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       if (response.status === 200) {
         const productData = response.data;
         setProduct(productData); // Set product details in state
+        console.log(productData)
         setbatchProduct(); // EVITA DI AVERE DUE PRODOTTI DIVERSI IN CONTEMPORANEA
         setBatch(); // EVITA DI AVERE PRODOTTO E BATCH INCOERENTI
         setMessage(`Product ${itemCode} found!`);
@@ -1040,6 +1043,58 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
               onBatchUpdate={handleScanBatch}
             />}
         </div>
+      )}
+
+      {/* Display manufacuturer details if the product is found */}
+      {product && (
+          <div className="row justify-content-center mt-5">
+            <div className="col-md-8">
+              <div className="card shadow">
+                <div className="card-body">
+                  <h4 className="card-title">Manufacturer Information ℹ️</h4>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <div></div> {/* Empty div for flex spacing */}
+                  </div>
+                  <Table striped bordered hover>
+                    <tbody>
+                    {product.ProducerInfo ? (
+                        <>
+                        <tr>
+                          <th>Manufacturer</th>
+                          <td>{product.Manufacturer}</td>
+                        </tr>
+                        <tr>
+                          <th>Legal Address</th>
+                          <td>{product.ProducerInfo.legalAddress}</td>
+                        </tr>
+                      <tr>
+                      <th>Cap</th>
+                      <td>{product.ProducerInfo.cap}</td>
+                      </tr>
+                          <tr>
+                            <th>Partita IVA</th>
+                            <td>{product.ProducerInfo.piva}</td>
+                          </tr>
+                          <tr>
+                            <th>Description</th>
+                            <td>{product.ProducerInfo.description}</td>
+                          </tr>
+
+                  </>
+                    ) : (
+                        <tr>
+                          <th>No More Information foud!</th>
+                        </tr>
+                    ) }
+
+
+                    </tbody>
+                  </Table>
+
+                </div>
+              </div>
+            </div>
+          </div>
       )}
 
       <br/>
