@@ -26,30 +26,51 @@ from werkzeug.security import check_password_hash
 
 import prompts_variables_storage
 
-# le variabili d'ambiente ottenute da Docker Compose
-MYSQL_HOST = os.getenv("MYSQL_HOST", "mysql")
-MYSQL_USER = os.getenv("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
-MYSQL_DB = os.getenv("MYSQL_DB", "filiera360")
-def get_db_connection():
-    max_retries = 10
+from database.queries.otp_queries import (
+    insert_or_update_otp,
+    get_otp_record,
+    get_latest_otp
+)
 
-    for attempt in range(max_retries):
-     try:
-        connection = pymysql.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            database=MYSQL_DB,
-            port=3306,
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        return connection
-    
-     except pymysql.MySQLError as e:
-        print(f"Connection failed on attempt {attempt + 1}/{max_retries}: {e}")
-        time.sleep(2)
-    raise Exception("Could not connect to MySQL after several retries.")
+from database.queries.invite_token_queries import (
+    fetch_invite_token_data,  
+    mark_invite_token_used)
+
+from database.queries.users_queries import (
+    check_email_exists,
+    check_manufacturer_exists,
+    insert_user,
+    get_user_by_email,
+    get_user_operators,
+    get_user_role,
+    get_raw_operators,
+    update_user_operators,
+    get_manufacturer_by_email,
+    update_user_password
+)
+
+from database.queries.access_control_queries import (
+    required_permissions,
+    verify_product_authorization
+)
+
+from database.queries.models_queries import (
+    save_or_update_model, 
+    get_model_by_product_id
+)
+
+from database.queries.likes_queries import (
+    has_user_liked_product,
+    add_product_like,
+    remove_product_like,
+    get_user_liked_products
+)
+
+from database.queries.searches_queries import (
+    add_recent_search, 
+    get_recent_searches
+)
+
 
 # Update the CORS configuration to allow all methods
 app = Flask(__name__, instance_relative_config=True)
@@ -99,26 +120,12 @@ otp_lifetime = timedelta(minutes=5)
 # @app.route('/send-otp', methods=['POST'])
 def send_otp(email):
     otp = generate_otp()
-    local_tz = pytz.timezone("Europe/Rome")
-    expiration_time = (datetime.now(local_tz) + otp_lifetime).strftime("%Y-%m-%d %H:%M:%S")
-
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            # Controlla se l'utente esiste
-            cursor.execute("SELECT email FROM users WHERE email = %s", (email,))
-            if not cursor.fetchone():
-                return jsonify({"message": "User not found."}), 404
+        user = check_email_exists(email)
+        if not user:
+            return jsonify({"message": "User not found."}), 404
 
-            # Inserisci o aggiorna OTP
-            cursor.execute("""
-                INSERT INTO otp_codes (email, otp, expiration)
-                VALUES (%s, %s, %s)
-                ON DUPLICATE KEY UPDATE otp = VALUES(otp), expiration = VALUES(expiration)
-            """, (email, otp, expiration_time))
-        
-        connection.commit()  
-        connection.close()
+        insert_or_update_otp(email, otp)
 
     except Exception as e:
         print(f"[OTP ERROR] {e}")
@@ -210,14 +217,8 @@ def verify_reset_token(token):
 def forgot_password():
     email = request.json.get('email')
     try:
-        # Query al database per verificare se l'email esiste
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            sql = "SELECT email FROM users WHERE email = %s"
-            cursor.execute(sql, (email,))
-            user = cursor.fetchone()
 
-        if not user:
+        if not get_user_by_email(email):
             return jsonify({"message": "Email not found"}), 404
 
         token = generate_reset_token(email)
@@ -256,11 +257,7 @@ def reset_password(token):
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         try:
-            connection = get_db_connection()
-            with connection.cursor() as cursor:
-                sql = "UPDATE users SET password = %s WHERE email = %s"
-                cursor.execute(sql, (hashed_password, email))
-                connection.commit()
+            update_user_password(email, hashed_password)
 
             return jsonify({"message": "Password updated successfully"}), 200
 
@@ -272,7 +269,7 @@ def reset_password(token):
 
 ###################
 # Carica dal db
-def load_users():
+'''def load_users():
     connection = get_db_connection()
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM users")
@@ -328,7 +325,7 @@ def save_models(models):
                 """, (product_id, glbFile))
         connection.commit()
     except Exception as e:
-        print("Error saving model to database:", e)
+        print("Error saving model to database:", e)'''
 
 
 
@@ -362,33 +359,25 @@ def init_ledger():
         return jsonify({"message": "Ledger initialized successfully with sample data."})
 
 def is_valid_invite_token(token):
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            # Recupera il token dal DB
-            sql = "SELECT code, expires_at, used FROM invite_token WHERE code = %s"
-            cursor.execute(sql, (token,))
-            token_data = cursor.fetchone()
+    token_data = fetch_invite_token_data(token)
+            
+    if not token_data:
+        return False, "Invalid invitation token."
 
-            if not token_data:
-                return False, "Invalid invitation token."
-
-            expires_at = token_data["expires_at"]
-            used = token_data["used"]
+    expires_at = token_data["expires_at"]
+    used = token_data["used"]
 
             # Verifica scadenza
-            if datetime.now() > expires_at:
+    if datetime.now() > expires_at:
                 return False, "Expired invitation token."
 
             # Verifica se è già usato
-            if used:
+    if used:
                 return False, "Invitation token already used."
 
-            return True, "Valid token."
+    return True, "Valid token."
 
-    except Exception as e:
-        print("Database error while validating token:", e)
-        return False, "Internal error during token validation."
+
 
 ###########
 @app.route('/signup', methods=['POST'])
@@ -406,15 +395,11 @@ def signup():
     
     #Controlla se l'email è già presente nel database
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT email FROM users WHERE email = %s", (email,))
-            if cursor.fetchone():  # Se l'email esiste già nel DB
+            if check_email_exists(email):  # Se l'email esiste già nel DB
                 return jsonify({"message": "Email already exists"}), 409
 
             #Controlla se il manufacturer è già registrato nel database
-            cursor.execute("SELECT manufacturer FROM users WHERE manufacturer = %s", (manufacturer,))
-            if cursor.fetchone():  # Se il manufacturer esiste già nel DB
+            if check_manufacturer_exists(manufacturer):  # Se il manufacturer esiste già nel DB
                 return jsonify({"message": "Manufacturer already exists"}), 409
 
             
@@ -430,30 +415,16 @@ def signup():
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
             #Inserisci l'utente nel db
-            cursor.execute("""
-                INSERT INTO users (email, manufacturer, password, role)
-                VALUES (%s, %s, %s, %s)
-            """, (
-                email,
-                manufacturer,
-                hashed_password,
-                role
-            ))
-
-            connection.commit()
+            insert_user(email, manufacturer, hashed_password, role)
 
             #Se il token è stato usato, viene segnato come utilizzato
-        if role == "producer" and invite_token:
-         try:
-            connection = get_db_connection()
-            with connection.cursor() as cursor:
-             sql = "UPDATE invite_token SET used = TRUE WHERE code = %s"
-             cursor.execute(sql, (invite_token,))
-            connection.commit()
-         except Exception as e:
-          print("Errore durante l'aggiornamento dello stato del token:", e)
-          return jsonify({"message": "Database error while updating token status"}), 500
-        return jsonify({"message": "User registered successfully"}), 201
+            if role == "producer" and invite_token:
+                try:
+                     mark_invite_token_used(invite_token)
+                except Exception as e:
+                    print("Errore durante l'aggiornamento dello stato del token:", e)
+                    return jsonify({"message": "Database error while updating token status"}), 500
+            return jsonify({"message": "User registered successfully"}), 201
 
     except pymysql.MySQLError as e:
         print(f"Error: {e}")
@@ -469,10 +440,8 @@ def login():
     password = data.get("password")
 
     try:
-        connection = get_db_connection()
-        with connection.cursor(pymysql.cursors.DictCursor) as cursor:  
-            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-            user = cursor.fetchone()
+        user = get_user_by_email(email)
+
 
         if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             return jsonify({"message": "Invalid email or password"}), 401
@@ -511,11 +480,7 @@ def verify_otp():
         return jsonify({"message": "Email and OTP are required."}), 400
 
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-        
-            cursor.execute("SELECT otp, expiration FROM otp_codes WHERE email = %s", (email,))
-            record = cursor.fetchone()
+            record = get_otp_record(email)
 
             if not record:
                 return jsonify({"message": "OTP has expired or is invalid."}), 400
@@ -526,8 +491,7 @@ def verify_otp():
             #Verifica se l'OTP corrisponde e se non è scaduto
             if str(stored_otp) == otp and expiration_time > datetime.now():
                 # OTP valido, genera access token e restituisci i dati utente
-                cursor.execute("SELECT email, role, manufacturer FROM users WHERE email = %s", (email,))
-                user = cursor.fetchone()
+                user = get_user_by_email(email)
 
                 #verifica se l'utente non esiste
                 if not user:
@@ -552,16 +516,13 @@ def verify_otp():
 
  # CODICE AGGIUNTO PER LO STRESS TEST
 @app.route('/get-latest-otp', methods=['GET'])
-def get_latest_otp():
+def get_latest_otp_route():
     email = request.args.get('email')
     if not email:
         return jsonify({"message": "Email is required"}), 400
 
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT otp FROM otp_codes WHERE email = %s", (email,))
-            record = cursor.fetchone()
+            record = get_latest_otp(email)
 
             if not record:
                 return jsonify({"message": "OTP not found"}), 404
@@ -579,12 +540,7 @@ def get_operators():
 
     if not required_permissions(user_email, ['producer']):
         return jsonify({"operators": None}), 403
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT operators FROM users WHERE email = %s", (user_email,))
-        result = cursor.fetchone()
-        operators = json.loads(result["operators"]) if result and result["operators"] else []
-
+    operators = get_user_operators(user_email)
     return jsonify({"operators": operators})
 
 
@@ -593,28 +549,22 @@ def get_operators():
 @app.route('/operators/add', methods=['POST'])
 @jwt_required()
 def add_operator():
-    user_email = get_jwt_identity()
+        user_email = get_jwt_identity()
 
-    if not required_permissions(user_email, ['producer']):
-        return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
+        if not required_permissions(user_email, ['producer']):
+            return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
 
-    data = request.json
-    operator_email = data.get("email")
-    if not operator_email:
-        return jsonify({"message": "Email is required."}), 400
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        #verifica se l'utente da aggiungere è un operatore
-        cursor.execute("SELECT role FROM users WHERE email = %s", (operator_email,))
-        operator = cursor.fetchone()
-        if not operator:
+        data = request.json
+        operator_email = data.get("email")
+        if not operator_email:
+            return jsonify({"message": "Email is required."}), 400
+        role = get_user_role(operator_email)
+        if not role:
             return jsonify({"message": "Operator not found."}), 404
-        if operator["role"] != "operator":
+        if role != "operator":
             return jsonify({"message": "User is not an operator."}), 400
 
-        cursor.execute("SELECT operators FROM users WHERE email = %s", (user_email,))
-        user = cursor.fetchone()
-        operators = json.loads(user["operators"]) if user and user["operators"] else []
+        operators = operators = get_raw_operators(user_email)
 
         if operator_email in operators:
             return jsonify({"message": "Operator already added."}), 409
@@ -622,10 +572,8 @@ def add_operator():
         operators.append(operator_email)
 
         # Salva nel db
-        cursor.execute("UPDATE users SET operators = %s WHERE email = %s",
-                       (json.dumps(operators), user_email))
-        connection.commit()
-    return jsonify({"message": "Operator added successfully."}), 201
+        update_user_operators(user_email, operators)
+        return jsonify({"message": "Operator added successfully."}), 201
 
 
 
@@ -641,20 +589,13 @@ def remove_operator():
     operator_email = data.get("email")
     if not operator_email:
         return jsonify({"message": "Email is required."}), 400
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT operators FROM users WHERE email = %s", (user_email,))
-        user = cursor.fetchone()
-        operators = json.loads(user["operators"]) if user and user["operators"] else []
-
-        if operator_email not in operators:
+    operators = get_raw_operators(user_email)
+    if operator_email not in operators:
             return jsonify({"message": "Operator not found."}), 404
 
-        operators.remove(operator_email)
+    operators.remove(operator_email)
 
-        cursor.execute("UPDATE users SET operators = %s WHERE email = %s",
-                       (json.dumps(operators), user_email))
-        connection.commit()
+    update_user_operators(user_email, operators)
     return jsonify({"message": "Operator removed successfully."})
 
 
@@ -735,59 +676,6 @@ def get_batch_history():
         print("Failed to get batch history:", e)
         return jsonify({'message': 'Failed to get batch history.'}), 500
 
-def find_producer_by_operator(operator_email):
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT email, operators FROM users WHERE role = 'producer'")
-        producers = cursor.fetchall()
-        for producer in producers:
-            operators = json.loads(producer["operators"]) if producer["operators"] else []
-            if operator_email in operators:
-                return producer  
-    return None
-
-def required_permissions(email, allowed_roles):
-    connection = get_db_connection()
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT role FROM users WHERE email = %s", (email,))
-        result = cursor.fetchone()
-        return result and result["role"] in allowed_roles
-
-
-def verify_product_authorization(email, product_id):
-    if not email or not product_id:
-        return False
-
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT role, manufacturer, operators FROM users WHERE email = %s", (email,))
-            user = cursor.fetchone()
-            if not user:
-                return False
-
-            if user["role"] == "operator":
-                producer = find_producer_by_operator(email)
-                if not producer:
-                    return False
-                manufacturer = producer["manufacturer"]
-            else:
-                # L'utente è un producer o altro
-                manufacturer = user["manufacturer"]
-
-        # ottengo il prodotto dal middleware
-        response = requests.get(f'http://middleware:3000/readProduct?productId={product_id}')
-        if response.status_code != 200:
-            print('Failed to get product.')
-            return False
-
-        product = response.json()
-        return product.get("Manufacturer") == manufacturer
-
-    except Exception as e:
-        print("Failed to verify product authorization:", e)
-        return False
-
 
 # ora in uso + autenticazione jwt
 @app.route('/uploadProduct', methods=['POST'])
@@ -805,13 +693,9 @@ def upload_product():
 
    # ottengo manufacturer dal DB in base all'utente loggato
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
-            user = cursor.fetchone()
-            if not user:
+            real_manufacturer = get_manufacturer_by_email(email)
+            if not real_manufacturer:
                 return jsonify({"message": "User not found."}), 404
-            real_manufacturer = user["manufacturer"]
     except Exception as e:
         print("DB error:", e)
         return jsonify({"message": "Database error."}), 500
@@ -850,7 +734,8 @@ def upload_product():
 @app.route('/uploadBatch', methods=['POST'])
 @jwt_required()
 def uploadBatch():
-    if not required_permissions(get_jwt_identity(), ['producer', 'operator']):
+    identity = get_jwt_identity()
+    if not required_permissions(identity, ['producer', 'operator']):
         return jsonify({"message": "Unauthorized: Insufficient permissions."}), 403
 
     print("Sono arrivata al backend")
@@ -862,19 +747,13 @@ def uploadBatch():
     if not verify_product_authorization(get_jwt_identity(), batch_data.get("ProductId")):
         return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
 
-    identity = get_jwt_identity()
+    
 
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            sql = "SELECT manufacturer FROM users WHERE email = %s"
-            cursor.execute(sql, (identity,))
-            user = cursor.fetchone()
+        real_operator = get_manufacturer_by_email(identity)
 
-        if not user:
+        if not real_operator:
             return jsonify({"message": "User not found"}), 404
-
-        real_operator = user["manufacturer"]
         print("operator authenticated: " + real_operator)
 
     except Exception as e:
@@ -917,34 +796,29 @@ def upload_model():
 
     try:
         product_data = request.json
-        
-       #  produttore autenticato dal DB
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
-            user = cursor.fetchone()
-            if not user:
-                return jsonify({"message": "User not found in database."}), 404
-            real_manufacturer = user["manufacturer"]
-        print("Manufacturer authenticated: ", real_manufacturer)
-
         # prendo l'id del prodotto dalla richiesta POST
         product_id = product_data.get("ID")
         glbFile = product_data.get('ModelBase64')
         if not product_id:
             return jsonify({"message": "Product ID is required."}), 400
-        
         print("product id: " + product_id)
         print("glbFile length:", len(glbFile) if glbFile else "No file")
-
-        # verifica che il manufacturer autenticato corrisponda al manufacturer del prodotto
-        verification_result = verify_manufacturer(product_id, real_manufacturer)
-        if verification_result:
-            return verification_result  # Restituisce l'errore se la verifica non è passata
-
         
         if not glbFile:
             return jsonify({"message": "missing GLB file"}), 400
+        
+        try:
+            real_manufacturer = get_manufacturer_by_email(email)
+            if not real_manufacturer:
+                return jsonify({"message": "User not found in database."}), 404
+        except Exception as e:
+            print("Error fetching manufacturer:", e)
+            return jsonify({"message": "Database error."}), 500
+
+        verification_result = verify_manufacturer(product_id, real_manufacturer)
+        if verification_result:
+         return verification_result
+
         #debug
         print(f"Product ID: {product_id}")
         print(f"Length of incoming Base64 string: {len(glbFile)}")
@@ -959,14 +833,7 @@ def upload_model():
         print("Uploading 3D model...")
         
        # salva il modello nella tabella 'models'
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO models (id, stringa)
-                VALUES (%s, %s)
-                ON DUPLICATE KEY UPDATE stringa = VALUES(stringa)
-            """, (product_id, glbFile))
-        connection.commit()
+        save_or_update_model(product_id, glbFile)
         return jsonify({"message": "Model uploaded successfully"}), 201
 
     except Exception as e:
@@ -982,15 +849,11 @@ def get_model():
         return jsonify({"message": "Product ID is required."}), 400
     try:
         # prendo il file GLB dal database
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT stringa FROM models WHERE id = %s", (productId,))
-            result = cursor.fetchone()
-            if not result:
+            glbFile = get_model_by_product_id(productId)
+            if not glbFile:
                 return jsonify({"message": "No model found for the provided product ID."}), 404
-            glbFile = result["stringa"]
-    # Se il file esiste, lo restituiamo come risposta
-        return jsonify({"ModelBase64": glbFile}), 200
+       # Se il file esiste, lo restituiamo come risposta
+            return jsonify({"ModelBase64": glbFile}), 200
 
     except Exception as e:
         print("Error occurred:", e)
@@ -1008,13 +871,9 @@ def update_product():
     product_data  = request.json
    # Recupera il manufacturer dell'utente loggato
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
-            result = cursor.fetchone()
-            if not result:
+            real_manufacturer = get_manufacturer_by_email(email)
+            if not real_manufacturer:
                 return jsonify({"message": "User not found."}), 404
-            real_manufacturer = result["manufacturer"]
             print("Manufacturer authenticated:", real_manufacturer)
     except Exception as e:
         print("Database error while fetching manufacturer:", e)
@@ -1066,16 +925,10 @@ def update_batch():
         return jsonify({"message": "Unauthorized: You do not have access to this product."}), 403
     identity = get_jwt_identity()
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            sql = "SELECT manufacturer FROM users WHERE email = %s"
-            cursor.execute(sql, (identity,))
-            user = cursor.fetchone()
+        real_operator = get_manufacturer_by_email(identity)
 
-        if not user:
+        if not real_operator:
             return jsonify({"message": "User not found"}), 404
-
-        real_operator = user["manufacturer"]
         print("operator authenticated: " + real_operator)
 
     except Exception as e:
@@ -1121,16 +974,10 @@ def add_sensor_data():
 
     try:
         # query al database per ottenere il manufacturer dell'utente autenticato
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            sql = "SELECT manufacturer FROM users WHERE email = %s"
-            cursor.execute(sql, (identity,))
-            user = cursor.fetchone()
+        real_manufacturer = get_manufacturer_by_email(identity)
 
-        if not user:
+        if not real_manufacturer:
             return jsonify({"message": "User not found"}), 404
-
-        real_manufacturer = user["manufacturer"]
         print("Manufacturer authenticated:", real_manufacturer)
 
     except Exception as e:
@@ -1169,16 +1016,9 @@ def add_movement_data():
 
     try:
         # query al database per ottenere il manufacturer dell'utente autenticato
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            sql = "SELECT manufacturer FROM users WHERE email = %s"
-            cursor.execute(sql, (identity,))
-            user = cursor.fetchone()
-
-        if not user:
+        real_manufacturer = get_manufacturer_by_email(identity)
+        if not real_manufacturer:
             return jsonify({"message": "User not found"}), 404
-
-        real_manufacturer = user["manufacturer"]
         print("Manufacturer authenticated:", real_manufacturer)
 
     except Exception as e:
@@ -1212,13 +1052,9 @@ def add_movement_data():
 def add_certification_data():
     email = get_jwt_identity()
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT manufacturer FROM users WHERE email = %s", (email,))
-            result = cursor.fetchone()
-            if not result:
+            real_manufacturer = get_manufacturer_by_email(email)
+            if not real_manufacturer:
                 return jsonify({"message": "User not found."}), 404
-            real_manufacturer = result["manufacturer"]
             print("Manufacturer authenticated:", real_manufacturer)
     except Exception as e:
         print("Database error while fetching manufacturer:", e)
@@ -1564,32 +1400,13 @@ def like_product():
         return jsonify({"message": "Missing required product fields."}), 400
 
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            # Verifica se il like esiste già
-            cursor.execute("""
-                SELECT COUNT(*) as cnt FROM liked_products
-                WHERE user_email = %s AND ID = %s
-            """, (user_email, product['ID']))
-            result = cursor.fetchone()
-
-            if result['cnt'] > 0:
+            if has_user_liked_product(user_email, product['ID']):
                 return jsonify({"message": "Product already liked"}), 200
 
             # Inserisci nella tabella liked_products
-            cursor.execute("""
-                INSERT INTO liked_products (ID, Name, Manufacturer, timestamp, user_email)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (
-                product['ID'],
-                product['Name'],
-                product['Manufacturer'],
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                user_email
-            ))
-            connection.commit()
+            add_product_like(user_email, product)
 
-        return jsonify({"message": "Product liked successfully"}), 201
+            return jsonify({"message": "Product liked successfully"}), 201
 
     except Exception as e:
         print("Errore nel likeProduct:", e)
@@ -1606,13 +1423,7 @@ def unlike_product():
         return jsonify({"message": "Product ID is required."}), 400
 
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                DELETE FROM liked_products
-                WHERE user_email = %s AND ID = %s
-            """, (user_email, product_id))
-            connection.commit()
+        remove_product_like(user_email, product_id)
 
         return jsonify({"message": "Product unliked successfully"}), 200
 
@@ -1627,15 +1438,9 @@ def get_liked_products():
     user_email = get_jwt_identity()
 
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT ID, Name, Manufacturer, CreationDate, timestamp FROM liked_products
-                WHERE user_email = %s
-            """, (user_email,))
-            results = cursor.fetchall()
+        liked_products = get_user_liked_products(user_email)
 
-        return jsonify(results), 200
+        return jsonify(liked_products), 200 
 
     except Exception as e:
         print("Errore nel getLikedProducts:", e)
@@ -1656,38 +1461,7 @@ def add_recently_searched():
         return jsonify({"error": "Missing product or userEmail"}), 400
 
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                DELETE FROM searches
-                WHERE user_email = %s AND product_id = %s
-            """, (user_email, product.get('ID')))
-
-            cursor.execute("""
-                INSERT INTO searches (product_id, Name, Manufacturer, CreationDate, timestamp, user_email)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (
-                product.get('ID'),
-                product.get('Name'),
-                product.get('Manufacturer'),
-                product.get('CreationDate'),
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                user_email
-            ))
-
-            cursor.execute("""
-                DELETE FROM searches
-                WHERE user_email = %s AND ID NOT IN (
-                    SELECT ID FROM (
-                        SELECT ID FROM searches
-                        WHERE user_email = %s
-                        ORDER BY timestamp DESC
-                        LIMIT 5
-                    ) AS recent
-                )
-            """, (user_email, user_email))
-
-            connection.commit()
+        add_recent_search(user_email, product)
         return jsonify({"message": "Product added to recently searched"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -1700,16 +1474,7 @@ def get_recently_searched():
         return jsonify({"error": "Missing userEmail"}), 400
 
     try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT product_id AS ID, Name, Manufacturer, CreationDate, timestamp
-                FROM searches
-                WHERE user_email = %s
-                ORDER BY timestamp DESC
-                LIMIT 5
-            """, (user_email,))
-            results = cursor.fetchall()
+        results = get_recent_searches(user_email)
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

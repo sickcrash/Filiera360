@@ -18,7 +18,9 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD} # password MySQL
       - MYSQL_DB=filiera360 # nome del database
     volumes:
+      - .:/app
       - ./jsondb/:/app/jsondb:rw
+    working_dir: /app
 
   frontend:
     build:

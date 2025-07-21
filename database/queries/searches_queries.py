@@ -1,0 +1,54 @@
+from database.db_connection import get_db_connection
+from datetime import datetime
+
+def add_recent_search(user_email, product):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        # Rimuovi eventuale duplicato
+        cursor.execute("""
+            DELETE FROM searches
+            WHERE user_email = %s AND product_id = %s
+        """, (user_email, product.get('ID')))
+
+        # Inserisci nuovo record
+        cursor.execute("""
+            INSERT INTO searches (product_id, Name, Manufacturer, CreationDate, timestamp, user_email)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            product.get('ID'),
+            product.get('Name'),
+            product.get('Manufacturer'),
+            product.get('CreationDate'),
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            user_email
+        ))
+
+        # Mantieni solo le ultime 5 ricerche
+        cursor.execute("""
+            DELETE FROM searches
+            WHERE user_email = %s AND ID NOT IN (
+                SELECT ID FROM (
+                    SELECT ID FROM searches
+                    WHERE user_email = %s
+                    ORDER BY timestamp DESC
+                    LIMIT 5
+                ) AS recent
+            )
+        """, (user_email, user_email))
+
+        conn.commit()
+    conn.close()
+
+def get_recent_searches(user_email):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            SELECT product_id AS ID, Name, Manufacturer, CreationDate, timestamp
+            FROM searches
+            WHERE user_email = %s
+            ORDER BY timestamp DESC
+            LIMIT 5
+        """, (user_email,))
+        results = cursor.fetchall()
+    conn.close()
+    return results
