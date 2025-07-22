@@ -29,12 +29,15 @@ import prompts_variables_storage
 from database.queries.otp_queries import (
     insert_or_update_otp,
     get_otp_record,
+    delete_otp,
     get_latest_otp
 )
 
 from database.queries.invite_token_queries import (
     fetch_invite_token_data,  
-    mark_invite_token_used)
+    mark_invite_token_used,
+    delete_expired_or_used_tokens
+)
 
 from database.queries.users_queries import (
     check_email_exists,
@@ -388,7 +391,7 @@ def signup():
     password = data.get('password')
     role = data.get('role', 'user') 
     invite_token = data.get('inviteToken', None) 
-    
+    delete_expired_or_used_tokens()
     #Verifica che tutti i campi siano forniti
     if not email or not manufacturer or not password:
         return jsonify({"message": "All fields are required"}), 400
@@ -420,7 +423,7 @@ def signup():
             #Se il token è stato usato, viene segnato come utilizzato
             if role == "producer" and invite_token:
                 try:
-                     mark_invite_token_used(invite_token)
+                     mark_invite_token_used(invite_token,email)
                 except Exception as e:
                     print("Errore durante l'aggiornamento dello stato del token:", e)
                     return jsonify({"message": "Database error while updating token status"}), 500
@@ -491,6 +494,7 @@ def verify_otp():
             #Verifica se l'OTP corrisponde e se non è scaduto
             if str(stored_otp) == otp and expiration_time > datetime.now():
                 # OTP valido, genera access token e restituisci i dati utente
+                delete_otp(email)
                 user = get_user_by_email(email)
 
                 #verifica se l'utente non esiste
