@@ -23,7 +23,7 @@ def add_recent_search(user_email, product):
             user_email
         ))
 
-        # Mantieni solo le ultime 5 ricerche
+        # Mantieni solo le ultime 50 ricerche
         cursor.execute("""
             DELETE FROM searches
             WHERE user_email = %s AND ID NOT IN (
@@ -31,7 +31,7 @@ def add_recent_search(user_email, product):
                     SELECT ID FROM searches
                     WHERE user_email = %s
                     ORDER BY timestamp DESC
-                    LIMIT 5
+                    LIMIT 50
                 ) AS recent
             )
         """, (user_email, user_email))
@@ -47,7 +47,7 @@ def get_recent_searches(user_email):
             FROM searches
             WHERE user_email = %s
             ORDER BY timestamp DESC
-            LIMIT 5
+            LIMIT 50
         """, (user_email,))
         results = cursor.fetchall()
     conn.close()
