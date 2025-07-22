@@ -14,8 +14,29 @@ def fetch_invite_token_data(token):
     finally:
         connection.close()
 
-def mark_invite_token_used(token):
+def mark_invite_token_used(token, used_by_email):
     conn = get_db_connection()
     with conn.cursor() as cursor:
-        cursor.execute("UPDATE invite_token SET used = TRUE WHERE code = %s", (token,))
+        cursor.execute("""
+            UPDATE invite_token
+            SET used = TRUE,
+                used_by = %s,
+                used_at = %s
+            WHERE code = %s
+        """, (
+            used_by_email,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            token
+        ))
         conn.commit()
+    conn.close()
+
+def delete_expired_or_used_tokens():
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            DELETE FROM invite_token
+            WHERE used = TRUE OR expires_at < %s
+        """, (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
+        conn.commit()
+    conn.close()
