@@ -15,16 +15,36 @@ def has_user_liked_product(user_email, product_id):
 def add_product_like(user_email, product):
     conn = get_db_connection()
     with conn.cursor() as cursor:
+        # Verifica quanti like ha già l'utente
         cursor.execute("""
-            INSERT INTO liked_products (ID, Name, Manufacturer, timestamp, user_email)
-            VALUES (%s, %s, %s, %s, %s)
+            SELECT COUNT(*) as cnt FROM liked_products
+            WHERE user_email = %s
+        """, (user_email,))
+        count_result = cursor.fetchone()
+
+        if count_result and count_result["cnt"] >= 100:
+            # Elimina il like più vecchio se sono già 100
+            cursor.execute("""
+                DELETE FROM liked_products
+                WHERE user_email = %s
+                ORDER BY timestamp ASC
+                LIMIT 1
+            """, (user_email,))
+
+        # Inserisci o aggiorna il like
+        cursor.execute("""
+            INSERT INTO liked_products (ID, Name, Manufacturer, CreationDate, timestamp, user_email)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE timestamp = VALUES(timestamp)
         """, (
-            product['ID'],
-            product['Name'],
-            product['Manufacturer'],
+            product["ID"],
+            product["Name"],
+            product.get("Manufacturer", ""),
+            product.get("CreationDate", None),
             datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             user_email
         ))
+
         conn.commit()
     conn.close()
 
@@ -42,8 +62,10 @@ def get_user_liked_products(user_email):
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
-            SELECT ID, Name, Manufacturer, CreationDate, timestamp FROM liked_products
+            SELECT ID, Name, Manufacturer, CreationDate, timestamp
+            FROM liked_products
             WHERE user_email = %s
+            ORDER BY timestamp DESC
         """, (user_email,))
         results = cursor.fetchall()
     conn.close()
