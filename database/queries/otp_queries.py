@@ -5,10 +5,12 @@ from datetime import timedelta
 
 def insert_or_update_otp(email, otp):
     local_tz = pytz.timezone("Europe/Rome")
+    now = datetime.now(pytz.timezone("Europe/Rome"))
     expiration_time = (datetime.now(local_tz) + timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
 
     connection = get_db_connection()
     with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM otp_codes WHERE expiration < %s", (now.strftime("%Y-%m-%d %H:%M:%S"),))
         cursor.execute("""
             INSERT INTO otp_codes (email, otp, expiration)
             VALUES (%s, %s, %s)
@@ -31,3 +33,10 @@ def get_latest_otp(email):
     with connection.cursor() as cursor:
         cursor.execute("SELECT otp FROM otp_codes WHERE email = %s", (email,))
         return cursor.fetchone()
+
+def delete_otp(email):
+    connection = get_db_connection()
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM otp_codes WHERE email = %s", (email,))
+        connection.commit()
+    connection.close()
