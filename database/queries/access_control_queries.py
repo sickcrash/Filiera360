@@ -4,23 +4,41 @@ from database.db_connection import get_db_connection
 
 def find_producer_by_operator(operator_email):
     conn = get_db_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT email, manufacturer, operators FROM users WHERE role = 'producer'")
-        producers = cursor.fetchall()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT u.email, u.manufacturer
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE r.name = 'producer'
+            """)
+            producers = cursor.fetchall()
+
         for producer in producers:
-            operators = json.loads(producer["operators"]) if producer["operators"] else []
-            if operator_email in operators:
-                return producer  
-    conn.close()
+            with conn.cursor() as cursor2:
+                cursor2.execute("""
+                    SELECT operator_email FROM user_operators
+                    WHERE user_email = %s
+                """, (producer["email"],))
+                linked_operators = [row["operator_email"] for row in cursor2.fetchall()]
+                if operator_email in linked_operators:
+                    return producer
+    finally:
+        conn.close()
+
     return None
 
 def required_permissions(email, allowed_roles):
     conn = get_db_connection()
     with conn.cursor() as cursor:
-        cursor.execute("SELECT role FROM users WHERE email = %s", (email,))
+        cursor.execute("""
+            SELECT r.name FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.email = %s
+        """, (email,))
         result = cursor.fetchone()
+        return result and result["name"] in allowed_roles
     conn.close()
-    return result and result["role"] in allowed_roles
 
 def verify_product_authorization(email, product_id):
     print(f"Verifica autorizzazione per utente: {email} sul prodotto: {product_id}")
@@ -31,7 +49,13 @@ def verify_product_authorization(email, product_id):
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT role, manufacturer, operators FROM users WHERE email = %s", (email,))
+            cursor.execute("""
+                SELECT u.manufacturer, r.name AS role
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE u.email = %s
+            """, (email,))
+
             user = cursor.fetchone()
         conn.close()
 

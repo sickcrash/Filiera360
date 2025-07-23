@@ -12,13 +12,10 @@ def add_recent_search(user_email, product):
 
         # Inserisci nuovo record
         cursor.execute("""
-            INSERT INTO searches (product_id, Name, Manufacturer, CreationDate, timestamp, user_email)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO searches (product_id, timestamp, user_email)
+            VALUES (%s, %s, %s)
         """, (
             product.get('ID'),
-            product.get('Name'),
-            product.get('Manufacturer'),
-            product.get('CreationDate'),
             datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             user_email
         ))
@@ -43,7 +40,7 @@ def get_recent_searches(user_email):
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
-            SELECT product_id AS ID, Name, Manufacturer, CreationDate, timestamp
+            SELECT product_id AS ID, timestamp
             FROM searches
             WHERE user_email = %s
             ORDER BY timestamp DESC

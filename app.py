@@ -46,10 +46,10 @@ from database.queries.users_queries import (
     get_user_by_email,
     get_user_operators,
     get_user_role,
-    get_raw_operators,
-    update_user_operators,
     get_manufacturer_by_email,
-    update_user_password
+    update_user_password,
+    add_operator_to_user,
+    remove_operator_from_user
 )
 
 from database.queries.access_control_queries import (
@@ -568,7 +568,7 @@ def add_operator():
         if role != "operator":
             return jsonify({"message": "User is not an operator."}), 400
 
-        operators = operators = get_raw_operators(user_email)
+        operators = get_user_operators(user_email)
 
         if operator_email in operators:
             return jsonify({"message": "Operator already added."}), 409
@@ -576,7 +576,7 @@ def add_operator():
         operators.append(operator_email)
 
         # Salva nel db
-        update_user_operators(user_email, operators)
+        add_operator_to_user(user_email, operator_email)
         return jsonify({"message": "Operator added successfully."}), 201
 
 
@@ -593,13 +593,13 @@ def remove_operator():
     operator_email = data.get("email")
     if not operator_email:
         return jsonify({"message": "Email is required."}), 400
-    operators = get_raw_operators(user_email)
+    operators = get_user_operators(user_email)
     if operator_email not in operators:
             return jsonify({"message": "Operator not found."}), 404
 
     operators.remove(operator_email)
 
-    update_user_operators(user_email, operators)
+    remove_operator_from_user(user_email, operator_email)
     return jsonify({"message": "Operator removed successfully."})
 
 
