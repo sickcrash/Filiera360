@@ -1,41 +1,54 @@
 from locust import HttpUser, task, between
 import uuid
 import random
+import time
 
 class FullUserFlow(HttpUser):
     host = "http://localhost:5001"
     wait_time = between(1, 3)
 
     def on_start(self):
-        producer_email = "user90@gmail.com"
+        producer_email = "user6799@gmail.com"
 
-        # recupero OTP 
+        # 1. Richiedi OTP
+        login_resp = self.client.post("/login", json={
+            "email": producer_email,
+            "password": "user6799"
+        })
+        if login_resp.status_code != 200:
+            print("Login OTP trigger fallito")
+            self.token = None
+            return
+
+        # 2. Aspetta che il backend scriva l’OTP
+        time.sleep(1.2)
+
+        # 3. Recupera OTP
         otp_resp = self.client.get("/get-latest-otp", params={"email": producer_email})
         if otp_resp.status_code != 200:
             print("OTP non recuperato:", otp_resp.status_code, otp_resp.text)
             self.token = None
             return
 
-        otp = str(otp_resp.json().get("otp"))
+        otp = otp_resp.json().get("otp")
 
-        # verifica OTP e ottiengo token
+        # 4. Verifica OTP
         verify_resp = self.client.post("/verify-otp", json={
             "email": producer_email,
             "otp": otp
         })
-
         if verify_resp.status_code == 200 and "access_token" in verify_resp.json():
             self.token = verify_resp.json()["access_token"]
-            print("Login producer riuscito")
         else:
-            print("Login producer fallito:", verify_resp.status_code, verify_resp.text)
+            print("Verifica OTP fallita:", verify_resp.status_code, verify_resp.text)
             self.token = None
+
 
     @task(1)
     def login(self):
         response = self.client.post("/login", json={
-            "email": "user90@gmail.com",
-            "password": "user90"
+            "email": "user6799@gmail.com",
+            "password": "user6799"
         })
         if response.status_code != 200 or "access_token" not in response.json():
             print("Login fallito:", response.status_code, response.text)
@@ -62,9 +75,9 @@ class FullUserFlow(HttpUser):
         headers = {"Authorization": f"Bearer {self.token}"}
         self.client.post("/likeProduct", json={
             "product": {
-                "ID": "12345",
-                "Name": "Mela",
-                "Manufacturer": "user3"
+                "ID": "cocco",
+                "Name": "Cocco",
+                "Manufacturer": "user6799"
             }
         }, headers=headers)
 
@@ -74,14 +87,15 @@ class FullUserFlow(HttpUser):
             return
         headers = {"Authorization": f"Bearer {self.token}"}
         self.client.post("/addRecentlySearched", json={
-            "userEmail": "user90@gmail.com",
+            "userEmail": "user6799@gmail.com",
             "product": {
-                "ID": "99999",
-                "Name": "Banana",
-                "Manufacturer": "locustUser",
-                "CreationDate": "2025-01-01"
+                "ID": "cocco",
+                "Name": "Cocco",
+                "Manufacturer": "user6799",
+                "CreationDate": "2025-07-23"
             }
         }, headers=headers)
+
 
     @task(1)
     def get_recently_searched(self):
@@ -89,7 +103,7 @@ class FullUserFlow(HttpUser):
             return
         headers = {"Authorization": f"Bearer {self.token}"}
         self.client.get("/getRecentlySearched", params={
-            "userEmail": "user90@gmail.com"
+            "userEmail": "user6799@gmail.com"
         }, headers=headers)
 
     @task(1)
