@@ -31,11 +31,6 @@ from database.queries.users_queries import (
     remove_operator_from_user
 )
 
-from database.queries.access_control_queries import (
-    required_permissions,
-    verify_product_authorization
-)
-
 from database.queries.models_queries import (
     save_or_update_model,
     get_model_by_product_id,
@@ -129,20 +124,6 @@ def test_invite_tokens():
     times.append(time_query("Delete expired or used tokens", delete_expired_or_used_tokens))
     print(f"TEMPO MEDIO INVITE TOKENS: {sum(times)/len(times):.4f} s\n")
 
-
-'''def test_access_control():
-    print("\n=== TEST ACCESS CONTROL ===")
-    times = []
-    times.append(time_query("Required permissions", required_permissions, "like_product"))
-    try:
-        start = time.time()
-        verify_product_authorization(test_email, test_product_id)
-        elapsed = time.time() - start
-    except Exception:
-        elapsed = time.time() - start
-    print(f"Verify product authorization: {elapsed:.4f}s")
-    times.append(elapsed)
-    print(f"TEMPO MEDIO ACCESS CONTROL: {sum(times)/len(times):.4f} s\n")'''
 
 
 def test_models():
