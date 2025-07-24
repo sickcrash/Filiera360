@@ -59,7 +59,8 @@ from database.queries.access_control_queries import (
 
 from database.queries.models_queries import (
     save_or_update_model, 
-    get_model_by_product_id
+    get_model_by_product_id,
+    insert_product_if_not_exists
 )
 
 from database.queries.likes_queries import (
@@ -710,6 +711,17 @@ def upload_product():
     # Reject operation if the authenticated manufacturer doesn't match the one in the request
     if real_manufacturer != client_manufacturer:
         return jsonify({"message": "Unauthorized: Manufacturer mismatch."}), 403
+    product_id = product_data.get("product_id") or product_data.get("ID")
+    if not product_id:
+        return jsonify({"message": "Missing product_id."}), 400
+
+    try:
+        insert_product_if_not_exists(product_id)
+        print(f"Product ID '{product_id}' registrato nel DB locale.")
+    except Exception as e:
+        print("Errore nel salvataggio locale del product ID:", e)
+        return jsonify({"message": "Database error while saving product ID."}), 500
+
     print("Uploading new product data:", product_data)
     product_data["CustomObject"] = product_data.get("CustomObject", {})
     print("Uploading custom object:", product_data["CustomObject"])

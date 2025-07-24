@@ -1,6 +1,6 @@
 from database.db_connection import get_db_connection
 
-def save_or_update_model(product_id, glb_base64):
+def save_or_update_model(product_id, glb_base64=None):
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
@@ -18,3 +18,12 @@ def get_model_by_product_id(product_id):
         result = cursor.fetchone()
     conn.close()
     return result["stringa"] if result else None
+
+def insert_product_if_not_exists(product_id):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            INSERT IGNORE INTO models (id) VALUES (%s)
+        """, (product_id,))
+        conn.commit()
+    conn.close()
