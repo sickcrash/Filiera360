@@ -2,6 +2,7 @@ from database.db_connection import get_db_connection
 from datetime import datetime
 import pytz
 from datetime import timedelta
+import os  
 
 def insert_or_update_otp(email, otp):
     local_tz = pytz.timezone("Europe/Rome")
@@ -34,7 +35,13 @@ def get_latest_otp(email):
         cursor.execute("SELECT otp FROM otp_codes WHERE email = %s", (email,))
         return cursor.fetchone()
 
+
+
 def delete_otp(email):
+    if os.environ.get("ENV") == "test":
+        print(f"[DEBUG] Test mode attivo – OTP non cancellato per {email}")
+        return  #SE STO ESEGUENDO UN TEST NON CANCELLARE OTP
+
     connection = get_db_connection()
     with connection.cursor() as cursor:
         cursor.execute("DELETE FROM otp_codes WHERE email = %s", (email,))
