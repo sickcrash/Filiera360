@@ -1,5 +1,10 @@
 from database.db_connection import get_db_connection
 from datetime import datetime
+import pytz
+
+def now_italy():
+    return datetime.now(pytz.timezone("Europe/Rome")).strftime('%Y-%m-%d %H:%M:%S')
+
 
 def has_user_liked_product(user_email, product_id):
     conn = get_db_connection()
@@ -39,7 +44,7 @@ def add_product_like(user_email, product):
         """, (
             product["ID"],
             user_email,
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            now_italy()
         ))
 
         conn.commit()
