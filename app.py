@@ -49,6 +49,7 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'filiera360@gmail.com'  
 app.config['MAIL_PASSWORD'] = 'bspi hkbw jcwh yckx'
+app.config['TESTING'] = True #utile per lo stress test!
 
 mail = Mail(app)
 # Funzione per generare l'OTP
@@ -63,16 +64,20 @@ def create_jwt_token(email):
 
 # Funzione per inviare l'OTP tramite email
 def send_otp_email(email, otp):
-     try:
+    if app.config.get("TESTING"):  # se siamo in modalità test
+        print(f"[TEST MODE] OTP per {email}: {otp}")  # log utile per debug
+        return True
+
+    try:
          msg = Message('OTP Code',
                    sender='noreply@example.com',
                    recipients=[email])
          msg.body = f"This is your OTP code: {otp}"
          mail.send(msg)
-     except Exception as e:
+    except Exception as e:
          print(f"Error sending email: {e}")
          return False
-     return True
+    return True
 
 
 otp_store_file = "./jsondb/users-otp.json"
@@ -1505,18 +1510,19 @@ def get_recently_searched():
     
     return jsonify(recently_searched[user_id])
 
+#gestione del cambio nome
 @app.route('/updateManufacturer', methods=['POST'])
 @jwt_required()
 def update_name():
-    identity = get_jwt_identity()  # ad esempio: email dell’utente
+    identity = get_jwt_identity()  # email dell’utente
     data = request.json
     if not data:
-        return jsonify({"message": "Il nuovo nome è obbligatorio"}), 400
+        return jsonify({"message": "Il nuovo nome è obbligatorio"}), 400 #caso di richiesta vuota
 
     result = users_collection.update_one(
         {"email": identity},
-        {"$set": {"manufacturer": data}}  # o "name": new_name
-    )
+        {"$set": {"manufacturer": data}}  #in data è presente il nuovo nome
+    ) #query che trova l'azienda in base alla mail e cambia il nome
 
     if result.matched_count == 0:
         return jsonify({"message": "Utente non trovato"}), 404

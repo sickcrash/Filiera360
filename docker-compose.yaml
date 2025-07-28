@@ -61,6 +61,19 @@ services:
     networks:
       - filiera360_default
 
+  locust:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.locust
+    depends_on:
+      - backend   # oppure middleware, dipende da cosa stai testando
+    ports:
+      - "8089:8089"   # UI Locust accessibile da browser
+    networks:
+      - filiera360_default
+    environment:
+      - TARGET_HOST=http://middleware:3000  # o http://middleware:3000
+
 networks:
   filiera360_default:
     driver: bridge

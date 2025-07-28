@@ -7,3 +7,4 @@ bcrypt
 pyotp
 flask_mail
 pymongo
+locust
