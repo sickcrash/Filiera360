@@ -32,7 +32,15 @@ def get_otp_record(email):
 def get_latest_otp(email):
     connection = get_db_connection()
     with connection.cursor() as cursor:
-        cursor.execute("SELECT otp FROM otp_codes WHERE email = %s", (email,))
+        now = datetime.now(pytz.timezone("Europe/Rome")).strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor.execute("""
+            SELECT otp FROM otp_codes
+            WHERE email = %s AND expiration >= %s
+            ORDER BY expiration DESC
+            LIMIT 1
+        """, (email, now))
+        
         return cursor.fetchone()
 
 
