@@ -32,9 +32,9 @@
         },
         "operators": []
     },
-    "ale@ale.it": {
-        "manufacturer": "djkjsdkf",
-        "password": "$2b$12$dY2JXVx5oAcMQNpfvP2or.eAovHIlDcdQ7etm4xVTe8w3FKalEuta",
+    "gab@das.it": {
+        "manufacturer": "Gabriele",
+        "password": "$2b$12$eZsobWEXRQCLgBF7hcNmP.rnMEYoUXdzfZtatbOM7xQ3OdRb67/CS",
         "role": "producer",
         "flags": {
             "producer": true,

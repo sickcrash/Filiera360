@@ -21,15 +21,44 @@ function ScanProduct() {
 
   return (
     <div className="container mt-4">
+<<<<<<< HEAD
       <ProductList
         onProductSelect={setSelectedProduct}
         onBatchSelect={setSelectedBatch} />
       {/* {selectedProduct && (
+=======
+      {!isLoggedIn &&
+        <>
+          {/* Logo a sinistra */}
+          <div
+            style={{
+              position: "relative",
+            }}
+          >
+            <img
+              src={require("./logo_filiera360.png")}
+              style={{
+                width: "8vw",
+              }}
+            />
+          </div>
+          <p className="mt-3" style={{ marginBottom: "-2vw", color: "grey" }}>
+            👤 Already have an account? {" "}
+            <span onClick={() => navigate("/login")} style={{ color: "blue", cursor: "pointer" }}>Login</span>
+          </p>
+        </>
+      }
+      <ProductList 
+        onProductSelect={setSelectedProduct} 
+        onBatchSelect={setSelectedBatch}/>
+      {selectedProduct && (
+>>>>>>> origin/sensori
         <div className="mt-4" id="customForm">
-          <DataSensors productId={selectedProduct} />
-          <ProductMovements productId={selectedProduct} />
+          {/*<DataSensors productId={selectedProduct} />
+          <ProductMovements productId={selectedProduct} />*/}
           <Certifications productId={selectedProduct} />
         </div>
+<<<<<<< HEAD
       )} */}
       {!isLoggedIn &&
         <p className="mt-3" style={{ marginBottom: "-2vw", color: "grey" }}>
@@ -37,6 +66,9 @@ function ScanProduct() {
           <span onClick={() => navigate("/login")} style={{ color: "blue", cursor: "pointer" }}>Login</span>
         </p>
       }
+=======
+      )} 
+>>>>>>> origin/sensori
       <br />
       <br />
       {selectedProduct ?

@@ -17,6 +17,7 @@ const { TextDecoder } = require('node:util');
 const app = express();
 app.use(bodyParser.json());
 
+
 const channelName = envOrDefault('CHANNEL_NAME', 'mychannel');
 const chaincodeName = envOrDefault('CHAINCODE_NAME', 'basic');
 const mspId = envOrDefault('MSP_ID', 'Org1MSP');
@@ -226,14 +227,16 @@ async function createProductDefault(contract) {
             ID = "",
             Name = "",
             Manufacturer = "",
-            ExpiryDate = "",
+            HarvestDate = "",
             Ingredients = "",
             Allergens = "",
             Nutritional_information = "",
-            HarvestDate = "",
+            SowingDate = "",
             PesticideUse = "",
             FertilizerUse = "",
             CountryOfOrigin = "",
+            SensorData = {},
+            Certifications = {},
             CustomObject = {}  // Corretta destrutturazione
         } = productData;
     
@@ -242,6 +245,16 @@ async function createProductDefault(contract) {
         // Verifica la struttura di CustomObject
         if (typeof CustomObject !== 'object') {
             console.error("❌ ERRORE: CustomObject non è un oggetto valido!", CustomObject);
+            return;
+        }
+
+        if (typeof Certifications !== 'object') {
+            console.error("❌ ERRORE: Certifications non è un oggetto valido!", Certifications);
+            return;
+        }
+
+        if (typeof SensorData !== 'object') {
+            console.error("❌ ERRORE: SensorData non è un oggetto valido!", SensorData);
             return;
         }
     
@@ -253,14 +266,30 @@ async function createProductDefault(contract) {
             console.error("❌ ERRORE nella serializzazione di CustomObject:", error);
             return;
         }
+
+        try {
+            const certificationsJson = JSON.stringify(Certifications);
+            console.log("📌 Certifications dopo JSON.stringify:", certificationsJson);
+        } catch (error) {
+            console.error("❌ ERRORE nella serializzazione di Certifications:", error);
+            return;
+        }
+
+        try {
+            const sensorDataJson = JSON.stringify(SensorData);
+            console.log("📌 SensorData dopo JSON.stringify:", sensorDataJson);
+        } catch (error) {
+            console.error("❌ ERRORE nella serializzazione di SensorData:", error);
+            return;
+        }
     
         console.log('\n--> Sto facendo partire la funzione per il submit');
     
         try {
             // Aggiungi logging per verificare i parametri
             console.log("📌 Parametri passati alla transazione:", {
-                ID, Name, Manufacturer, ExpiryDate, Ingredients, Allergens, Nutritional_information,
-                HarvestDate, PesticideUse, FertilizerUse, CountryOfOrigin, CustomObject
+                ID, Name, Manufacturer, HarvestDate, Ingredients, Allergens, Nutritional_information,
+                SowingDate, PesticideUse, FertilizerUse, CountryOfOrigin, SensorData, Certifications, CustomObject
             });
     
             // Submit della transazione
@@ -269,14 +298,16 @@ async function createProductDefault(contract) {
                 ID,
                 Name,
                 Manufacturer,
-                ExpiryDate,
+                HarvestDate,
                 Ingredients,
                 Allergens,
                 Nutritional_information,
-                HarvestDate,
+                SowingDate,
                 PesticideUse,
                 FertilizerUse,
                 CountryOfOrigin,
+                JSON.stringify(SensorData),
+                JSON.stringify(Certifications),
                 JSON.stringify(CustomObject)  // Corretta conversione JSON
             );
     
@@ -302,6 +333,7 @@ async function createProductDefault(contract) {
             BatchNumber = "",
             Quantity = "",
             ProductionDate = "",
+            State = "",
             CustomObject = {}  // Corretta destrutturazione
         } = batchData;
     
@@ -339,6 +371,7 @@ async function createProductDefault(contract) {
                 BatchNumber,
                 Quantity,
                 ProductionDate,
+                State,
                 JSON.stringify(CustomObject)  // Corretta conversione JSON
             );
     
@@ -562,14 +595,16 @@ app.post('/api/product/updateProduct', async (req, res) => {
             productData.ID, 
             productData.Name, 
             productData.Manufacturer,  
-            productData.ExpiryDate, 
+            productData.HarvestDate, 
             productData.Ingredients, 
             productData.Allergens, 
             productData.Nutritional_information, 
-            productData.HarvestDate, 
+            productData.SowingDate, 
             productData.PesticideUse, 
             productData.FertilizerUse, 
             productData.CountryOfOrigin, 
+            JSON.stringify(productData.SensorData),
+            JSON.stringify(productData.Certifications),
             JSON.stringify(productData.CustomObject));
         res.status(200).json({ message: `product updated` });
     }
@@ -599,6 +634,7 @@ app.post('/api/batch/updateBatch', async (req, res) => {
             batchData.BatchNumber, 
             batchData.Quantity, 
             batchData.ProductionDate, 
+            batchData.State,
             JSON.stringify(batchData.CustomObject));
         res.status(200).json({ message: `batch updated` });
     }
@@ -609,20 +645,20 @@ app.post('/api/batch/updateBatch', async (req, res) => {
     }
 });
 
-// app.post('/api/product/sensor', async (req, res) => {
-//     try {
-//         const { id, SensorId, Temperature, Humidity, Timestamp } = req.body;
-//         console.log("Recerived data sensor: " + id + ", " + SensorId + ", " + Temperature + ", " + Humidity + ", " + Timestamp)
-//         const network = gateway.getNetwork(channelName);
-//         const contract = network.getContract(chaincodeName);
-//         await contract.submitTransaction('AddSensorData', id, SensorId, Temperature, Humidity, Timestamp);
+app.post('/api/product/sensor', async (req, res) => {
+    try {
+        const { id, SensorId, Signals } = req.body;
+        console.log("Received data sensor: " + id + ", " + SensorId + ",  " + JSON.stringify(Signals))
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
+        await contract.submitTransaction('AddSensorData', id, SensorId, JSON.stringify(Signals));
 
-//         res.status(200).json({ message: `Dati del sensore aggiunti per il prodotto ${id}` });
-//     } catch (error) {
-//         console.error(`Failed to add sensor data: ${error}`);
-//         res.status(500).json({ error: `Errore durante l'aggiunta dei dati del sensore: ${error.message}` });
-//     }
-// });
+        res.status(200).json({ message: `Dati del sensore aggiunti per il prodotto ${id}` });
+    } catch (error) {
+        console.error(`Failed to add sensor data: ${error}`);
+        res.status(500).json({ error: `Errore durante l'aggiunta dei dati del sensore: ${error.message}` });
+    }
+});
 
 // app.post('/api/product/movement', async (req, res) => {
 //     try {
@@ -638,22 +674,22 @@ app.post('/api/batch/updateBatch', async (req, res) => {
 //     }
 // });
 
-// app.post('/api/product/certification', async (req, res) => {
-//     try {
-//         const { id, certificationType, certifyingBody, issueDate } = req.body;
-//         console.log(req.body)
-//         const network = gateway.getNetwork(channelName);
-//         const contract = network.getContract(chaincodeName);
-//         await contract.submitTransaction('AddCertification', id, certificationType, certifyingBody, issueDate);
+app.post('/api/product/certification', async (req, res) => {
+    try {
+        const { id, certificationType, certifyingBody, issueDate } = req.body;
+        console.log(req.body)
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName);
+        await contract.submitTransaction('AddCertification', id, certificationType, certifyingBody, issueDate);
 
-//         res.status(200).json({ message: `Certification added to product ${id}` });
-//     } catch (error) {
-//         console.error(`Failed to update certification: ${error}`);
-//         res.status(500).json({ error: `Error while adding certification: ${error.message}` });
-//     }
-// });
+        res.status(200).json({ message: `Certification added to product ${id}` });
+    } catch (error) {
+        console.error(`Failed to update certification: ${error}`);
+        res.status(500).json({ error: `Error while adding certification: ${error.message}` });
+    }
+});
 
-app.post('/api/product/verifyProductCompliance', async (req, res) => {
+/*app.post('/api/product/verifyProductCompliance', async (req, res) => {
     try {
         const { id, maxTemperature, minHumidity } = req.body;
 
@@ -684,7 +720,7 @@ app.post('/api/product/verifyProductCompliance', async (req, res) => {
         console.error(`Failed to check product compliance: ${error}`);
         res.status(500).json({ error: `Failed to check product compliance: ${error.message}` });
     }
-});
+}); */
 
 // app.get('/api/product/getMovements', async (req, res) => {
 //     try {
@@ -703,39 +739,39 @@ app.post('/api/product/verifyProductCompliance', async (req, res) => {
 //     }
 // })
 
-// app.get('/api/product/getSensorData', async (req, res) => {
-//     try {
-//         const id = req.query.productId
-//         const network = gateway.getNetwork(channelName);
-//         const contract = network.getContract(chaincodeName)
-//         const response = await contract.evaluateTransaction('GetAllSensorData', id);
-//         const result = utf8Decoder.decode(response);
-//         console.log(result)
-//         const resultJson = JSON.parse(result);
-//         res.json(resultJson)
-//     }
-//     catch (error) {
-//         console.error(`Failed to retrieve all sensor data: ${error}`);
-//         res.status(500).json({ error: `Failed to retrieve all sensor data: ${error.message}` });
-//     }
-// })
+app.get('/api/product/getSensorData', async (req, res) => {
+    try {
+        const id = req.query.productId
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName)
+        const response = await contract.evaluateTransaction('GetAllSensorData', id);
+        const result = utf8Decoder.decode(response);
+        console.log(result)
+        const resultJson = JSON.parse(result);
+        res.json(resultJson)
+    }
+    catch (error) {
+        console.error(`Failed to retrieve all sensor data: ${error}`);
+        res.status(500).json({ error: `Failed to retrieve all sensor data: ${error.message}` });
+    }
+})
 
-// app.get('/api/product/getCertifications', async (req, res) => {
-//     try {
-//         const id = req.query.productId
-//         const network = gateway.getNetwork(channelName);
-//         const contract = network.getContract(chaincodeName)
-//         const response = await contract.evaluateTransaction('GetAllCertifications', id);
-//         const result = utf8Decoder.decode(response);
-//         console.log(result)
-//         const resultJson = JSON.parse(result);
-//         res.json(resultJson)
-//     }
-//     catch (error) {
-//         console.error(`Failed to retrieve all certification data: ${error}`);
-//         res.status(500).json({ error: `Failed to retrieve all certification data: ${error.message}` });
-//     }
-// })
+app.get('/api/product/getCertifications', async (req, res) => {
+    try {
+        const id = req.query.productId
+        const network = gateway.getNetwork(channelName);
+        const contract = network.getContract(chaincodeName)
+        const response = await contract.evaluateTransaction('GetAllCertifications', id);
+        const result = utf8Decoder.decode(response);
+        console.log(result)
+        const resultJson = JSON.parse(result);
+        res.json(resultJson)
+    }
+    catch (error) {
+        console.error(`Failed to retrieve all certification data: ${error}`);
+        res.status(500).json({ error: `Failed to retrieve all certification data: ${error.message}` });
+    }
+})
 
 app.listen(3000, async () => {
     await initGateway();
