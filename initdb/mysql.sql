@@ -162,3 +162,36 @@ CREATE TABLE `users` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-07-24 17:29:45
+
+
+-- Popola la tabella dei ruoli
+INSERT INTO roles (name) VALUES
+  ('user'),
+  ('operator'),
+  ('producer');
+
+-- Crea utenti di test con password hashate
+INSERT INTO users (email, password, manufacturer, role_id) VALUES
+  ('producer@test.com', '$2b$12$4RMEd4AN9AxNgJ94yDpc/usjB9p3SdpA0bNi.sXPzi4kDgCSviqsO', 'TestProducer', (SELECT id FROM roles WHERE name = 'producer')),
+  ('operator@test.com', '$2b$12$gpmQnwKYwtktVtF7dthX6.GPhlx1axX.don6QOeWf5IAbcYPCOrXC', 'OperatorInc', (SELECT id FROM roles WHERE name = 'operator')),
+  ('user@test.com', '$2b$12$YrChbzJpMmjcTuegRpYkDOsLkH9GErK13V9YywqHPRiW8BjVkyTKK', 'UserInc', (SELECT id FROM roles WHERE name = 'user'));
+
+
+-- Relazione producer ↔ operator
+INSERT INTO user_operators (user_email, operator_email) VALUES
+  ('producer@test.com', 'operator@test.com');
+
+-- Token di invito
+INSERT INTO invite_token (code, expires_at, used) VALUES
+  ('INVITE123', DATE_ADD(NOW(), INTERVAL 1 DAY), 0);
+
+-- Modello di test
+INSERT INTO models (id, stringa) VALUES
+  ('model123', 'modello 3D');
+
+-- Like e ricerca
+INSERT INTO liked_products (user_email, ID, timestamp) VALUES
+  ('producer@test.com', 'model123', NOW());
+
+INSERT INTO searches (user_email, product_id, timestamp) VALUES
+  ('producer@test.com', 'model123', NOW());
