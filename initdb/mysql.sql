@@ -170,7 +170,7 @@ INSERT INTO roles (name) VALUES
   ('operator'),
   ('producer');
 
--- Crea utenti di test con password hashate
+-- Crea utenti di test con password hashate (psw non hashata 'filiera360')
 INSERT INTO users (email, password, manufacturer, role_id) VALUES
   ('producer@test.com', '$2b$12$4RMEd4AN9AxNgJ94yDpc/usjB9p3SdpA0bNi.sXPzi4kDgCSviqsO', 'TestProducer', (SELECT id FROM roles WHERE name = 'producer')),
   ('operator@test.com', '$2b$12$gpmQnwKYwtktVtF7dthX6.GPhlx1axX.don6QOeWf5IAbcYPCOrXC', 'OperatorInc', (SELECT id FROM roles WHERE name = 'operator')),
