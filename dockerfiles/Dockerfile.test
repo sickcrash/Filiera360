@@ -5,6 +5,6 @@ WORKDIR /app
 COPY route_testing.py .
 COPY database_mongo ./database_mongo
 
-RUN pip install requests pymongo
+RUN pip install requests pymongo psutil
 
 CMD ["python", "route_testing.py"]

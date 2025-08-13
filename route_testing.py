@@ -1,11 +1,47 @@
 import requests
 import time
 import uuid
+import psutil
+import threading
+import statistics
 from database_mongo.queries.users_queries import get_user_by_email
 from database_mongo.queries.otp_queries import get_otp_by_user_id
 
 BASE_URL = "http://backend:5000"
 
+# ---------- MONITORAGGIO RISORSE ----------
+resource_stats = {
+    "cpu": [],
+    "ram": [],
+    "disk_read": [],
+    "disk_write": [],
+    "net_sent": [],
+    "net_recv": []
+}
+monitoring = True
+
+def monitor_resources(interval=1):
+    """Monitora CPU, RAM, Disco e Rete ogni N secondi"""
+    global monitoring
+    prev_disk = psutil.disk_io_counters()
+    prev_net = psutil.net_io_counters()
+    while monitoring:
+        resource_stats["cpu"].append(psutil.cpu_percent())
+        resource_stats["ram"].append(psutil.virtual_memory().percent)
+
+        disk_now = psutil.disk_io_counters()
+        resource_stats["disk_read"].append(disk_now.read_bytes - prev_disk.read_bytes)
+        resource_stats["disk_write"].append(disk_now.write_bytes - prev_disk.write_bytes)
+        prev_disk = disk_now
+
+        net_now = psutil.net_io_counters()
+        resource_stats["net_sent"].append(net_now.bytes_sent - prev_net.bytes_sent)
+        resource_stats["net_recv"].append(net_now.bytes_recv - prev_net.bytes_recv)
+        prev_net = net_now
+
+        time.sleep(interval)
+
+# ---------- FUNZIONI TEST ----------
 def wait_for_backend(url, timeout=60):
     print(f"Waiting for backend at {url}/signup ...")
     for _ in range(timeout):
@@ -116,8 +152,14 @@ def test_verify_otp(email, otp):
     token = response_json.get("access_token") if isinstance(response_json, dict) else None
     return token
 
+# ---------- ESECUZIONE TEST ----------
 if __name__ == "__main__":
     wait_for_backend(BASE_URL)
+
+    # Avvia monitoraggio risorse
+    monitor_thread = threading.Thread(target=monitor_resources, daemon=True)
+    monitor_thread.start()
+
     N = 5
     signup_times = []
     login_times = []
@@ -165,8 +207,20 @@ if __name__ == "__main__":
         else:
             getprod_times.append(None)
 
+    # Stop monitoraggio risorse
+    monitoring = False
+    monitor_thread.join()
+
     print("\n--- TEMPO MEDIO DI RISPOSTA ROUTE", N, "CICLI ---")
     print("Tempo medio route /Signup:", sum(signup_times)/4, "s")
     print("Tempo medio route /Login:", sum(login_times)/4, "s")
     print("Tempo medio route /AddProduct:", sum([t for t in addprod_times if t is not None])/N, "s")
     print("Tempo medio route /GetProduct:", sum([t for t in getprod_times if t is not None])/N, "s")
+
+    print("\n--- RESOURCE USAGE ---")
+    print(f"CPU avg: {statistics.mean(resource_stats['cpu']):.2f}%")
+    print(f"RAM avg: {statistics.mean(resource_stats['ram']):.2f}%")
+    print(f"Disk read total: {sum(resource_stats['disk_read'])/1024:.2f} KB")
+    print(f"Disk write total: {sum(resource_stats['disk_write'])/1024:.2f} KB")
+    print(f"Net sent total: {sum(resource_stats['net_sent'])/1024:.2f} KB")
+    print(f"Net recv total: {sum(resource_stats['net_recv'])/1024:.2f} KB")
