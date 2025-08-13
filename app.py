@@ -19,6 +19,7 @@ from langchain_community.llms import Ollama
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from werkzeug.security import check_password_hash
+import prompts_variables_storage
 
 from database_mongo.setup_indexes import setup_indexes
 setup_indexes()  # Setup indici MongoDB
@@ -102,6 +103,10 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'filiera360@gmail.com'  
 app.config['MAIL_PASSWORD'] = 'bspi hkbw jcwh yckx'
+
+DATABOOM_API_BASE = 'https://api.databoom.com/v1'
+DATABOOM_USERNAME = 'g.lococciolo@studenti.poliba.it'
+DATABOOM_PASSWORD = 'ifarming2024'
 
 mail = Mail(app)
 # Funzione per generare l'OTP
@@ -218,7 +223,7 @@ def verify_reset_token(token):
     except JWTExtendedException as e:
         print(f"Errore nel token: {e}")
         return None
-    
+
 @app.route('/change-password', methods=['POST'])
 @jwt_required()
 def change_password():
@@ -287,34 +292,34 @@ def reset_password(token):
     return jsonify({"message": "Token is valid, proceed with password reset"}), 200
 
 # Carica gli utenti dal file JSON (database utenti)
-'''def load_users():
-    try:
-        with open('./jsondb/users.json', 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
-    
-# Carica i modelli 3D dal file JSON
-def load_models():
-    try:
-        with open('models.json', 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
-    
-# Salva gli utenti nel file JSON
-def save_users(users):
-    with open('./jsondb/users.json', 'w') as f:
-        json.dump(users, f, indent=4)
-
-# Salva i modelli nel file JSON
-def save_models(models):
-    with open('models.json', 'w') as f:
-        json.dump(models, f, indent=4)
-
-# Carica i database all'avvio del server
-users = load_users()
-models = load_models()'''
+# def load_users():
+#     try:
+#         with open('./jsondb/users.json', 'r') as f:
+#             return json.load(f)
+#     except (FileNotFoundError, json.JSONDecodeError):
+#         return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
+#
+# # Carica i modelli 3D dal file JSON
+# def load_models():
+#     try:
+#         with open('models.json', 'r') as f:
+#             return json.load(f)
+#     except (FileNotFoundError, json.JSONDecodeError):
+#         return {}  # Se il file non esiste o è vuoto, restituisce un dizionario vuoto
+#
+# # Salva gli utenti nel file JSON
+# def save_users(users):
+#     with open('./jsondb/users.json', 'w') as f:
+#         json.dump(users, f, indent=4)
+#
+# # Salva i modelli nel file JSON
+# def save_models(models):
+#     with open('models.json', 'w') as f:
+#         json.dump(models, f, indent=4)
+#
+# # Carica i database all'avvio del server
+# users = load_users()
+# models = load_models()
 
 # questa funzione va chiamata solamente alla prima scrittura
 # della rete o dopo suoi eventuali reset
@@ -567,8 +572,10 @@ def get_product():
         response = requests.get(f'http://middleware:3000/readProduct?productId={productId}')
         if response.status_code == 200:
             productinfo = response.json()
+            print("success", response.json())
             return jsonify(response.json())
         else:
+            print("error", response.json())
             return jsonify({'message': 'Failed to get product.'}), 500
     except Exception as e:
         print("Failed to get product:", e)
@@ -686,6 +693,8 @@ def upload_product():
     if real_manufacturer != client_manufacturer:
         return jsonify({"message": "Unauthorized: Manufacturer mismatch."}), 403
     print("Uploading new product data:", product_data)
+    product_data["SensorData"] = product_data.get("SensorData", [])
+    print("Uploading sensor data:", product_data["SensorData"])
     product_data["CustomObject"] = product_data.get("CustomObject", {})
     print("Uploading custom object:", product_data["CustomObject"])
 
@@ -1021,7 +1030,19 @@ def add_certification_data():
     verification_result = verify_manufacturer(product_id, real_manufacturer)
     if verification_result:
         return verification_result  # Restituisce l'errore se la verifica non è passata
-    
+
+    # in caso di corrispondenza manufacturer
+    print("Add certification data:", certification_data)
+    try:
+        response = requests.post(f'http://middleware:3000/api/product/certification', json=certification_data)
+        if response.status_code == 200:
+            return jsonify({'message': 'Product uploaded successfully!'})
+        else:
+            return jsonify({'message': 'Failed to upload product.'}), 500
+    except Exception as e:
+        print("Error uploading product:", e)
+        return jsonify({'message': 'Error uploading product.'}), 500
+
 # NON UTILIZZATA
 @app.route('/verifyProductCompliance', methods=['POST'])
 def verify_product_compliance():
@@ -1054,7 +1075,7 @@ def get_all_movements():
         print("EFailed to get movements:", e)
         return jsonify({'message': 'Failed to get movements.'}), 500
 
-# già usata su frontend
+# recupera i dati dei sensori
 @app.route('/getAllSensorData', methods=['GET'])
 def get_all_sensor_data():
     productId = request.args.get('productId')
@@ -1063,11 +1084,56 @@ def get_all_sensor_data():
         response = requests.get(f'http://middleware:3000/api/product/getSensorData?productId={productId}')
         print(response.json())
         if response.status_code == 200:
-            return jsonify(response.json())
+            sensor_data = response.json()
+            login_response = requests.post(
+                f"{DATABOOM_API_BASE}/auth/signin",
+                json={'username': DATABOOM_USERNAME, 'password': DATABOOM_PASSWORD}
+            )
+
+            if login_response.status_code != 200:
+                return jsonify({'message': 'Databoom login failed', 'details': login_response.json()}), 500
+
+
+            jwt_token = login_response.json().get('jwt')
+            if not jwt_token:
+                return jsonify({'message': 'Databoom login failed, no JWT token received'}), 500
+            headers = {'Authorization': f'Bearer {jwt_token}'}
+            updated_sensor_data = []
+            for sensor_item in sensor_data:
+                sensor_id = sensor_item.get('SensorId')
+                sensor_info_resp = requests.get(
+                    f"{DATABOOM_API_BASE}/devices/{sensor_id}",
+                    headers=headers
+                )
+                if sensor_info_resp.status_code == 200:
+                    sensor_info_json = sensor_info_resp.json()
+                    sensor_name = sensor_info_json.get('description', 'Unnamed')
+                else:
+                    print(f"Errore: Risposta API inattesa per {signal_id}: {signal_info_json}")
+                    sensor_name = 'Unnamed'
+                signals = sensor_item.get('Signals', {})
+                renamed_signals = {}
+                for signal_id, signal_value in signals.items():
+                    signal_info_resp = requests.get(
+                        f"{DATABOOM_API_BASE}/signals/{signal_id}",
+                        headers=headers
+                    )
+                    if signal_info_resp.status_code == 200:
+                        signal_info_json = signal_info_resp.json()
+                        signal_name = signal_info_json.get('description', 'Unnamed')
+                    else:
+                        print(f"Errore: Risposta API inattesa per {signal_id}: {signal_info_json}")
+                        signal_name = 'Unnamed'
+                    renamed_signals[signal_name] = signal_value
+                updated_sensor_data.append({
+                    'SensorName': sensor_name,
+                    'Signals': renamed_signals
+                })
+            return jsonify(updated_sensor_data), 200
         else:
-            return jsonify({'message': 'Failed to get sensor data'}), 500
+            return jsonify({'message': 'Failed to get sensor data from middleware'}), 500
     except Exception as e:
-        print("EFailed to get movements:", e)
+        print("Failed to get sensor data:", e)
         return jsonify({'message': 'Failed to get sensor data.'}), 500
         batch_data = request.get_json()
         print("📢 JSON ricevuto nel backend:", batch_data)
@@ -1254,8 +1320,8 @@ def get_all_sensor_data():
 #         return jsonify({'message': 'Failed to get sensor data.'}), 500
 
 # # già usata su frontend
-# @app.route('/getAllCertifications', methods=['GET'])
-# def get_all_certifications():
+@app.route('/getAllCertifications', methods=['GET'])
+def get_all_certifications():
     productId = request.args.get('productId')
     print("get all certifications:", productId)
     try:
@@ -1268,6 +1334,76 @@ def get_all_sensor_data():
     except Exception as e:
         print("Failed to get certifications:", e)
         return jsonify({'message': 'Failed to get certifications.'}), 500
+
+
+# AI CONFIG & AI API CALLS
+
+#llm = Ollama(model="llama3")
+#llm = Ollama(model="gemma2")
+llm = Ollama(model="llama3:latest") #oppure: model="llama3.1"
+chat_history = []
+start = prompts_variables_storage.smaller_initprompt
+productinfo= "No information available for this product at the moment"
+
+def init_variables(productinfo):
+    prompt_template_msg="{start} This is your knowledge base: {product_details}"
+    prompt_template = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            prompt_template_msg,
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}"),
+    ]
+)
+    chain = prompt_template | llm
+    return chain
+
+def chatbot_response(user_prompt, itemcode, productinfo):
+    question = "You: "+ user_prompt
+    
+    if question == "done":
+        return "Bye bye"
+
+    response = llm.invoke(question)
+    chain=init_variables(productinfo)
+    response = chain.invoke({"input": question, "chat_history": chat_history,"start":start,"product_details":productinfo})
+    chat_history.append(HumanMessage(content=question))
+    chat_history.append(AIMessage(content=response))
+    print(chat_history)
+    return response
+
+# usata dall'interfaccia AI
+@app.route('/scan', methods=['POST'])
+def scan():
+    item_code = request.json['item_code']
+    print("ATTEMPTING TO CONNECT:")
+     # Send request to JavaScript server to get product details
+    try: 
+        response = requests.get(f'http://middleware:3000/readProduct?productId={item_code}')
+        if response.status_code == 200:
+            productinfo = response.json()
+            globals()["productinfo"]=productinfo
+            initial_message = f"Hello, you just scanned the item {item_code}. What would you like to know about it?"
+        else:
+            initial_message = f"Hello, you just scanned the item {item_code}. At the moment i'm unable to retrieve product details."
+
+    except: initial_message = "Cannot connect to the server"
+    
+    return jsonify({'message': initial_message, 'item_code': item_code})
+
+# usata dall'interfaccia AI
+@app.route('/ask', methods=['POST'])
+def ask():
+    user_input = request.json['message']
+    item_code = request.json['item_code']
+    print("Sending the request with the following informations:")
+    print(productinfo)
+    bot_response = chatbot_response(user_input, item_code, productinfo)
+    return jsonify({'message': bot_response})
+
+
 
 # Managing Liked Products Per User Account
 
@@ -1412,8 +1548,119 @@ def get_recently_searched_route():
 
 def save_recently_searched(products):
     with open('recently_searched.json', 'w') as f:
-        json.dump(products, f, indent=4)'''
+        json.dump(products, f, indent=4)
+'''
 
+# Recupera l'elenco dei device da Databoom
+@app.route('/getDataboomDevices', methods=['GET'])
+def get_databoom_devices():
+    try:
+        # Login e ricezione del JWT
+        login_response = requests.post(
+            f"{DATABOOM_API_BASE}/auth/signin",
+            json={'username': DATABOOM_USERNAME, 'password': DATABOOM_PASSWORD}
+        )
+
+        if login_response.status_code != 200:
+            return jsonify({'message': 'Databoom login failed', 'details': login_response.json()}), 500
+
+        # Estrazione del token JWT dalla risposta
+        jwt_token = login_response.json().get('jwt')
+        if not jwt_token:
+            return jsonify({'message': 'Databoom login failed, no JWT token received'}), 500
+
+        headers = {'Authorization': f'Bearer {jwt_token}'}
+
+        # Devices
+        devices_response = requests.get(
+            f"{DATABOOM_API_BASE}/devices/all",
+            headers=headers
+        )
+
+        if devices_response.status_code != 200:
+            return jsonify({'message': 'Failed to fetch devices', 'details': devices_response.json()}), 500
+
+        devices = devices_response.json()
+        return jsonify(devices)
+
+    except Exception as e:
+        return jsonify({'message': 'Error fetching devices', 'error': str(e)}), 500
+
+# Recupera i segnali dei device e calcola il valore medio
+@app.route('/getDataboomSignalAverages', methods=['GET'])
+def get_signal_averages():
+    device_id = request.args.get('device_id')
+    start_date = str(request.args.get('start_date'))
+    end_date = str(request.args.get('end_date'))
+
+    if not all([device_id, start_date, end_date]):
+        return jsonify({'message': 'Missing required parameters'}), 400
+
+    try:
+        # Login
+        login_resp = requests.post(
+            f"{DATABOOM_API_BASE}/auth/signin",
+            json={'username': DATABOOM_USERNAME, 'password': DATABOOM_PASSWORD}
+        )
+        jwt = login_resp.json().get('jwt')
+        headers = {'Authorization': f'Bearer {jwt}'}
+
+        # Prendi segnali del device
+        device_resp = requests.get(
+            f"{DATABOOM_API_BASE}/devices/{device_id}",
+            headers=headers
+        )
+        if device_resp.status_code != 200:
+            return jsonify({'message': 'Failed to fetch device info from Databoom'}), 500
+        device_data = device_resp.json()
+        signals = device_data.get('signals', [])
+
+        results = []
+
+        for signal in signals:
+            signal_name = requests.get(
+            f"{DATABOOM_API_BASE}/signals/{signal}",
+            headers=headers
+            ).json().get('description', 'Unnamed')
+
+            if signal_name == 'Unnamed':
+                continue
+
+            # Chiamata a /chart per ottenere valori grezzi
+            chart_resp = requests.post(
+                f"{DATABOOM_API_BASE}/chart",
+                headers=headers,
+                json={
+                    "startDate": start_date,
+                    "endDate": end_date,
+                    "granularity": "a",
+                    "signals": [signal]
+                }
+            )
+            if chart_resp.status_code != 200:
+                print(f"Errore nel recuperare dati da /chart per {signal}: {chart_resp.text}")
+                continue
+
+            chart_data = chart_resp.json().get(signal, [])
+            values = [entry['value'] for entry in chart_data if 'value' in entry]
+
+            if not values:
+                continue
+
+            # Calcolo valore medio
+            avg_value = round(sum(values) / len(values), 2)
+
+            results.append({
+                'signal_id': signal,
+                'signal_name': signal_name,
+                'average': avg_value
+            })
+
+        return jsonify(results)
+
+    except Exception as e:
+        print("Errore:", e)
+        return jsonify({'message': 'Internal error', 'error': str(e)}), 500
 
 # Make sure the if __name__ block is inside the code
 if __name__ == "__main__":

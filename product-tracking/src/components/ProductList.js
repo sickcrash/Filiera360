@@ -8,6 +8,7 @@ import QrScanner from 'react-qr-scanner';
 import jsQR from 'jsqr';
 import Viewer3D from './Viewer3D';
 import { useParams } from 'react-router-dom';
+import DataSensors from './DataSensors';
 
 const ProductList = ({ onProductSelect, onBatchSelect }) => {
   const isProducer = localStorage.getItem("role") === "producer";
@@ -266,6 +267,24 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       logContent += `Fertilizer Use: ${valueData.FertilizerUse || 'N/A'}\n`;
       logContent += `Country Of Origin: ${valueData.CountryOfOrigin || 'N/A'}\n`;
 
+      if (valueData.SensorData && Object.keys(valueData.SensorData).length > 0) {
+        logContent += `Sensor Data:\n`;
+        Object.entries(valueData.SensorData).forEach(([key, value]) => {
+          logContent += `${key}: ${value}\n`;
+        });
+      } else {
+        logContent += `Sensor Data: N/A\n`; // Se non ci sono sensor data, mostriamo N/A
+      }
+
+      if (valueData.Certifications && Object.keys(valueData.Certifications).length > 0) {
+        logContent += `Certifications:\n`;
+        Object.entries(valueData.Certifications).forEach(([key, value]) => {
+          logContent += `${key}: ${value}\n`;
+        });
+      } else {
+        logContent += `Custom Fields: N/A\n`; // Se non ci sono certifications, mostriamo N/A
+      }
+
       if (valueData.CustomObject && Object.keys(valueData.CustomObject).length > 0) {
         logContent += `Custom Fields:\n`;
         Object.entries(valueData.CustomObject).forEach(([key, value]) => {
@@ -300,6 +319,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       logContent += `Batch number: ${valueData.BatchNumber}\n`;
       logContent += `Quantity: ${valueData.Quantity}\n`;
       logContent += `Production date: ${valueData.Production_date || 'N/A'}\n`;
+      logContent += `State: ${valueData.State || 'N/A'}\n`;
 
       if (valueData.CustomObject && Object.keys(valueData.CustomObject).length > 0) {
         logContent += `Custom Batch Fields:\n`;
@@ -510,7 +530,7 @@ const addToRecentlyScanned = async (productData) => {
       console.log("ID Batch estratto da URL:", batchCode);
       setItemCodeBatch(batchCode);
       document.getElementById("itemCodeBatch").value = batchCode;
-      setScanBatch(prev => prev + 1); // triggera la scansione 
+      setScanBatch(prev => prev + 1); // triggera la scansione
     }
   }, []);
 
@@ -756,13 +776,18 @@ const addToRecentlyScanned = async (productData) => {
                         <td>{product.Manufacturer}</td>
                       </tr>
                     )}
-                    {product.ExpiryDate && (
+                    {product.SowingDate && (
                       <tr>
-                        <th>Expiry Date</th>
-                        <td>{product.ExpiryDate}</td>
+                        <th>Sowing Date</th>
+                        <td>{product.SowingDate}</td>
                       </tr>
                     )}
-
+                    {product.HarvestDate && (
+                      <tr>
+                        <th>Harvest Date</th>
+                        <td>{product.HarvestDate}</td>
+                      </tr>
+                    )}
                     {product.Ingredients && (
                       <tr>
                         <th>Ingredients</th>
@@ -828,11 +853,15 @@ const addToRecentlyScanned = async (productData) => {
                     </tr>
                   </tbody>
                 </Table>
-                <br />
-                <QRCodeCanvas
-                  value={`${window.location.origin}/scan-product/${itemCode}`}
-                  style={{ marginBottom: "2vw" }}
-                />
+                <br/>
+                  <DataSensors productId={product.ID} />
+                  <br/>
+                  <br/>
+                  <br/>
+                  <QRCodeCanvas
+                      value={`${window.location.origin}/scan-product/${itemCode}`}
+                      style={{ marginBottom: "2vw" }}
+                  />
                 <p>
                   Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
                   ensuring transparency and reliability.
@@ -903,20 +932,18 @@ const addToRecentlyScanned = async (productData) => {
                         <td>{batch.ProductionDate}</td>
                       </tr>
                     )}
-
+                    {batch.State && (
+                      <tr>
+                        <th>Status</th>
+                        <td>{batch.State}</td>
+                      </tr>
+                    )}
                     {batch.CustomObject && Object.entries(batch.CustomObject).map(([key, value]) => (
                       <tr key={key}>
                         <th>{key}</th>
                         <td>{value}</td>
                       </tr>
                     ))}
-
-
-
-                    <tr>
-                      <th>Status</th>
-                      <td>{status || 'No status available'}</td>
-                    </tr>
                     <tr>
                       <th>N. Updates *</th>
                       <td>{batchHistory.length}</td>
@@ -983,11 +1010,16 @@ const addToRecentlyScanned = async (productData) => {
                             <td>{batchProduct.Manufacturer}</td>
                           </tr>
                         )}
-
-                        {batchProduct.ExpiryDate && (
+                        {batchProduct.SowingDate && (
                           <tr>
-                            <th>Expiry Date</th>
-                            <td>{batchProduct.ExpiryDate}</td>
+                            <th>Sowing Date</th>
+                            <td>{batchProduct.SowingDate}</td>
+                          </tr>
+                        )}
+                        {batchProduct.HarvestDate && (
+                          <tr>
+                            <th>Harvest Date</th>
+                            <td>{batchProduct.HarvestDate}</td>
                           </tr>
                         )}
 
@@ -1052,11 +1084,15 @@ const addToRecentlyScanned = async (productData) => {
                     </tr> */}
                       </tbody>
                     </Table>
-                    <br />
-                    <QRCodeCanvas
-                      value={`${window.location.origin}/scan-product/${batchProduct.ID}`}
-                      style={{ marginBottom: "2vw" }}
-                    />
+                    <br/>
+                      <DataSensors productId={batchProduct.ID} />
+                      <br/>
+                      <br/>
+                      <br/>
+                      <QRCodeCanvas
+                          value={`${window.location.origin}/scan-product/${batchProduct.ID}`}
+                          style={{ marginBottom: "2vw" }}
+                      />
                   </div>
                 </div>
               </div>

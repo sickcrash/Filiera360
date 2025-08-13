@@ -1,6 +1,7 @@
 from bson import ObjectId
 from database_mongo.mongo_client import models
 from database_mongo.models.models_model import create_model_model
+from datetime import datetime
 
 # Update || Insert
 def upsert_model_for_product(blockchain_product_id, model_string, uploaded_by):
@@ -39,6 +40,22 @@ def update_model(model_id, update_data):
         model_id = ObjectId(model_id)
     result = models.update_one({"_id": model_id}, {"$set": update_data})
     return result.modified_count > 0
+
+def create_model(product_id, content_base64, user_id):
+    # Se user_id è stringa, convertilo in ObjectId
+    if isinstance(user_id, str):
+        user_id = ObjectId(user_id)
+
+    model_data = {
+        "product_id": product_id,
+        "content": content_base64,
+        "created_by": user_id,
+        "created_at": datetime.utcnow()
+    }
+
+    result = models.insert_one(model_data)
+    return str(result.inserted_id)
+
 
 def delete_model(model_id):
     if isinstance(model_id, str):

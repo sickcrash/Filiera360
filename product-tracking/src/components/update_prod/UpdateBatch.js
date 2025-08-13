@@ -8,6 +8,7 @@ const UpdateBatch = ({ productId, batchId, onBatchUpdate }) => {
   const [batchNumber, setBatchNumber] = useState('');
   const [quantity, setQuantity] = useState('');
   const [productionDate, setProductionDate] = useState('');
+  const [state, setState] = useState('');
   // Statici 
   const [message, setMessage] = useState('');
   const [customFields, setCustomFields] = useState([]);
@@ -25,6 +26,7 @@ const UpdateBatch = ({ productId, batchId, onBatchUpdate }) => {
     setBatchNumber('');
     setQuantity('');
     setProductionDate('');
+    setState('');
     setCustomFields([]); // Ensure it's an array
     setMessage('');
     setShowForm(false);
@@ -59,6 +61,7 @@ const removeCustomField = (index) => {
         BatchNumber: batchNumber || '',
         Quantity: quantity || '',
         ProductionDate: productionDate || '',
+        State: state || '',
         CustomObject: customFields
 
         .filter(field => field.key.trim())
@@ -166,6 +169,15 @@ const removeCustomField = (index) => {
                           type="date"
                           value={productionDate}
                           onChange={(e) => setProductionDate(e.target.value)}
+                          placeholder={placeholderText}
+                        />
+                      </Form.Group>
+                      <Form.Group controlId="state" className="d-flex align-items-center mb-3">
+                        <Form.Label style={{ width: inputWidth }} className="me-3">Status</Form.Label>
+                        <Form.Control
+                          type="state"
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
                           placeholder={placeholderText}
                         />
                       </Form.Group>
