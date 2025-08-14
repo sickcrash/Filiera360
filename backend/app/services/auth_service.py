@@ -4,9 +4,11 @@ from flask_jwt_extended import create_access_token
 # from datetime import timedelta
 
 from database_mongo.queries.otp_queries import create_otp
-from database_mongo.queries.users_queries import get_user_by_email
+from database_mongo.queries.token_queries import get_token, mark_token_as_used
+from database_mongo.queries.users_queries import get_user_by_email, get_user_by_manufacturer, create_user
 from ..utils.otp_utils import generate_otp
 from ..utils.email_utils import send_otp_email
+from ..utils.bcrypt_utils import hash_password
 
 # OTP_LIFETIME = timedelta(minutes=5)
 
@@ -58,3 +60,43 @@ def process_login(email, password):
         return jsonify({"message": "Failed to send OTP."}), 500
 
     # Se la 2FA non è necessaria, crea un token JWT
+
+def process_signup(data):
+    email = data.get('email')
+    manufacturer = data.get('manufacturer')
+    password = data.get('password')
+    role = data.get('role', 'user')
+    invite_token = data.get('inviteToken', None)
+
+    # Verifica che tutti i campi siano forniti
+    if not email or not manufacturer or not password:
+        return {"message": "All fields are required"}, 400
+
+    # Controlla se l'email è già registrata
+    if get_user_by_email(email):
+        return {"message": "Email already exists"}, 409
+
+    # Controlla se il manufacturer è già registrato
+    if get_user_by_manufacturer(manufacturer):
+        return {"message": "Manufacturer already exists"}, 409
+
+    # Controlla il token di invito per i produttori
+    if role == "producer":
+        if not invite_token:
+            return {"message": "The invite token is required for producers."}, 400
+
+        token_doc = get_token(invite_token)
+        if not token_doc:
+            return {"message": "Invalid invitation token."}, 403
+        if token_doc.get("used"):
+            return {"message": "Invitation token already used."}, 403
+
+    # Crea un hash della password con bcrypt
+    hashed_password = hash_password(password)
+    create_user(email, hashed_password, manufacturer, role)
+
+    # Se il token è stato usato, viene segnato come utilizzato
+    if role == "producer" and invite_token:
+        mark_token_as_used(invite_token, email)
+
+    return {"message": "User registered successfully"}, 201
