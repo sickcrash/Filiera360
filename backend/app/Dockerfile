@@ -1,0 +1,17 @@
+FROM python:3.8-slim
+
+WORKDIR /app
+ENV PYTHONUNBUFFERED=1 \
+    FLASK_APP=app.py \
+    FLASK_ENV=development \
+    FLASK_DEBUG=1
+
+COPY app.py requirements.txt ./
+COPY prompts_variables_storage.py ./
+COPY database_mongo/ ./database_mongo/
+
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+EXPOSE 5000
+CMD ["flask", "--app", "app.py", "run", "--host=0.0.0.0", "--debug", "--reload"]

@@ -199,6 +199,7 @@ def verify_operator(batch_id, real_operator):
         return  jsonify({"message": "Error retrieving batch from blockchain.", "error": str(e)}), 500   # Errore generico
 
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
