@@ -1,14 +1,18 @@
 import bcrypt
 from flask import jsonify
 from flask_jwt_extended import create_access_token
+from flask_mail import Message
+from flask import current_app
 # from datetime import timedelta
 
-from database_mongo.queries.otp_queries import create_otp
+from database_mongo.queries.otp_queries import create_otp, delete_otp_by_user_id, get_otp_by_user_id
 from database_mongo.queries.token_queries import get_token, mark_token_as_used
-from database_mongo.queries.users_queries import get_user_by_email, get_user_by_manufacturer, create_user
+from database_mongo.queries.users_queries import get_user_by_email, get_user_by_manufacturer, create_user, update_user
 from ..utils.otp_utils import generate_otp
 from ..utils.email_utils import send_otp_email
 from ..utils.bcrypt_utils import hash_password
+from ..utils.token_utils import generate_reset_token, verify_reset_token
+
 
 # OTP_LIFETIME = timedelta(minutes=5)
 
@@ -100,3 +104,87 @@ def process_signup(data):
         mark_token_as_used(invite_token, email)
 
     return {"message": "User registered successfully"}, 201
+
+def verify_otp_service(data):
+    email = data.get('email')
+    otp = data.get('otp')
+
+    user = get_user_by_email(email)
+    if not user:
+        return {"message": "User not found."}, 404
+
+    otp_entry = get_otp_by_user_id(user["_id"])
+    if not otp_entry or otp_entry["otp"] != str(otp):
+        return {"message": "Invalid or expired OTP."}, 400
+
+    delete_otp_by_user_id(user["_id"])
+    token = create_access_token(email)
+
+    return {
+        "message": "OTP validated successfully.",
+        "access_token": token,
+        "role": user['role'],
+        "manufacturer": user['manufacturer'],
+        "email": email
+    }, 200
+
+def change_password_service(data, user_identity):
+    current_password = data.get('currentPassword')
+    new_password = data.get('newPassword')
+
+    if not current_password or not new_password:
+        return {"message": "Both current and new password are required."}, 400
+
+    user = get_user_by_email(user_identity)
+    if not user:
+        return {"message": "User not found."}, 404
+
+    # Verifica la password attuale
+    if not bcrypt.checkpw(current_password.encode('utf-8'), user['password'].encode('utf-8')):
+        return {"message": "Current password is incorrect."}, 401
+
+    # Aggiorna la password
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    update_user(user["_id"], {"password": hashed_password})
+
+    return {"message": "Password changed successfully."}, 200
+
+def forgot_password_service(data):
+    email = data.get('email')
+
+    if not email or not get_user_by_email(email):
+        return {"message": "Email not found"}, 404
+
+    token = generate_reset_token(email)
+    reset_url = f"/api/reset-password/{token}"
+
+    msg = Message(
+        'Password Reset Request',
+        sender='noreply@example.com',
+        recipients=[email]
+    )
+    msg.body = f"To reset your password, visit the following link: {reset_url}"
+    mail = current_app.extensions.get('mail')
+    mail.send(msg)
+
+    return {"message": "Password reset email sent"}, 200
+
+def reset_password_service(token, request):
+    email = verify_reset_token(token)
+    if email is None:
+        return {"message": "Invalid or expired token"}, 400
+
+    if request.method == 'POST':
+        if request.content_type != 'application/json':
+            return {"message": "Content-Type must be application/json"}, 415
+
+        new_password = request.json.get('password')
+        if not new_password:
+            return {"message": "Password is required"}, 400
+
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        update_user(get_user_by_email(email)["_id"], {"password": hashed_password})
+        return {"message": "Password updated successfully"}, 200
+
+    return {"message": "Token is valid, proceed with password reset"}, 200
