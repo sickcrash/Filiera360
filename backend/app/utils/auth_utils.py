@@ -1,8 +1,16 @@
 from flask import jsonify
 
-from app import find_producer_by_operator
 from database_mongo.queries.users_queries import get_user_by_email
+from database_mongo.mongo_client import users as users_collection
 import requests
+
+
+def find_producer_by_operator(operator_email):
+    return users_collection.find_one({
+        "operators": {
+            "$elemMatch": {"email": operator_email}
+        }
+    })
 
 def verify_product_authorization(email, product_id):
     user = get_user_by_email(email)
