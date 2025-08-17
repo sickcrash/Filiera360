@@ -42,5 +42,27 @@
             "user": false
         },
         "operators": []
+    },
+    "gab@das.it": {
+        "manufacturer": "Gabriele",
+        "password": "$2b$12$eZsobWEXRQCLgBF7hcNmP.rnMEYoUXdzfZtatbOM7xQ3OdRb67/CS",
+        "role": "producer",
+        "flags": {
+            "producer": true,
+            "operator": false,
+            "user": false
+        },
+        "operators": []
+    },
+    "sergmose@gmail.com": {
+        "manufacturer": "sergio",
+        "password": "$2b$12$iM9ZgekCA9/L1/TCeLD4lec13HrPW0ReZ0BPIevP0m.oUWYB.9NDS",
+        "role": "user",
+        "flags": {
+            "producer": false,
+            "operator": false,
+            "user": true
+        },
+        "operators": []
     }
 }

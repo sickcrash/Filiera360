@@ -3,7 +3,6 @@ from flask_jwt_extended import get_jwt_identity
 
 from backend.app.services.model_service import upload_model_service, get_model_service
 
-
 def upload_model_controller():
     product_data = request.json
     user_email = get_jwt_identity()

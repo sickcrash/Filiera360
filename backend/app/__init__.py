@@ -23,8 +23,7 @@ app.config.from_object(Config)  # carica tutte le variabili da Config
 # --- CONFIG CORS ---
 CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}})
 
-mail = Mail()
-mail.init_app(app)
+mail = Mail(app)
 
 jwt = JWTManager(app)
 

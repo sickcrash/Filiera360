@@ -1,7 +1,7 @@
 __pycache__/
-./jsondb/users.json
-./jsondb/users-otp.json
-./jsondb/invite_tokens.json
+./data/jsondb/users.json
+./data/jsondb/users-otp.json
+./data/jsondb/invite_tokens.json
 liked_products.json
 recently_searched.json
 .vscode

@@ -29,3 +29,10 @@ def update_user(user_id, update_data):
         return get_user_by_id(user_id)
     return None
 
+def find_producer_by_operator(operator_email):
+    return users.find_one({
+        "operators": {
+            "$elemMatch": {"email": operator_email}
+        }
+    })
+

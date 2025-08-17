@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: dockerfiles/Dockerfile.backend
     volumes:
-      - ./jsondb/:/app/jsondb:rw
+      - ./data/jsondb/:/app/jsondb:rw
     networks:
       - filiera360_default
     expose:

@@ -1,8 +1,6 @@
 from flask_jwt_extended import create_access_token, decode_token
 from datetime import timedelta
-
 from flask_jwt_extended.exceptions import JWTExtendedException
-
 
 def generate_reset_token(email):
     expiration = timedelta(hours=1)
