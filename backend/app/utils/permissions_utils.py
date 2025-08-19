@@ -1,4 +1,4 @@
-from database_mongo.queries.users_queries import get_user_by_email
+from ..database_mongo.queries.users_queries import get_user_by_email
 
 def required_permissions(manufacturer, roles):
     """Verifica se il manufacturer ha almeno uno dei ruoli richiesti."""

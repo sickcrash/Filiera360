@@ -1,7 +1,7 @@
 from ..utils.blockchain_utils import verify_manufacturer
 from ..utils.permissions_utils import required_permissions
-from database_mongo.queries.models_queries import upsert_model_for_product, get_model_by_blockchain_id
-from database_mongo.queries.users_queries import get_user_by_email
+from ..database_mongo.queries.models_queries import upsert_model_for_product, get_model_by_blockchain_id
+from ..database_mongo.queries.users_queries import get_user_by_email
 
 
 def upload_model_service(user_email, product_data):

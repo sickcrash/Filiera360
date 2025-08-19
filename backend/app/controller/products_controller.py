@@ -1,8 +1,8 @@
 from flask import request, jsonify
 from flask_jwt_extended import get_jwt_identity
 
-from database_mongo.queries.recently_searched_queries import get_recently_searched
-from database_mongo.queries.users_queries import get_user_by_email
+from ..database_mongo.queries.recently_searched_queries import get_recently_searched
+from ..database_mongo.queries.users_queries import get_user_by_email
 from ..services.products_service import fetch_product_from_js_server, fetch_product_history_from_js_server, \
     upload_product_service, update_product_service, like_product_service, unlike_product_service, \
     get_liked_products_service, add_recently_searched_service, add_sensor_data_service, add_movement_data_service, \

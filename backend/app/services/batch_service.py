@@ -2,7 +2,7 @@ import requests
 
 from ..utils.auth_utils import verify_product_authorization
 from ..utils.permissions_utils import required_permissions
-from database_mongo.queries.users_queries import get_user_by_email
+from ..database_mongo.queries.users_queries import get_user_by_email
 
 
 def get_batch_service(batch_id):

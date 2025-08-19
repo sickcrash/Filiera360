@@ -1,6 +1,6 @@
 from flask import jsonify
 
-from database_mongo.queries.users_queries import get_user_by_email, find_producer_by_operator
+from ..database_mongo.queries.users_queries import get_user_by_email, find_producer_by_operator
 import requests
 
 def verify_product_authorization(email, product_id):

@@ -5,9 +5,9 @@ from flask_mail import Message
 from flask import current_app
 # from datetime import timedelta
 
-from database_mongo.queries.otp_queries import create_otp, delete_otp_by_user_id, get_otp_by_user_id
-from database_mongo.queries.token_queries import get_token, mark_token_as_used
-from database_mongo.queries.users_queries import get_user_by_email, get_user_by_manufacturer, create_user, update_user
+from ..database_mongo.queries.otp_queries import create_otp, delete_otp_by_user_id, get_otp_by_user_id
+from ..database_mongo.queries.token_queries import get_token, mark_token_as_used
+from ..database_mongo.queries.users_queries import get_user_by_email, get_user_by_manufacturer, create_user, update_user
 from ..utils.otp_utils import generate_otp
 from ..utils.email_utils import send_otp_email
 from ..utils.bcrypt_utils import hash_password

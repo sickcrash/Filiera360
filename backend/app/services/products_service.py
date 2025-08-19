@@ -2,14 +2,14 @@ import json
 from flask import current_app
 import requests
 
-from backend.app.utils.blockchain_utils import verify_manufacturer
-from backend.app.utils.permissions_utils import required_permissions
-from backend.app.utils.product_utils import get_product_changes
-from database_mongo.queries.history_queries import get_last_history_entry, add_history_entry
-from database_mongo.queries.liked_queries import get_liked_products_by_user, like_a_product, unlike_a_product
-from database_mongo.queries.products_queries import create_product
-from database_mongo.queries.recently_searched_queries import add_recently_searched
-from database_mongo.queries.users_queries import get_user_by_email
+from ..utils.blockchain_utils import verify_manufacturer
+from ..utils.permissions_utils import required_permissions
+from ..utils.product_utils import get_product_changes
+from ..database_mongo.queries.history_queries import get_last_history_entry, add_history_entry
+from ..database_mongo.queries.liked_queries import get_liked_products_by_user, like_a_product, unlike_a_product
+from ..database_mongo.queries.products_queries import create_product
+from ..database_mongo.queries.recently_searched_queries import add_recently_searched
+from ..database_mongo.queries.users_queries import get_user_by_email
 
 def fetch_product_from_js_server(product_id):
     try:

@@ -1,5 +1,5 @@
 from ..utils.permissions_utils import required_permissions
-from database_mongo.queries.users_queries import get_user_by_email, update_user
+from ..database_mongo.queries.users_queries import get_user_by_email, update_user
 
 
 def get_operators_service(user_email):
