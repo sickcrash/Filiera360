@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from backend.app.controller.databoom_controller import fetch_devices, fetch_signal_averages
+from ..controller.databoom_controller import fetch_devices, fetch_signal_averages
 
 databoom_bp = Blueprint("databoom", __name__)
 

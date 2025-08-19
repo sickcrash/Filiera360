@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from backend.app.controller.ai_controller import scan_controller, ask_controller
+from ..controller.ai_controller import scan_controller, ask_controller
 
 ai_bp = Blueprint("ai", __name__)
 

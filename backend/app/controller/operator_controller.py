@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity
 
-from backend.app.services.operator_service import get_operators_service, add_operator_service, remove_operator_service
+from ..services.operator_service import get_operators_service, add_operator_service, remove_operator_service
 
 def get_operators_controller():
     user_id = get_jwt_identity()

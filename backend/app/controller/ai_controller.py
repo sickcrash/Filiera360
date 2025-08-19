@@ -1,6 +1,6 @@
 from flask import request, jsonify
 
-from backend.app.services.ai_service import scan_service, ask_service
+from ..services.ai_service import scan_service, ask_service
 
 def scan_controller():
     item_code = request.json.get("item_code")

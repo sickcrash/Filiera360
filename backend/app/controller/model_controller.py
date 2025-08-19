@@ -1,7 +1,7 @@
 from flask import jsonify,request
 from flask_jwt_extended import get_jwt_identity
 
-from backend.app.services.model_service import upload_model_service, get_model_service
+from ..services.model_service import upload_model_service, get_model_service
 
 def upload_model_controller():
     product_data = request.json

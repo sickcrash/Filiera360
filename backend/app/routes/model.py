@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from backend.app.controller.model_controller import upload_model_controller, get_model_controller
+from ..controller.model_controller import upload_model_controller, get_model_controller
 
 model_bp = Blueprint('model', __name__)
 

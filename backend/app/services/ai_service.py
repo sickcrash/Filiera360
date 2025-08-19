@@ -1,6 +1,6 @@
 import requests
 
-from backend.app.utils.chatbot import chatbot_response
+from ..utils.chatbot import chatbot_response
 
 # Variabile globale per salvare il productinfo associato all'ultimo scan
 _cached_product_info = {}

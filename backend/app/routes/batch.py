@@ -1,5 +1,5 @@
 from flask import Blueprint
-from backend.app.controller.batch_controller import get_batch_controller, get_batch_history_controller, \
+from ..controller.batch_controller import get_batch_controller, get_batch_history_controller, \
     upload_batch_controller, update_batch_controller
 
 batch_bp = Blueprint('batch', __name__)

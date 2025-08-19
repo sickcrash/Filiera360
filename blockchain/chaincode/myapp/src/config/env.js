@@ -20,7 +20,6 @@ const cryptoPath = envOrDefault(
         __dirname,
         '..',
         '..',
-        '..', // verificare se corretto un .. in piu
         'test-network',
         'organizations',
         'peerOrganizations',

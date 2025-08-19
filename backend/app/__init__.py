@@ -1,7 +1,8 @@
+# import os
 from flask import Flask
 from flask_mail import Mail
 from flask_jwt_extended import JWTManager
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from .config import Config
 from flask_cors import CORS
 
@@ -15,7 +16,9 @@ from .routes.operator import operator_bp
 from .routes.products import products_bp
 from .routes.auth import auth_bp
 
-load_dotenv()  # carica le variabili dal file .env
+# # Carica .env solo se esiste il file (sviluppo locale)
+# if os.path.exists('.env'):
+#     load_dotenv()
 
 app = Flask(__name__)
 app.config.from_object(Config)  # carica tutte le variabili da Config

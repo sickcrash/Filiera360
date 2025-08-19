@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from flask_jwt_extended import get_jwt_identity
 
-from backend.app.services.batch_service import get_batch_service, get_batch_history_service, upload_batch_service, \
+from ..services.batch_service import get_batch_service, get_batch_history_service, upload_batch_service, \
     update_batch_service
 
 def get_batch_controller():

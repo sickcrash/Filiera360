@@ -1,6 +1,6 @@
 from flask import jsonify, request
 
-from backend.app.services.databoom_service import get_devices, get_signal_averages
+from ..services.databoom_service import get_devices, get_signal_averages
 
 def fetch_devices():
     try:
