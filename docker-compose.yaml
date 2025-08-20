@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - ./.env
+      - backend/.env
     volumes:
       - ./data/jsondb/:/app/jsondb:rw
     networks:
@@ -27,15 +27,15 @@ services:
 
   middleware:
     build:
-      context: .
-      dockerfile: blockchain/chaincode/myapp/Dockerfile
+      context: ./blockchain/chaincode/myapp
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     networks:
       - filiera360_default
       - fabric_test
     volumes:
-      - ./linux_files/fabric-samples/test-network:/test-network:ro
+      - ./blockchain/fabric/fabric-samples/test-network:/app/blockchain/fabric/fabric-samples/test-network:ro
     environment:
       - PEER_ENDPOINT=peer0.org1.example.com:7051
 
