@@ -18,8 +18,8 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: dockerfiles/Dockerfile.frontend
+      context: ./frontend
+      dockerfile: Dockerfile
     networks:
       - filiera360_default
     expose:
