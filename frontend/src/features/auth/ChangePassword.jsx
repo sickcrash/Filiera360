@@ -1,31 +1,31 @@
-import React, { useState } from "react";
-import { Button, Form } from "react-bootstrap";
+import React, { useState } from 'react';
+import { Button, Form } from 'react-bootstrap';
 
 const ChangePassword = () => {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setMessage("All fields are required.");
+      setMessage('All fields are required.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      setMessage("New passwords do not match.");
+      setMessage('New passwords do not match.');
       return;
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/change-password", {
-        method: "POST",
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/change-password', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -36,23 +36,26 @@ const ChangePassword = () => {
       const data = await response.json();
       if (response.ok) {
         setSuccess(true);
-        setMessage("Password changed successfully.");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
+        setMessage('Password changed successfully.');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
       } else {
         setSuccess(false);
-        setMessage(data.message || "Error changing password.");
+        setMessage(data.message || 'Error changing password.');
       }
     } catch (err) {
       setSuccess(false);
-      setMessage("Error: " + err.message);
+      setMessage('Error: ' + err.message);
     }
   };
 
   return (
-    <div className="container mt-5" style={{ width: "50%" }}>
-      <h3 style={{ marginTop: "2vw" }}>🔑 Change Password</h3>
+    <div
+      className="container mt-5"
+      style={{ width: '50%' }}
+    >
+      <h3 style={{ marginTop: '2vw' }}>🔑 Change Password</h3>
       <br />
       <Form onSubmit={handleSubmit}>
         <Form.Group>
@@ -82,14 +85,15 @@ const ChangePassword = () => {
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </Form.Group>
-        <Button type="submit" className="mt-3">
+        <Button
+          type="submit"
+          className="mt-3"
+        >
           Change Password
         </Button>
       </Form>
       {message && (
-        <div className={`mt-3 ${success ? "text-success" : "text-danger"}`}>
-          {message}
-        </div>
+        <div className={`mt-3 ${success ? 'text-success' : 'text-danger'}`}>{message}</div>
       )}
     </div>
   );

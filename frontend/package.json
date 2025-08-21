@@ -29,7 +29,9 @@
     "start": "cross-env PORT=3001 HOST=0.0.0.0 BROWSER=none react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "eslintConfig": {
     "extends": [
@@ -50,6 +52,7 @@
     ]
   },
   "devDependencies": {
+    "prettier": "^3.6.2",
     "typescript": "^4.9.5"
   }
 }
