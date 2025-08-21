@@ -149,7 +149,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
         const idproduct = responseBatch.data.ProductId;
 
         setBatch(responseBatch.data); // Set batch details in state
-        addToRecentlyScanned(responseBatch.data);
+        await addToRecentlyScanned(responseBatch.data);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         //Chiamo il backend per ottenere i dettagli del prodotto
         const responseProduct = await axios.get(`/api/getProduct?productId=${idproduct}`);
@@ -544,15 +544,12 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
       if (liked) {
         // If already liked, remove from favorites
         try {
-          const response = await axios.delete(
-            `/api/unlikeProduct?productId=${product.ID}&userId=${userId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-              },
+          const response = await axios.delete(`/api/unlikeProduct?productId=${product.ID}&userId=${userId}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
-          );
+          });
 
           console.log(`Product ${product.ID} removed from favorites`, response.data);
 
@@ -613,9 +610,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
               <div className="card-body">
                 <Card.Header>
                   <h4>Scan Product 🔎</h4>
-                  <p style={{ color: 'grey' }}>
-                    🔗 Insert the item code manually or either scan/upload a QR code
-                  </p>
+                  <p style={{ color: 'grey' }}>🔗 Insert the item code manually or either scan/upload a QR code</p>
                 </Card.Header>
                 <br />
                 <div className="form-group d-flex align-items-center">
@@ -683,9 +678,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
             <div className="card-body">
               <Card.Header>
                 <h4>Scan Batch 🔎</h4>
-                <p style={{ color: 'grey' }}>
-                  🔗 Insert the item code manually or either scan/upload a QR code
-                </p>
+                <p style={{ color: 'grey' }}>🔗 Insert the item code manually or either scan/upload a QR code</p>
               </Card.Header>
               <br />
               <div className="form-group d-flex align-items-center">
@@ -878,9 +871,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                   style={{ marginBottom: '2vw' }}
                 />
                 <p>
-                  Note: The data marked with <b>(*)</b> is generated automatically by the server
-                  through the blockchain, ensuring transparency and reliability. These values are
-                  not provided by the manufacturer.
+                  Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
+                  ensuring transparency and reliability. These values are not provided by the manufacturer.
                 </p>
                 <button
                   className="btn btn-primary mt-3"
@@ -985,9 +977,8 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                   style={{ marginBottom: '2vw' }}
                 />
                 <p>
-                  Note: The data marked with <b>(*)</b> is generated automatically by the server
-                  through the blockchain, ensuring transparency and reliability. These values are
-                  not provided by the operator.
+                  Note: The data marked with <b>(*)</b> is generated automatically by the server through the blockchain,
+                  ensuring transparency and reliability. These values are not provided by the operator.
                 </p>
                 <button
                   className="btn btn-primary mt-3"
@@ -1156,9 +1147,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                       <Card.Text>
                         <small className="text-muted">ID: {scannedProduct.ID}</small>
                         <br />
-                        <small className="text-muted">
-                          Manufacturer: {scannedProduct.Manufacturer}
-                        </small>
+                        <small className="text-muted">Manufacturer: {scannedProduct.Manufacturer}</small>
                         <br />
                         <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
                       </Card.Text>
@@ -1175,9 +1164,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                         >
                           View Details
                         </button>
-                        <small className="text-muted">
-                          {new Date(scannedProduct.timestamp).toLocaleDateString()}
-                        </small>
+                        <small className="text-muted">{new Date(scannedProduct.timestamp).toLocaleDateString()}</small>
                       </div>
                     </Card.Body>
                   </Card>
@@ -1209,9 +1196,7 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                       <Card.Text>
                         <small className="text-muted">ID: {likedProduct.ID}</small>
                         <br />
-                        <small className="text-muted">
-                          Manufacturer: {likedProduct.Manufacturer}
-                        </small>
+                        <small className="text-muted">Manufacturer: {likedProduct.Manufacturer}</small>
                         <br />
                         <small className="text-muted">Created: {likedProduct.CreationDate}</small>
                       </Card.Text>
@@ -1244,15 +1229,10 @@ const ProductList = ({ onProductSelect, onBatchSelect }) => {
                                 },
                               );
 
-                              console.log(
-                                `Product ${likedProduct.ID} removed from favorites`,
-                                response.data,
-                              );
+                              console.log(`Product ${likedProduct.ID} removed from favorites`, response.data);
 
                               // Update the list of liked products in state
-                              const updatedProducts = likedProducts.filter(
-                                (p) => p.ID !== likedProduct.ID,
-                              );
+                              const updatedProducts = likedProducts.filter((p) => p.ID !== likedProduct.ID);
                               setLikedProducts(updatedProducts);
 
                               // If this is the currently displayed product, update its liked status

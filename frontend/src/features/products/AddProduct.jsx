@@ -116,8 +116,7 @@ const AddProduct = () => {
     setCustomFields(customFields.filter((_, i) => i !== index));
   };
   // Batch
-  const addCustomBatchField = () =>
-    setCustomBatchFields([...customBatchFields, { key: '', value: '' }]);
+  const addCustomBatchField = () => setCustomBatchFields([...customBatchFields, { key: '', value: '' }]);
   const updateCustomBatchField = (index, key, value) => {
     const newBatchFields = [...customBatchFields];
     newBatchFields[index] = { key, value };
@@ -379,9 +378,7 @@ const AddProduct = () => {
           setViewProduct(false);
           break; // Mostra solo il primo QR code, puoi rimuovere se vuoi batch
         } catch (error) {
-          setMessageProduct(
-            error.response?.data?.message || `Failed to upload product ${postData.ID}.`,
-          );
+          setMessageProduct(error.response?.data?.message || `Failed to upload product ${postData.ID}.`);
           setLastAddedProduct(''); // Nascondi QR se errore
           break; // Mostra solo il primo errore
         }
@@ -455,10 +452,7 @@ const AddProduct = () => {
             Object.keys(item).forEach((key) => {
               if (key.toLowerCase().startsWith('customobject')) {
                 try {
-                  Object.assign(
-                    customObj,
-                    typeof item[key] === 'string' ? JSON.parse(item[key]) : item[key],
-                  );
+                  Object.assign(customObj, typeof item[key] === 'string' ? JSON.parse(item[key]) : item[key]);
                 } catch {
                   customObj[key] = item[key];
                 }
@@ -692,8 +686,7 @@ const AddProduct = () => {
                 <Card.Header>
                   <h4>Upload Product 🌱</h4>
                   <p style={{ color: 'grey' }}>
-                    ℹ️ Add your product and complete its details to enhance traceability and
-                    transparency
+                    ℹ️ Add your product and complete its details to enhance traceability and transparency
                     <br />
                     🖼️ Insert and visualize your product with a 3D model
                   </p>
@@ -729,9 +722,7 @@ const AddProduct = () => {
                 )}
                 {!viewProduct && (
                   <>
-                    {messageProduct && (
-                      <p style={{ color: 'red', marginTop: '1vw' }}>{messageProduct}</p>
-                    )}
+                    {messageProduct && <p style={{ color: 'red', marginTop: '1vw' }}>{messageProduct}</p>}
                     <button
                       style={{
                         backgroundColor: '#6c757d',
@@ -918,8 +909,8 @@ const AddProduct = () => {
                           Production Start Date
                           {showInfo && (
                             <div style={{ marginLeft: '10px', fontSize: '0.9em', color: 'grey' }}>
-                              Production Start Date refers to the sowing date or, more generally,
-                              the date when the production for that year’s product begins
+                              Production Start Date refers to the sowing date or, more generally, the date when the
+                              production for that year’s product begins
                             </div>
                           )}
                         </Form.Label>
@@ -1163,8 +1154,8 @@ const AddProduct = () => {
                       <div className="text-center mt-4">
                         <h5>Sensors 🌡️</h5>
                         <p style={{ color: 'grey' }}>
-                          ℹ️ Sensor data are processed and extracted from the Databoom server. To
-                          retrieve it, you need to enter the sowing date and harvest date
+                          ℹ️ Sensor data are processed and extracted from the Databoom server. To retrieve it, you need
+                          to enter the sowing date and harvest date
                           <br />
                         </p>
                         <Button
@@ -1189,8 +1180,7 @@ const AddProduct = () => {
                       <div className="text-center mt-4">
                         <h5>Certifications ✅</h5>
                         <p style={{ color: 'grey' }}>
-                          ℹ️ In order to insert certifications, the product must already have been
-                          uploaded
+                          ℹ️ In order to insert certifications, the product must already have been uploaded
                           <br />
                         </p>
                         <Button
@@ -1255,9 +1245,7 @@ const AddProduct = () => {
                       >
                         Upload Product
                       </Button>
-                      {messageProduct && (
-                        <p style={{ marginTop: '1vw', color: 'red' }}>{messageProduct}</p>
-                      )}
+                      {messageProduct && <p style={{ marginTop: '1vw', color: 'red' }}>{messageProduct}</p>}
                     </Form>
                   </Card.Body>
                 )}
@@ -1271,8 +1259,7 @@ const AddProduct = () => {
                 <Card.Header>
                   <h4>Upload Batch 📦</h4>
                   <p style={{ color: 'grey' }}>
-                    ℹ️ Add your batch and complete its details to enhance traceability and
-                    transparency
+                    ℹ️ Add your batch and complete its details to enhance traceability and transparency
                     <br />
                   </p>
                 </Card.Header>
@@ -1352,9 +1339,7 @@ const AddProduct = () => {
                             cursor: 'pointer',
                           }}
                         >
-                          {csvBatchFile
-                            ? JSON.stringify(csvBatchFile.name)
-                            : 'upload data Batch from CSV file'}
+                          {csvBatchFile ? JSON.stringify(csvBatchFile.name) : 'upload data Batch from CSV file'}
                         </label>
                         <input
                           style={{ display: 'none' }}
@@ -1569,18 +1554,14 @@ const AddProduct = () => {
                             type="text"
                             placeholder="Batch Field Name"
                             value={field.key}
-                            onChange={(e) =>
-                              updateCustomBatchField(index, e.target.value, field.value)
-                            }
+                            onChange={(e) => updateCustomBatchField(index, e.target.value, field.value)}
                             className="me-2"
                           />
                           <Form.Control
                             type="text"
                             placeholder="Value"
                             value={field.value}
-                            onChange={(e) =>
-                              updateCustomBatchField(index, field.key, e.target.value)
-                            }
+                            onChange={(e) => updateCustomBatchField(index, field.key, e.target.value)}
                           />
                           {/* Pulsante di rimozione con icona*/}
                           <button
@@ -1641,15 +1622,11 @@ const AddProduct = () => {
                       <Button
                         variant="primary"
                         type="submit"
-                        disabled={
-                          !idBatch || !productId || !batchNumber || !quantity || !productionDate
-                        }
+                        disabled={!idBatch || !productId || !batchNumber || !quantity || !productionDate}
                       >
                         Upload Batch
                       </Button>
-                      {messageBatch && (
-                        <p style={{ marginTop: '1vw', color: 'red' }}>{messageBatch}</p>
-                      )}
+                      {messageBatch && <p style={{ marginTop: '1vw', color: 'red' }}>{messageBatch}</p>}
                     </Form>
                   </Card.Body>
                 )}
@@ -1678,16 +1655,12 @@ const AddProduct = () => {
                       <Card.Text>
                         <small className="text-muted">ID: {scannedProduct.ID}</small>
                         <br />
-                        <small className="text-muted">
-                          Manufacturer: {scannedProduct.Manufacturer}
-                        </small>
+                        <small className="text-muted">Manufacturer: {scannedProduct.Manufacturer}</small>
                         <br />
                         <small className="text-muted">Created: {scannedProduct.CreationDate}</small>
                       </Card.Text>
                       <div className="d-flex justify-content-between align-items-center">
-                        <small className="text-muted">
-                          {new Date(scannedProduct.timestamp).toLocaleDateString()}
-                        </small>
+                        <small className="text-muted">{new Date(scannedProduct.timestamp).toLocaleDateString()}</small>
                       </div>
                     </Card.Body>
                   </Card>

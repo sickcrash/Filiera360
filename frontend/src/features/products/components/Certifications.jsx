@@ -91,8 +91,7 @@ function Certifications({ productId }) {
                   </Button>
                 </div>
               ) : null}
-              {showAddCertification &&
-              productManufacturer == localStorage.getItem('manufacturer') ? (
+              {showAddCertification && productManufacturer == localStorage.getItem('manufacturer') ? (
                 <AddCertification
                   productId={productId}
                   onAddCertification={addCertification}

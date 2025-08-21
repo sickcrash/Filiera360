@@ -53,9 +53,7 @@ function AddCertification({ productId, onAddCertification }) {
       })
       .catch((error) => {
         console.error('Error adding certification:', error);
-        setMessage(
-          error.response?.data?.message || 'Error adding certification. Please try again.',
-        );
+        setMessage(error.response?.data?.message || 'Error adding certification. Please try again.');
       });
   };
 

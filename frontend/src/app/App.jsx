@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import Login from '../features/auth/Login';
 import SignUp from '../features/auth/SignUp';
 import Account from '../features/account/Account';
-import AddProduct from '../features/products/AddProduct';
+// import AddProduct from '../features/products/AddProduct';
 import ScanProduct from '../features/products/ScanProduct';
 import Navbar from '../components/layout/Navbar';
 import ForgotPassword from '../features/auth/ForgotPassword';
@@ -12,6 +12,7 @@ import ResetPassword from '../features/auth/ResetPassword';
 import AccessDenied from '../features/auth/AccessDenied';
 import ProtectedRoute from '../features/auth/ProtectedRoute';
 import ChangePassword from '../features/auth/ChangePassword';
+import AddProduct from "../features/products/addProduct/AddProduct";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -42,9 +43,7 @@ function App() {
         />
         <Route
           path="/login"
-          element={
-            isLoggedIn ? <Navigate to="/add-product" /> : <Login setIsLoggedIn={setIsLoggedIn} />
-          }
+          element={isLoggedIn ? <Navigate to="/add-product" /> : <Login setIsLoggedIn={setIsLoggedIn} />}
         />
         <Route
           path="/signup"
@@ -72,9 +71,7 @@ function App() {
         />
         <Route
           path="/account"
-          element={
-            isLoggedIn ? <Account setIsLoggedIn={setIsLoggedIn} /> : <Navigate to="/login" />
-          }
+          element={isLoggedIn ? <Account setIsLoggedIn={setIsLoggedIn} /> : <Navigate to="/login" />}
         />
         <Route
           path="/"

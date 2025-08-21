@@ -16,9 +16,7 @@ export const ManageOperators = () => {
         },
       });
       // estrai solo le email dagli oggetti operatori
-      const operatorEmails = (response.data.operators || []).map((op) =>
-        typeof op === 'string' ? op : op.email,
-      );
+      const operatorEmails = (response.data.operators || []).map((op) => (typeof op === 'string' ? op : op.email));
       setOperators(operatorEmails);
     } catch (error) {
       console.error(error);

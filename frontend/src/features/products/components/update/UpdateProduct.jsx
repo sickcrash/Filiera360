@@ -425,8 +425,8 @@ const UpdateProduct = ({ productId, onProductUpdate }) => {
                   <div className="text-center mt-4">
                     <h5>Sensors 🌡️</h5>
                     <p style={{ color: 'grey' }}>
-                      ℹ️ Sensor data are processed and extracted from the Databoom server. To
-                      retrieve it, you need to enter the sowing date and harvest date
+                      ℹ️ Sensor data are processed and extracted from the Databoom server. To retrieve it, you need to
+                      enter the sowing date and harvest date
                       <br />
                     </p>
                     <Button
@@ -440,9 +440,7 @@ const UpdateProduct = ({ productId, onProductUpdate }) => {
                     {showAddSensor && (
                       <AddSensorData
                         productId={productId}
-                        /*onAddSensorData={(data) => console.log("Sensor added:", data)}*/ sowingDate={
-                          sowingDate
-                        }
+                        /*onAddSensorData={(data) => console.log("Sensor added:", data)}*/ sowingDate={sowingDate}
                         harvestDate={harvestDate}
                         onAddSensorData={(data) => setSensorData(data)}
                       />

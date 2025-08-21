@@ -18,19 +18,12 @@ function Navbar() {
   useEffect(() => {
     setRole(localStorage.getItem('role'));
     console.log(localStorage.getItem('role'));
-    if (
-      localStorage.getItem('role') === 'producer' ||
-      localStorage.getItem('role') === 'operator'
-    ) {
+    if (localStorage.getItem('role') === 'producer' || localStorage.getItem('role') === 'operator') {
       setIsProducer(true);
     }
   }, []);
 
-  return isMobile ? (
-    <MobileNavbar isProducer={isProducer} />
-  ) : (
-    <DesktopNavbar isProducer={isProducer} />
-  );
+  return isMobile ? <MobileNavbar isProducer={isProducer} /> : <DesktopNavbar isProducer={isProducer} />;
 }
 
 function DesktopNavbar({ isProducer }) {

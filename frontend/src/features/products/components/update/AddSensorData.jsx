@@ -56,8 +56,7 @@ const AddSensorData = ({ productId, onAddSensorData, sowingDate, harvestDate }) 
 
       const signals = res.data || [];
       const filteredSignals = signals.filter(
-        (signal) =>
-          signal.average !== null && signal.average !== undefined && signal.average !== '',
+        (signal) => signal.average !== null && signal.average !== undefined && signal.average !== '',
       );
       if (filteredSignals.length === 0) {
         const updatedForms = [...deviceForms];
@@ -100,8 +99,7 @@ const AddSensorData = ({ productId, onAddSensorData, sowingDate, harvestDate }) 
 
   const handleAddSensorData = async () => {
     const validForms = deviceForms.filter(
-      (df) =>
-        !df.empty && df.sensor_id && Object.values(df.signalValues).every((val) => val !== ''),
+      (df) => !df.empty && df.sensor_id && Object.values(df.signalValues).every((val) => val !== ''),
     );
     if (validForms.length === 0) {
       setMessage('⚠️ No valid device with sensor data to add.');

@@ -92,9 +92,7 @@ const ChangePassword = () => {
           Change Password
         </Button>
       </Form>
-      {message && (
-        <div className={`mt-3 ${success ? 'text-success' : 'text-danger'}`}>{message}</div>
-      )}
+      {message && <div className={`mt-3 ${success ? 'text-success' : 'text-danger'}`}>{message}</div>}
     </div>
   );
 };
