@@ -12,7 +12,7 @@ import AddSensorData from '../products/components/update/AddSensorData';
 const inputWidth = '30%';
 const placeholderText = '+ add new';
 
-const AddProduct = () => {
+const AddProductOld = () => {
   let navigate = useNavigate();
 
   const [manufacturer, setManufacturer] = useState('');
@@ -168,7 +168,7 @@ const AddProduct = () => {
       );
 
       // Aggiorna lo stato locale se vuoi mostrare la lista anche qui
-      // (opzionale, puoi rimuovere se non serve in AddProduct)
+      // (opzionale, puoi rimuovere se non serve in AddProductOld)
     } catch (error) {
       console.error('Error updating recently searched products:', error);
     }
@@ -1677,4 +1677,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default AddProductOld;

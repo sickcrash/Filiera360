@@ -1,10 +1,10 @@
 // ScanProduct.js
 import React, { useEffect, useState } from 'react';
-import ProductList from '../products/ProductList';
 import DataSensors from './components/DataSensors';
 import Certifications from '../products/components/Certifications';
 // import ProductMovements from './components/ProductMovements';
 import { useNavigate } from 'react-router-dom';
+import ProductList from "./productList/ProductList";
 
 function ScanProduct() {
   const [selectedProduct, setSelectedProduct] = useState(null);
