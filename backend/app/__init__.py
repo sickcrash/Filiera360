@@ -1,5 +1,5 @@
-# import os
 from flask import Flask
+# from werkzeug.middleware.profiler import ProfilerMiddleware
 from flask_mail import Mail
 from flask_jwt_extended import JWTManager
 # from dotenv import load_dotenv
@@ -40,3 +40,5 @@ app.register_blueprint(ledger_bp)
 app.register_blueprint(model_bp)
 app.register_blueprint(operator_bp)
 app.register_blueprint(ai_bp)
+
+# app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5])

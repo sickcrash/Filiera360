@@ -1,8 +1,9 @@
 # Python cache
-__pycache__/
+*.mo
 *.pyc
-*.pyo
-*.pyd
+*.swp
+*.swo
+*.~
 
 # Virtual environments
 env/
@@ -10,19 +11,20 @@ venv/
 .venv/
 
 # Environment variables
-.env
 *.env
 
-.git/
-.gitignore
+.git
+*.gitignore
 
 # IDE / OS
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
 *.idea
 .vscode
 
-Dockerfile
 .dockerignore
+Dockerfile
+docker-compose.yml
+docker-compose-dev.yml
+
+Procfile*

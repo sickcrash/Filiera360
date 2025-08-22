@@ -8,20 +8,14 @@ from flask import current_app
 from ..database_mongo.queries.otp_queries import create_otp, delete_otp_by_user_id, get_otp_by_user_id
 from ..database_mongo.queries.token_queries import get_token, mark_token_as_used
 from ..database_mongo.queries.users_queries import get_user_by_email, get_user_by_manufacturer, create_user, update_user
+from ..utils.bcrypt_utils import hash_password
 from ..utils.otp_utils import generate_otp
 from ..utils.email_utils import send_otp_email
-from ..utils.bcrypt_utils import hash_password
 from ..utils.token_utils import generate_reset_token, verify_reset_token
 
-
 # OTP_LIFETIME = timedelta(minutes=5)
-
-def send_otp(email):
+def send_otp(email, user):
     """Genera e invia un OTP a un utente."""
-    user = get_user_by_email(email)
-    if not user:
-        return jsonify({"message": "User not found."}), 404
-
     otp = generate_otp()
     create_otp(user["_id"], str(otp))
 
@@ -58,7 +52,7 @@ def process_login(email, password):
         })
 
     # Se il flag non è attivo → OTP
-    if send_otp(email):
+    if send_otp(email, user):
         return jsonify({"message": "OTP sent to your email."})
     else:
         return jsonify({"message": "Failed to send OTP."}), 500
