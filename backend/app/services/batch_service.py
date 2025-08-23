@@ -1,9 +1,7 @@
 import requests
 
-from ..utils.auth_utils import verify_product_authorization
 from ..utils.permissions_utils import required_permissions
-from ..database_mongo.queries.users_queries import get_user_by_email
-
+from ..database_mongo.queries.users_queries import get_user_by_email, find_producer_by_operator
 
 def get_batch_service(batch_id):
     if not batch_id:
@@ -33,20 +31,35 @@ def get_batch_history_service(batch_id):
         print("Failed to get batch history:", e)
         return {'message': 'Failed to get batch history.'}, 500
 
-def upload_batch_service(user_email, batch_data):
+
+def process_batch(user_email, batch_data, endpoint, success_message="Batch processed successfully!"):
+    """
+    Funzione generica per upload o update batch.
+    endpoint: URL del middleware
+    success_message: messaggio in caso di successo
+    """
+    # Recupera utente
+    user = get_user_by_email(user_email)
+    if not user:
+        return {"message": "User not found."}, 404
+
     # Controllo permessi
     if not required_permissions(user_email, ['producer', 'operator']):
         return {"message": "Unauthorized: Insufficient permissions."}, 403
 
-    if not batch_data:
-        return {"message": "No batch data provided."}, 400
+    # Controllo dati batch
+    if not batch_data or "ProductId" not in batch_data:
+        return {"message": "No batch data or ProductId provided."}, 400
+
+    product_id = batch_data["ProductId"]
 
     # Controllo autorizzazione al prodotto
-    if not verify_product_authorization(user_email, batch_data.get("ProductId")):
-        return {"message": "Unauthorized: You do not have access to this product."}, 403
+    authorized, error_response = verify_product_authorization(user, product_id)
+    if not authorized:
+        return error_response
 
     # Controllo operatore reale
-    real_operator = get_user_by_email(user_email).get("manufacturer")
+    real_operator = user.get("manufacturer")
     client_operator = batch_data.get("Operator")
     if real_operator != client_operator:
         return {"message": "Unauthorized: Operator mismatch."}, 403
@@ -54,49 +67,58 @@ def upload_batch_service(user_email, batch_data):
     # Assicura che CustomObject esista
     batch_data["CustomObject"] = batch_data.get("CustomObject", {})
 
+    # Chiamata al middleware
     try:
-        # Chiamata al middleware esterno
-        response = requests.post('http://middleware:3000/uploadBatch', json=batch_data)
-        if response.status_code == 200:
-            return {'message': response.json().get('message', 'Batch uploaded successfully!')}, 200
-        else:
-            return {'message': response.json().get('message', 'Failed to upload batch.')}, response.status_code
-    except Exception as e:
-        print("Error uploading batch:", e)
-        return {'message': 'Error uploading batch.', 'error': str(e)}, 500
+        response = requests.post(endpoint, json=batch_data)
+        resp_json = response.json()
+
+        message = resp_json.get(
+            'message',
+            success_message if response.status_code == 200 else 'Operation failed.')
+        return {"message": message}, response.status_code
+    except requests.RequestException as e:
+        print(f"Error calling middleware ({endpoint}): {e}")
+        return {"message": "Internal Server Error", "error": str(e)}, 500
+
+def upload_batch_service(user_email, batch_data):
+    return process_batch(
+        user_email,
+        batch_data,
+        endpoint='http://middleware:3000/uploadBatch',
+        success_message='Batch uploaded successfully!'
+    )
 
 def update_batch_service(user_email, batch_data):
-    if not required_permissions(user_email, ['producer', 'operator']):
-        return {"message": "Unauthorized: Insufficient permissions."}, 403
+    return process_batch(
+        user_email,
+        batch_data,
+        endpoint='http://middleware:3000/api/batch/updateBatch',
+        success_message='Batch updated successfully!'
+    )
 
-    if not batch_data:
-        return {"message": "No batch data provided."}, 400
+def verify_product_authorization(user, product_id):
+    """Verifica che l'utente abbia accesso al prodotto."""
+    if not user or not product_id:
+        return False, ({"message": "Invalid user or product."}, 400)
 
-    if not verify_product_authorization(user_email, batch_data.get("ProductId")):
-        return {"message": "Unauthorized: You do not have access to this product."}, 403
+    # Se è un operator, trova il produttore associato
+    if user.get("flags", [])[1]:  # flags[1] == operator
+        user = find_producer_by_operator(user["email"])
+        if not user:
+            return False, ({"message": "Operator not associated with any producer."}, 403)
 
-    real_operator = get_user_by_email(user_email).get("manufacturer")
-    client_operator = batch_data.get("Operator")
-    if real_operator != client_operator:
-        return {"message": "Unauthorized: Operator mismatch."}, 403
-
-    # Assicura che CustomObject esista
-    batch_data["CustomObject"] = batch_data.get("CustomObject", {})
-
-    print("✅ Autorizzato, procedo con l'aggiornamento del batch...")
-
+    # Chiamata al middleware
     try:
-        print("📢 Invia i dati aggiornati alla blockchain...")
-        response = requests.post('http://middleware:3000/api/batch/updateBatch', json=batch_data)
-        print("📢 Risposta dalla blockchain:", response.status_code, response.text)
+        response = requests.get(f"http://middleware:3000/readProduct?productId={product_id}")
+        if response.status_code != 200:
+            return False, ({"message": "Failed to get product from middleware."}, 500)
 
-        if response.status_code == 200:
-            return {'message': 'Batch updated successfully!'}, 200
-        else:
-            return {'message': 'Failed to update batch.'}, response.status_code
+        product = response.json()
+        if product.get("Manufacturer") != user.get("manufacturer"):
+            return False, ({"message": "Unauthorized: You do not have access to this product."}, 403)
 
-    except Exception as e:
-        print(f"❌ ERRORE nel service update_batch_service: {e}")
-        return {'message': 'Internal Server Error'}, 500
+        return True, None
 
-
+    except requests.RequestException as e:
+        print("Failed to get product:", e)
+        return False, ({"message": "Failed to get product from middleware."}, 500)
