@@ -38,13 +38,10 @@ def process_batch(user_email, batch_data, endpoint, success_message="Batch proce
     endpoint: URL del middleware
     success_message: messaggio in caso di successo
     """
-    # Recupera utente
     user = get_user_by_email(user_email)
-    if not user:
-        return {"message": "User not found."}, 404
 
     # Controllo permessi
-    if not required_permissions(user_email, ['producer', 'operator']):
+    if not required_permissions(user, ['producer', 'operator']):
         return {"message": "Unauthorized: Insufficient permissions."}, 403
 
     # Controllo dati batch

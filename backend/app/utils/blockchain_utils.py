@@ -1,5 +1,4 @@
 import requests
-from flask import jsonify
 
 def verify_manufacturer(product_id, real_manufacturer):
     """
@@ -12,12 +11,12 @@ def verify_manufacturer(product_id, real_manufacturer):
             blockchain_data = blockchain_response.json()
             registered_manufacturer = blockchain_data.get("Manufacturer")
             if not registered_manufacturer:
-                return jsonify({"message": "Manufacturer not found on blockchain."}), 404
+                return {"message": "Manufacturer not found on blockchain."}, 404
             if real_manufacturer != registered_manufacturer:
-                return jsonify({"message": "Unauthorized: Manufacturer mismatch."}), 403
+                return {"message": "Unauthorized: Manufacturer mismatch."}, 403
             return None  # Nessun errore
         else:
-            return jsonify({"message": "Failed to retrieve product from blockchain."}), 500
+            return {"message": "Failed to retrieve product from blockchain."}, 500
     except Exception as e:
         print("Error connecting to blockchain:", e)
-        return jsonify({"message": "Error retrieving product from blockchain."}), 500
+        return {"message": "Error retrieving product from blockchain."}, 500

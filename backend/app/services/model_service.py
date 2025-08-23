@@ -3,13 +3,14 @@ from ..utils.permissions_utils import required_permissions
 from ..database_mongo.queries.models_queries import upsert_model_for_product, get_model_by_blockchain_id
 from ..database_mongo.queries.users_queries import get_user_by_email
 
-
 def upload_model_service(user_email, product_data):
-    if not required_permissions(user_email, ['producer']):
+    user = get_user_by_email(user_email)
+
+    if not required_permissions(user, ['producer']):
         return {"message": "Unauthorized: Insufficient permissions."}, 403
 
     try:
-        real_manufacturer = get_user_by_email(user_email)["manufacturer"]
+        real_manufacturer = user["manufacturer"]
         print("Manufacturer authenticated: ", real_manufacturer)
 
         product_id = product_data.get("ID")
@@ -28,7 +29,7 @@ def upload_model_service(user_email, product_data):
             return {"message": "Missing GLB file"}, 400
 
         print("Uploading 3D model...")
-        upsert_model_for_product(product_id, glbFile, get_user_by_email(user_email)["_id"])
+        upsert_model_for_product(product_id, glbFile, user["_id"])
 
         return {"message": "Model uploaded successfully"}, 201
 

@@ -33,15 +33,15 @@ def fetch_product_history_from_js_server(product_id):
         return {"error": str(e)}
 
 def upload_product_service(product_data, user_identity):
+    user = get_user_by_email(user_identity)
+
     # Controllo permessi
-    if not required_permissions(user_identity, ['producer']):
+    if not required_permissions(user, ['producer']):
         return {"message": "Unauthorized: Insufficient permissions."}, 403
 
     # Verifica produttore autenticato
-    user = get_user_by_email(user_identity)
     real_manufacturer = user["manufacturer"]
     client_manufacturer = product_data.get("Manufacturer")
-
     if real_manufacturer != client_manufacturer:
         return {"message": "Unauthorized: Manufacturer mismatch."}, 403
 
@@ -67,12 +67,13 @@ def upload_product_service(product_data, user_identity):
 
 
 def update_product_service(product_data, user_identity):
+    user = get_user_by_email(user_identity)
+
     # Controllo permessi
-    if not required_permissions(user_identity, ["producer"]):
+    if not required_permissions(user, ["producer"]):
         return {"message": "Unauthorized: Insufficient permissions."}, 403
 
     try:
-        user = get_user_by_email(user_identity)
         real_manufacturer = user["manufacturer"]
 
         product_id = product_data.get("ID")
