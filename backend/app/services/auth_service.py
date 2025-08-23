@@ -1,18 +1,16 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 
-import bcrypt
 from flask import jsonify
 from flask_jwt_extended import create_access_token
-from flask_mail import Message
-from flask import current_app
 # from datetime import timedelta
 
 from ..database_mongo.queries.otp_queries import create_otp, delete_otp_by_user_id, get_otp_by_user_id
 from ..database_mongo.queries.token_queries import get_token, mark_token_as_used
 from ..database_mongo.queries.users_queries import get_user_by_email, get_user_by_manufacturer, create_user, update_user
+from ..utils.auth_utils import build_auth_response
 from ..utils.bcrypt_utils import hash_password, check_password
 from ..utils.otp_utils import generate_otp
-from ..utils.email_utils import send_otp_email
+from ..utils.email_utils import send_otp_email, send_email, send_reset_email
 from ..utils.token_utils import generate_reset_token, verify_reset_token
 
 # Thread pool per operazioni CPU-intensive
@@ -24,7 +22,7 @@ def send_otp(email, user):
     otp = generate_otp()
     create_otp(user["_id"], str(otp))
 
-    return send_otp_email(email, otp)
+    return send_otp_email(email, otp, executor)
 
 def process_login(email, password):
     user = get_user_by_email(email)
@@ -52,13 +50,7 @@ def process_login(email, password):
     # Se l'utente ha il flag user attivo
     if user["flags"][2]: # flags[2] == user
         token = create_access_token(email)
-        return jsonify({
-            "message": "Login successful",
-            "access_token": token,
-            "role": user['role'],
-            "manufacturer": user['manufacturer'],
-            "email": email
-        })
+        return jsonify(build_auth_response(user, email, token, "Login successful"))
 
     # Se il flag non è attivo → OTP
     if send_otp(email, user):
@@ -145,26 +137,20 @@ def create_user_with_token(email, hashed_password, manufacturer, role, invite_to
 
 def verify_otp_service(data):
     email = data.get('email')
-    otp = data.get('otp')
+    otp = str(data.get("otp", ""))  # converti in stringa
 
     user = get_user_by_email(email)
     if not user:
         return {"message": "User not found."}, 404
 
     otp_entry = get_otp_by_user_id(user["_id"])
-    if not otp_entry or otp_entry["otp"] != str(otp):
+    if not otp_entry or otp_entry["otp"] != otp:
         return {"message": "Invalid or expired OTP."}, 400
 
     delete_otp_by_user_id(user["_id"])
     token = create_access_token(email)
 
-    return {
-        "message": "OTP validated successfully.",
-        "access_token": token,
-        "role": user['role'],
-        "manufacturer": user['manufacturer'],
-        "email": email
-    }, 200
+    return build_auth_response(user, email, token, "OTP validated successfully."), 200
 
 def change_password_service(data, user_identity):
     current_password = data.get('currentPassword')
@@ -178,11 +164,11 @@ def change_password_service(data, user_identity):
         return {"message": "User not found."}, 404
 
     # Verifica la password attuale
-    if not bcrypt.checkpw(current_password.encode('utf-8'), user['password'].encode('utf-8')):
+    if not check_password(current_password, user['password']):
         return {"message": "Current password is incorrect."}, 401
 
     # Aggiorna la password
-    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    hashed_password = hash_password(new_password)
     update_user(user["_id"], {"password": hashed_password})
 
     return {"message": "Password changed successfully."}, 200
@@ -196,33 +182,37 @@ def forgot_password_service(data):
     token = generate_reset_token(email)
     reset_url = f"/api/reset-password/{token}"
 
-    msg = Message(
-        'Password Reset Request',
-        sender='noreply@example.com',
-        recipients=[email]
-    )
-    msg.body = f"To reset your password, visit the following link: {reset_url}"
-    mail = current_app.extensions.get('mail')
-    mail.send(msg)
+    success = send_reset_email(email, reset_url, executor)
 
-    return {"message": "Password reset email sent"}, 200
+    # send_email non indica se l’email è stata davvero inviata,
+    # ma solo se il task è stato inviato al pool correttamente.
+    if success:
+        return {"message": "Password reset email sent"}, 200
+    return {"message": "Failed to send password reset email"}, 500
 
 def reset_password_service(token, request):
     email = verify_reset_token(token)
-    if email is None:
+    if not email:
         return {"message": "Invalid or expired token"}, 400
 
-    if request.method == 'POST':
-        if request.content_type != 'application/json':
-            return {"message": "Content-Type must be application/json"}, 415
+    if request.method != 'POST':
+        # Se vuoi solo POST per reset password
+        return {"message": "Token is valid, proceed with password reset"}, 200
 
-        new_password = request.json.get('password')
-        if not new_password:
-            return {"message": "Password is required"}, 400
+    # Verifica Content-Type
+    if request.content_type != 'application/json':
+        return {"message": "Content-Type must be application/json"}, 415
 
-        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    new_password = request.json.get('password')
+    if not new_password:
+        return {"message": "Password is required"}, 400
 
-        update_user(get_user_by_email(email)["_id"], {"password": hashed_password})
-        return {"message": "Password updated successfully"}, 200
+    # Recupera utente
+    user = get_user_by_email(email)
+    if not user:
+        return {"message": "User not found"}, 404
 
-    return {"message": "Token is valid, proceed with password reset"}, 200
+    hashed_password = hash_password(new_password)
+    update_user(user["_id"], {"password": hashed_password})
+
+    return {"message": "Password updated successfully"}, 200
