@@ -1,5 +1,6 @@
 import json
-import requests
+
+from backend.app.utils.http_client import http_post
 
 def init_ledger_service():
     # Leggi il file sampleData.json
@@ -14,7 +15,7 @@ def init_ledger_service():
     errors = []
     for product in products:
         try:
-            response = requests.post('http://middleware:3000/uploadProduct', json=product)
+            response = http_post('http://middleware:3000/uploadProduct', json=product)
             if response.status_code != 200:
                 errors.append({
                     "product_id": product.get("ID"),

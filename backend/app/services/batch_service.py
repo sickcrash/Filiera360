@@ -1,5 +1,6 @@
 import requests
 
+from ..utils.http_client import http_get, http_post
 from ..utils.permissions_utils import required_permissions
 from ..database_mongo.queries.users_queries import get_user_by_email, find_producer_by_operator
 
@@ -8,7 +9,7 @@ def get_batch_service(batch_id):
         return {'message': 'Batch ID is required'}, 400
 
     try:
-        response = requests.get(f'http://middleware:3000/readBatch?batchId={batch_id}')
+        response = http_get(f'http://middleware:3000/readBatch?batchId={batch_id}')
         if response.status_code == 200:
             return response.json(), 200
         else:
@@ -22,7 +23,7 @@ def get_batch_history_service(batch_id):
         return {'message': 'Batch ID is required'}, 400
 
     try:
-        response = requests.get(f'http://middleware:3000/batchHistory?batchId={batch_id}')
+        response = http_get(f'http://middleware:3000/batchHistory?batchId={batch_id}')
         if response.status_code == 200:
             return response.json(), 200
         else:
@@ -32,7 +33,7 @@ def get_batch_history_service(batch_id):
         return {'message': 'Failed to get batch history.'}, 500
 
 
-def process_batch(user_email, batch_data, endpoint, success_message="Batch processed successfully!"):
+def _process_batch(user_email, batch_data, endpoint, success_message="Batch processed successfully!"):
     """
     Funzione generica per upload o update batch.
     endpoint: URL del middleware
@@ -66,7 +67,7 @@ def process_batch(user_email, batch_data, endpoint, success_message="Batch proce
 
     # Chiamata al middleware
     try:
-        response = requests.post(endpoint, json=batch_data)
+        response = http_post(endpoint, json=batch_data)
         resp_json = response.json()
 
         message = resp_json.get(
@@ -78,7 +79,7 @@ def process_batch(user_email, batch_data, endpoint, success_message="Batch proce
         return {"message": "Internal Server Error", "error": str(e)}, 500
 
 def upload_batch_service(user_email, batch_data):
-    return process_batch(
+    return _process_batch(
         user_email,
         batch_data,
         endpoint='http://middleware:3000/uploadBatch',
@@ -86,7 +87,7 @@ def upload_batch_service(user_email, batch_data):
     )
 
 def update_batch_service(user_email, batch_data):
-    return process_batch(
+    return _process_batch(
         user_email,
         batch_data,
         endpoint='http://middleware:3000/api/batch/updateBatch',
@@ -106,7 +107,7 @@ def verify_product_authorization(user, product_id):
 
     # Chiamata al middleware
     try:
-        response = requests.get(f"http://middleware:3000/readProduct?productId={product_id}")
+        response = http_get(f"http://middleware:3000/readProduct?productId={product_id}")
         if response.status_code != 200:
             return False, ({"message": "Failed to get product from middleware."}, 500)
 

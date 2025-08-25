@@ -26,7 +26,6 @@ def send_otp(email, user):
 
 def process_login(email, password):
     user = get_user_by_email(email)
-
     if not user:
         return jsonify({"message": "Invalid email or password"}), 401
 
@@ -74,7 +73,7 @@ def process_signup(data):
         return {"message": "All fields are required"}, 400
 
     # Esegui controlli in parallelo per email e manufacturer
-    email_exists, manufacturer_exists = check_existing_user_parallel(email, manufacturer)
+    email_exists, manufacturer_exists = _check_existing_user_parallel(email, manufacturer)
 
     if email_exists:
         return {"message": "Email already exists"}, 409
@@ -83,7 +82,7 @@ def process_signup(data):
 
     # Controlla il token di invito per i produttori
     if role == "producer":
-        token_validation = validate_producer_token(invite_token)
+        token_validation = _validate_producer_token(invite_token)
         if token_validation:
             return token_validation
 
@@ -91,14 +90,14 @@ def process_signup(data):
     hashed_password = hash_password(password)
 
     # Crea utente con transazione
-    success = create_user_with_token(email, hashed_password, manufacturer, role, invite_token)
+    success = _create_user_with_token(email, hashed_password, manufacturer, role, invite_token)
 
     if success:
         return {"message": "User registered successfully"}, 201
     else:
         return {"message": "Registration failed"}, 500
 
-def check_existing_user_parallel(email, manufacturer):
+def _check_existing_user_parallel(email, manufacturer):
     """Controlla email e manufacturer in parallelo"""
     with ThreadPoolExecutor(max_workers=2) as executor:
         email_future = executor.submit(get_user_by_email, email)
@@ -109,7 +108,7 @@ def check_existing_user_parallel(email, manufacturer):
 
     return email_exists, manufacturer_exists
 
-def validate_producer_token(invite_token):
+def _validate_producer_token(invite_token):
     if not invite_token:
         return {"message": "The invite token is required for producers."}, 400
 
@@ -121,7 +120,7 @@ def validate_producer_token(invite_token):
 
     return None
 
-def create_user_with_token(email, hashed_password, manufacturer, role, invite_token):
+def _create_user_with_token(email, hashed_password, manufacturer, role, invite_token):
     try:
         create_user(email, hashed_password, manufacturer, role)
 
@@ -175,7 +174,6 @@ def change_password_service(data, user_identity):
 
 def forgot_password_service(data):
     email = data.get('email')
-
     if not email or not get_user_by_email(email):
         return {"message": "Email not found"}, 404
 
