@@ -65,11 +65,13 @@ services:
   test:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.test
+      dockerfile: backend/Dockerfile.test
     environment:
       - MONGO_URI=mongodb://mongodb:27017
     networks:
       - filiera360_default
+    ports:
+      - "8089:8089"
     depends_on:
       - backend
       - mongodb

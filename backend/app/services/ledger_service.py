@@ -1,6 +1,6 @@
 import json
 
-from backend.app.utils.http_client import http_post
+from ..utils.http_client import http_post
 
 def init_ledger_service():
     # Leggi il file sampleData.json

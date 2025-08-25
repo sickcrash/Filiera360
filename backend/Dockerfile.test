@@ -1,0 +1,17 @@
+FROM python:3.10-slim
+
+# Imposto la working directory dentro al container
+WORKDIR /app
+
+# Installo le dipendenze necessarie ai test
+RUN pip install requests pymongo psutil
+
+# Copio solo quello che serve per i test
+COPY backend/app/tests/route_testing.py ./tests/route_testing.py
+COPY backend/app/database_mongo ./database_mongo
+
+# Dico a Python dove cercare i moduli
+ENV PYTHONPATH=/app
+
+# Avvio direttamente lo script di test
+CMD ["python", "tests/route_testing.py"]

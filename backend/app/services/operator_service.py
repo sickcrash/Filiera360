@@ -10,8 +10,10 @@ def get_operators_service(user_email):
     operators = user.get("operators") or []
     # Serializza ObjectId in stringa
     for op in operators:
-        if "operatorId" in op and not isinstance(op["operatorId"], str):
-            op["operatorId"] = str(op["operatorId"])
+        operator_id = op.get("operatorId")
+        if operator_id and not isinstance(operator_id, str):
+            op["operatorId"] = str(operator_id)
+
     return {"operators": operators}, 200
 
 def add_operator_service(user_email, data):

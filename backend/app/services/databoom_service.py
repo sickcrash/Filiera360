@@ -1,7 +1,7 @@
 import requests
 from flask import current_app
 
-from backend.app.utils.http_client import http_get, http_post
+from ..utils.http_client import http_get, http_post
 
 def databoom_login():
     """Effettua il login su Databoom e restituisce il JWT."""

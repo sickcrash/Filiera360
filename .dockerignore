@@ -24,5 +24,7 @@ Thumbs.db
 *.idea
 .vscode
 
-Dockerfile
 .dockerignore
+Dockerfile
+docker-compose.yml
+docker-compose-dev.yml
