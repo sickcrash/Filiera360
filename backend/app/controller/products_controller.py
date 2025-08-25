@@ -3,12 +3,11 @@ from flask_jwt_extended import get_jwt_identity
 
 from ..database_mongo.queries.recently_searched_queries import get_recently_searched
 from ..database_mongo.queries.users_queries import get_user_by_email
-from ..services.products_service import fetch_product_from_js_server, fetch_product_history_from_js_server, \
+from ..services.products_service import get_product_service ,get_product_history_service, \
     upload_product_service, update_product_service, like_product_service, unlike_product_service, \
     get_liked_products_service, add_recently_searched_service, add_sensor_data_service, add_movement_data_service, \
     add_certification_data_service, verify_product_compliance_service, get_all_movements_service, \
     get_all_sensor_data_service, get_all_certifications_service
-
 
 def get_product_controller():
     product_id = request.args.get('productId')
@@ -16,7 +15,7 @@ def get_product_controller():
         return jsonify({'message': 'productId is required'}), 400
 
     print(f"ATTEMPTING TO CONNECT TO JS SERVER FOR PRODUCT ID: {product_id}")
-    product_data = fetch_product_from_js_server(product_id)
+    product_data = get_product_service(product_id)
 
     if "error" in product_data:
         print("Error fetching product:", product_data["error"])
@@ -31,7 +30,7 @@ def get_product_history_controller():
         return jsonify({'message': 'productId is required'}), 400
 
     print(f"ATTEMPTING TO CONNECT TO JS SERVER FOR PRODUCT ID: {product_id}")
-    product_history_data = fetch_product_history_from_js_server(product_id)
+    product_history_data = get_product_history_service(product_id)
 
     if "error" in product_history_data:
         print("Error fetching product history:", product_history_data["error"])
@@ -53,7 +52,8 @@ def update_product_controller():
     return jsonify(result), status
 
 def like_product_controller():
-    result, status = like_product_service(request)
+    data = request.json
+    result, status = like_product_service(data, request)
     return jsonify(result), status
 
 def unlike_product_controller():

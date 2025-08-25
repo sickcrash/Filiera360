@@ -6,7 +6,7 @@ def verify_manufacturer(product_id, real_manufacturer):
     Restituisce None se la verifica passa, altrimenti jsonify con errore e status code.
     """
     try:
-        blockchain_response = requests.get(f'http://localhost:3000/readProduct?productId={product_id}')
+        blockchain_response = requests.get(f'http://middleware:3000/readProduct?productId={product_id}')
         if blockchain_response.status_code == 200:
             blockchain_data = blockchain_response.json()
             registered_manufacturer = blockchain_data.get("Manufacturer")

@@ -3,6 +3,7 @@ from flask import current_app
 import requests
 
 from ..utils.blockchain_utils import verify_manufacturer
+from ..utils.http_client import http_post, http_get, add_cors_headers
 from ..utils.permissions_utils import required_permissions
 from ..utils.product_utils import get_product_changes
 from ..database_mongo.queries.history_queries import get_last_history_entry, add_history_entry
@@ -11,18 +12,18 @@ from ..database_mongo.queries.products_queries import create_product
 from ..database_mongo.queries.recently_searched_queries import add_recently_searched
 from ..database_mongo.queries.users_queries import get_user_by_email
 
-def fetch_product_from_js_server(product_id):
+def get_product_service(product_id):
     try:
-        response = requests.get(f'http://middleware:3000/readProduct?productId={product_id}')
+        response = http_get(f'http://middleware:3000/readProduct?productId={product_id}')
         if response.status_code == 200:
             return response.json()
         return {"error": f"Failed to fetch product, status {response.status_code}"}
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
 
-def fetch_product_history_from_js_server(product_id):
+def get_product_history_service(product_id):
     try:
-        response = requests.get(f'http://middleware:3000/productHistory?productId={product_id}')
+        response = http_get(f'http://middleware:3000/productHistory?productId={product_id}')
         print(f"JS server responded with status {response.status_code}")
 
         if response.status_code == 200:
@@ -33,6 +34,9 @@ def fetch_product_history_from_js_server(product_id):
         return {"error": str(e)}
 
 def upload_product_service(product_data, user_identity):
+    """
+    Gestisce l'upload di un prodotto su middleware/blockchain e salva il prodotto su MongoDB.
+    """
     user = get_user_by_email(user_identity)
 
     # Controllo permessi
@@ -40,90 +44,115 @@ def upload_product_service(product_data, user_identity):
         return {"message": "Unauthorized: Insufficient permissions."}, 403
 
     # Verifica produttore autenticato
-    real_manufacturer = user["manufacturer"]
+    real_manufacturer = user.get("manufacturer")
     client_manufacturer = product_data.get("Manufacturer")
     if real_manufacturer != client_manufacturer:
         return {"message": "Unauthorized: Manufacturer mismatch."}, 403
 
-    # Assicurarsi che i campi opzionali siano valorizzati
-    product_data["SensorData"] = product_data.get("SensorData", [])
-    product_data["CustomObject"] = product_data.get("CustomObject", {})
+    # Valorizza i campi opzionali
+    product_data.setdefault("SensorData", [])
+    product_data.setdefault("CustomObject", {})
 
+    # Invio al middleware esterno
     try:
-        # Invio al middleware esterno
-        response = requests.post('http://middleware:3000/uploadProduct', json=product_data)
-
-        if response.status_code == 200:
-            try:
-                create_product(product_data["ID"], user["_id"])
-            except Exception as e:
-                print("Errore salvataggio MongoDB:", e)
-            return {'message': response.json().get('message', 'Product uploaded successfully!')}, 200
-        else:
-            return {'message': response.json().get('message', 'Failed to upload product.')}, response.status_code
-
+        response = http_post('http://middleware:3000/uploadProduct', json=product_data)
     except Exception as e:
-        return {'message': 'Error uploading product.', 'error': str(e)}, 500
+        return {"message": "Error connecting to middleware.", "error": str(e)}, 500
+
+    # Gestione risposta middleware
+    if response.status_code != 200:
+        return {"message": response.json().get('message', 'Failed to upload product.')}, response.status_code
+
+    # Salvataggio su MongoDB
+    try:
+        create_product(product_data["ID"], user["_id"])
+    except Exception as e:
+        print("Errore salvataggio MongoDB:", e)
+        return {"message": "Product uploaded to middleware but failed to save locally."}, 500
+
+    return {'message': response.json().get('message', 'Product uploaded successfully!')}, 200
 
 
 def update_product_service(product_data, user_identity):
+    """
+    Aggiorna un prodotto sia su blockchain (middleware) che sul database locale,
+    tracciando le modifiche nella history.
+    """
     user = get_user_by_email(user_identity)
-
-    # Controllo permessi
     if not required_permissions(user, ["producer"]):
         return {"message": "Unauthorized: Insufficient permissions."}, 403
 
+    product_id = product_data.get("ID")
+    if not product_id:
+        return {"message": "Product ID is required."}, 400
+
+    # --- Verifica Manufacturer ---
+    real_manufacturer = user.get("manufacturer")
+    if not real_manufacturer:
+        return {"message": "User manufacturer not found."}, 400
+
+    # Controllo con blockchain
+    manufacturer_check = verify_manufacturer(product_id, real_manufacturer)
+    if manufacturer_check:  # errore già pronto (es. jsonify con 403/404)
+        return manufacturer_check
+
+    # Controllo coerenza con i dati inviati
+    client_manufacturer = product_data.get("Manufacturer")
+    if client_manufacturer != real_manufacturer:
+        return {"message": "Unauthorized: Manufacturer mismatch."}, 403
+
     try:
-        real_manufacturer = user["manufacturer"]
-
-        product_id = product_data.get("ID")
-        if not product_id:
-            return {"message": "Product ID is required."}, 400
-
-        # Verifica che il manufacturer corrisponda
-        verification_result = verify_manufacturer(product_id, real_manufacturer)
-        if verification_result:
-            return verification_result  # ritorna errore già formattato
-
-        client_manufacturer = product_data.get("Manufacturer")
-        if real_manufacturer != client_manufacturer:
-            return {"message": "Unauthorized: Manufacturer mismatch."}, 403
-
-        # Chiamata al middleware esterno
-        response = requests.post(
+        # --- Chiamata al middleware esterno ---
+        response = http_post(
             "http://middleware:3000/api/product/updateProduct",
             json=product_data
         )
+    except requests.RequestException as e:
+        print(f"[update_product_service] Middleware error: {e}")
+        return {"message": "Middleware request failed.", "error": str(e)}, 502
 
-        if response.status_code != 200:
-            return {"message": "Failed to update product."}, response.status_code
+    if response.status_code != 200:
+        return {"message": "Failed to update product."}, response.status_code
 
-        # --- Gestione salvataggio modifiche su DB ---
-        last_history = get_last_history_entry(product_id)
-        old_data = {}
-        if last_history and last_history.get("changes"):
-            for change in last_history["changes"]:
-                field = change["field"]
-                if field.startswith("CustomObject."):
-                    _, subkey = field.split(".", 1)
-                    if "CustomObject" not in old_data:
-                        old_data["CustomObject"] = {}
-                    old_data["CustomObject"][subkey] = change["newValue"]
-                else:
-                    old_data[field] = change["newValue"]
-
+        # --- Salvataggio modifiche su DB ---
+    try:
+        old_data = _extract_last_known_data(product_id)
         changes = get_product_changes(old_data, product_data)
         if changes:
             add_history_entry(product_id, user["_id"], changes)
 
-        return {"message": "Product updated successfully!"}, 200
-
     except Exception as e:
-        print("Error updating product:", e)
+        print(f"[update_product_service] Error: {e}")
         return {"message": "Error updating product.", "error": str(e)}, 500
 
+    return {"message": "Product updated successfully!"}, 200
+
+
+def _extract_last_known_data(product_id):
+    """
+    Ricostruisce lo stato precedente del prodotto a partire dall'ultima history entry.
+    Restituisce un dict con i valori attuali conosciuti.
+    """
+    last_history = get_last_history_entry(product_id)
+    old_data = {}
+
+    if not last_history or not last_history.get("changes"):
+        return old_data
+
+    for change in last_history["changes"]:
+        field = change["field"]
+        new_value = change["newValue"]
+
+        if field.startswith("CustomObject."):
+            _, subkey = field.split(".", 1)
+            old_data.setdefault("CustomObject", {})[subkey] = new_value
+        else:
+            old_data[field] = new_value
+
+    return old_data
+
 # Funzione per aggiungere un prodotto ai liked products
-def like_product_service(request):
+def like_product_service(data, request):
     if request.method == 'OPTIONS':
         response = {'message': 'OK'}
         response.headers.add('Access-Control-Allow-Origin', '*')
@@ -131,7 +160,6 @@ def like_product_service(request):
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         return response, 200
 
-    data = request.json
     product_data = data.get('product')
     user_id = data.get('userId', None)
     if not user_id or not product_data or not product_data.get('ID'):
@@ -155,27 +183,21 @@ def like_product_service(request):
 def unlike_product_service(request):
     product_id = request.args.get('productId')
     user_id = request.args.get('userId', None)
+
     if not user_id or not product_id:
         response = {"message": "Missing userId or productId"}
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'DELETE')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response, 400
+        return add_cors_headers(response), 400
 
-    liked = get_liked_products_by_user(user_id)
-    if not any(p["blockchainProductId"] == product_id for p in liked):
+    liked_products = get_liked_products_by_user(user_id)
+    liked_ids = {p["blockchainProductId"] for p in liked_products}
+
+    if product_id not in liked_ids:
         response = {"message": "Product not found in liked products"}
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'DELETE')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response, 404
+        return add_cors_headers(response), 404
 
     unlike_a_product(user_id, product_id)
     response = {"message": "Product removed from liked products"}
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Methods', 'DELETE')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    return response, 200
+    return add_cors_headers(response), 200
 
 # Funzione per ottenere i liked products di un utente
 def get_liked_products_service(request):
@@ -212,13 +234,12 @@ def add_sensor_data_service(sensor_data, manufacturer):
         return {"body": verification_result[0], "status": verification_result[1]}
 
     try:
-        response = requests.post(f'http://middleware:3000/api/product/sensor', json=sensor_data)
+        response = http_post(f'http://middleware:3000/api/product/sensor', json=sensor_data)
         if response.status_code == 200:
             return {"body": {"message": "Product uploaded successfully!"}, "status": 200}
         return {"body": {"message": "Failed to upload product."}, "status": 500}
     except Exception as e:
         return {"body": {"message": f"Error uploading product: {str(e)}"}, "status": 500}
-
 
 def add_movement_data_service(movement_data, manufacturer):
     product_id = movement_data.get("id")
@@ -230,7 +251,7 @@ def add_movement_data_service(movement_data, manufacturer):
         return {"body": verification_result[0], "status": verification_result[1]}
 
     try:
-        response = requests.post(f'http://middleware:3000/api/product/movement', json=movement_data)
+        response = http_post(f'http://middleware:3000/api/product/movement', json=movement_data)
         if response.status_code == 200:
             return {"body": {"message": "Product uploaded successfully!"}, "status": 200}
         return {"body": {"message": "Failed to upload product."}, "status": 500}
@@ -248,7 +269,7 @@ def add_certification_data_service(certification_data, manufacturer):
         return {"body": verification_result[0], "status": verification_result[1]}
 
     try:
-        response = requests.post(f'http://middleware:3000/api/product/certification', json=certification_data)
+        response = http_post(f'http://middleware:3000/api/product/certification', json=certification_data)
         if response.status_code == 200:
             return {"body": {"message": "Product uploaded successfully!"}, "status": 200}
         return {"body": {"message": "Failed to upload product."}, "status": 500}
@@ -258,7 +279,7 @@ def add_certification_data_service(certification_data, manufacturer):
 
 def verify_product_compliance_service(compliance_data):
     try:
-        response = requests.post(f'http://middleware:3000/api/product/verifyProductCompliance', json=compliance_data)
+        response = http_post(f'http://middleware:3000/api/product/verifyProductCompliance', json=compliance_data)
         if response.status_code == 200:
             return {"body": {"message": "Product is compliant!"}, "status": 200}
         return {"body": {"message": "Product is not compliant"}, "status": 500}
@@ -268,7 +289,7 @@ def verify_product_compliance_service(compliance_data):
 
 def get_all_movements_service(product_id):
     try:
-        response = requests.get(f'http://middleware:3000/api/product/getMovements?productId={product_id}')
+        response = http_get(f'http://middleware:3000/api/product/getMovements?productId={product_id}')
         if response.status_code == 200:
             return {"body": response.json(), "status": 200}
         return {"body": {"message": "Failed to get movements"}, "status": 500}
@@ -277,51 +298,34 @@ def get_all_movements_service(product_id):
 
 def get_all_sensor_data_service(product_id):
     try:
-        response = requests.get(f'http://middleware:3000/api/product/getSensorData?productId={product_id}')
+        response = http_get(f'http://middleware:3000/api/product/getSensorData?productId={product_id}')
         if response.status_code != 200:
             return {"body": {"message": "Failed to get sensor data from middleware"}, "status": 500}
 
+        sensor_data = response.json()
+
+        # --- Login Databoom ---
         api_base = current_app.config['DATABOOM_API_BASE']
         username = current_app.config['DATABOOM_USERNAME']
         password = current_app.config['DATABOOM_PASSWORD']
 
-        sensor_data = response.json()
-
-        # login Databoom
-        login_response = requests.post(
-            f"{api_base}/auth/signin",
-            json={"username": username, "password": password}
-        )
-
-        if login_response.status_code != 200:
-            return {"body": {"message": "Databoom login failed", "details": login_response.json()}, "status": 500}
-
-        jwt_token = login_response.json().get("jwt")
+        jwt_token = _databoom_login(api_base, username, password)
         if not jwt_token:
-            return {"body": {"message": "Databoom login failed, no JWT token received"}, "status": 500}
+            return {"body": {"message": "Databoom login failed"}, "status": 500}
 
         headers = {"Authorization": f"Bearer {jwt_token}"}
-        updated_sensor_data = []
 
+        # --- Recupero info sensori e segnali ---
+        updated_sensor_data = []
         for sensor_item in sensor_data:
             sensor_id = sensor_item.get("SensorId")
-
-            # recupero info sensore
-            sensor_info_resp = requests.get(f"{api_base}/devices/{sensor_id}", headers=headers)
-            if sensor_info_resp.status_code == 200:
-                sensor_name = sensor_info_resp.json().get("description", "Unnamed")
-            else:
-                sensor_name = "Unnamed"
+            sensor_name = _get_databoom_description(f"{api_base}/devices/{sensor_id}", headers)
 
             # rinomina segnali
             signals = sensor_item.get("Signals", {})
             renamed_signals = {}
             for signal_id, signal_value in signals.items():
-                signal_info_resp = requests.get(f"{api_base}/signals/{signal_id}", headers=headers)
-                if signal_info_resp.status_code == 200:
-                    signal_name = signal_info_resp.json().get("description", "Unnamed")
-                else:
-                    signal_name = "Unnamed"
+                signal_name = _get_databoom_description(f"{api_base}/signals/{signal_id}", headers)
                 renamed_signals[signal_name] = signal_value
 
             updated_sensor_data.append({
@@ -334,9 +338,31 @@ def get_all_sensor_data_service(product_id):
     except Exception as e:
         return {"body": {"message": f"Failed to get sensor data: {str(e)}"}, "status": 500}
 
+
+def _databoom_login(api_base, username, password):
+    """Effettua il login su Databoom e restituisce il JWT, o None in caso di errore"""
+    try:
+        response = http_post(f"{api_base}/auth/signin", json={"username": username, "password": password})
+        if response.status_code != 200:
+            return None
+        return response.json().get("jwt")
+    except Exception:
+        return None
+
+
+def _get_databoom_description(url, headers):
+    """Recupera la descrizione di un device o signal, fallback a 'Unnamed'"""
+    try:
+        resp = http_get(url, headers=headers)
+        if resp.status_code == 200:
+            return resp.json().get("description", "Unnamed")
+    except Exception:
+        pass
+    return "Unnamed"
+
 def get_all_certifications_service(product_id):
     try:
-        response = requests.get(f'http://middleware:3000/api/product/getCertifications?productId={product_id}')
+        response = http_get(f'http://middleware:3000/api/product/getCertifications?productId={product_id}')
         if response.status_code == 200:
             return {"body": response.json(), "status": 200}
         return {"body": {"message": "Failed to get certifications"}, "status": 500}
