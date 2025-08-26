@@ -14,14 +14,12 @@ def get_product_controller():
     if not product_id:
         return jsonify({'message': 'productId is required'}), 400
 
-    print(f"ATTEMPTING TO CONNECT TO JS SERVER FOR PRODUCT ID: {product_id}")
     product_data = get_product_service(product_id)
 
     if "error" in product_data:
         print("Error fetching product:", product_data["error"])
         return jsonify({'message': 'Failed to get product.', 'error': product_data["error"]}), 500
 
-    print("Success:", product_data)
     return jsonify(product_data)
 
 def get_product_history_controller():
@@ -29,14 +27,12 @@ def get_product_history_controller():
     if not product_id:
         return jsonify({'message': 'productId is required'}), 400
 
-    print(f"ATTEMPTING TO CONNECT TO JS SERVER FOR PRODUCT ID: {product_id}")
     product_history_data = get_product_history_service(product_id)
 
     if "error" in product_history_data:
         print("Error fetching product history:", product_history_data["error"])
         return jsonify({'message': 'Failed to get product history.', 'error': product_history_data["error"]}), 500
 
-    print("Success:", product_history_data)
     return jsonify(product_history_data)
 
 def upload_product_controller():
