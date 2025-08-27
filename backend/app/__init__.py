@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 # from dotenv import load_dotenv
 from .config import Config
 from flask_cors import CORS
+from .extensions import executor
 
 from .routes.views import views_bp
 from .routes.ai import ai_bp

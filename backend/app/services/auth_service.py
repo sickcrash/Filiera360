@@ -1,5 +1,3 @@
-from concurrent.futures.thread import ThreadPoolExecutor
-
 from flask import jsonify
 from flask_jwt_extended import create_access_token
 # from datetime import timedelta
@@ -7,14 +5,12 @@ from flask_jwt_extended import create_access_token
 from ..database_mongo.queries.otp_queries import create_otp, delete_otp_by_user_id, get_otp_by_user_id
 from ..database_mongo.queries.token_queries import get_token, mark_token_as_used
 from ..database_mongo.queries.users_queries import get_user_by_email, get_user_by_manufacturer, create_user, update_user
+from ..extensions import executor
 from ..utils.auth_utils import build_auth_response
 from ..utils.bcrypt_utils import hash_password, check_password
 from ..utils.otp_utils import generate_otp
 from ..utils.email_utils import send_otp_email, send_email, send_reset_email
 from ..utils.token_utils import generate_reset_token, verify_reset_token
-
-# Thread pool per operazioni CPU-intensive
-executor = ThreadPoolExecutor(max_workers=4)
 
 # OTP_LIFETIME = timedelta(minutes=5)
 def send_otp(email, user):
@@ -99,12 +95,11 @@ def process_signup(data):
 
 def _check_existing_user_parallel(email, manufacturer):
     """Controlla email e manufacturer in parallelo"""
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        email_future = executor.submit(get_user_by_email, email)
-        manufacturer_future = executor.submit(get_user_by_manufacturer, manufacturer)
+    email_future = executor.submit(get_user_by_email, email)
+    manufacturer_future = executor.submit(get_user_by_manufacturer, manufacturer)
 
-        email_exists = email_future.result() is not None
-        manufacturer_exists = manufacturer_future.result() is not None
+    email_exists = email_future.result() is not None
+    manufacturer_exists = manufacturer_future.result() is not None
 
     return email_exists, manufacturer_exists
 

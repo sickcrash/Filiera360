@@ -4,7 +4,6 @@ from flask_jwt_extended import get_jwt_identity
 from ..services.auth_service import process_login, process_signup, verify_otp_service, change_password_service, \
     forgot_password_service, reset_password_service
 
-
 def login():
     data = request.get_json()
     if not data or not data.get("email") or not data.get("password"):
