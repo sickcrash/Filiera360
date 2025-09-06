@@ -25,7 +25,9 @@ def process_login(email, password):
     if not user:
         return jsonify({"message": "Invalid email or password"}), 401
 
-    if not check_password(password, user["password"]):
+    # Delego la verifica al thread pool
+    future = executor.submit(check_password, password, user["password"])
+    if not future.result():  # qui aspetto, ma senza bloccare il main thread Flask
         return jsonify({"message": "Invalid email or password"}), 401
 
     """ # Se la 2FA è abilitata, invia il codice OTP
@@ -66,13 +68,13 @@ def process_signup(data):
     if not all([email, manufacturer, password]):
         return {"message": "All fields are required"}, 400
 
-    # Controlla se l'email è già registrata
-    if get_user_by_email(email):
-        return jsonify({"message": "Email already exists"}), 409
+    # Esegui controlli in parallelo per email e manufacturer
+    email_exists, manufacturer_exists = _check_existing_user_parallel(email, manufacturer)
 
-    # Controlla se il manufacturer è già registrato
-    if get_user_by_manufacturer(manufacturer):
-        return jsonify({"message": "Manufacturer already exists"}), 409
+    if email_exists:
+        return {"message": "Email already exists"}, 409
+    if manufacturer_exists:
+        return {"message": "Manufacturer already exists"}, 409
 
     # Controlla il token di invito per i produttori
     if role == "producer":
@@ -90,6 +92,16 @@ def process_signup(data):
         return {"message": "User registered successfully"}, 201
     else:
         return {"message": "Registration failed"}, 500
+
+def _check_existing_user_parallel(email, manufacturer):
+    """Controlla email e manufacturer in parallelo"""
+    email_future = executor.submit(get_user_by_email, email)
+    manufacturer_future = executor.submit(get_user_by_manufacturer, manufacturer)
+
+    email_exists = email_future.result() is not None
+    manufacturer_exists = manufacturer_future.result() is not None
+
+    return email_exists, manufacturer_exists
 
 def _validate_producer_token(invite_token):
     if not invite_token:
