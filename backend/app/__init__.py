@@ -1,5 +1,5 @@
 from flask import Flask
-from werkzeug.middleware.profiler import ProfilerMiddleware
+# from werkzeug.middleware.profiler import ProfilerMiddleware
 from flask_mail import Mail
 from flask_jwt_extended import JWTManager
 # from dotenv import load_dotenv
@@ -42,4 +42,6 @@ app.register_blueprint(model_bp)
 app.register_blueprint(operator_bp)
 app.register_blueprint(ai_bp)
 
-app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5])
+
+# Profilation per capire i tempi di risposta di ongi api chiamata (in fase di test abilitarlo)
+# app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5])

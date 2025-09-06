@@ -16,7 +16,7 @@ def send_email(subject: str, recipients: list, body: str, executor, sender: str 
 
         # Submit al pool passato come parametro
         executor.submit(send_async_email, current_app._get_current_object(), msg)
-        return True
+        return True # ← Ritorna SUBITO, senza aspettare
     except Exception as e:
         current_app.logger.error(f"Error sending email: {e}")
         return False

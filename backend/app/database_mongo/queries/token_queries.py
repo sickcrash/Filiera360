@@ -17,6 +17,13 @@ def mark_token_as_used(token, used_by_email):
     )
     return result.modified_count > 0
 
+def mark_token_as_not_used(token, used_by_email):
+    result = invite_tokens.update_one(
+        {"token": token},
+        {"$set": {"used": False, "usedBy": used_by_email}}
+    )
+    return result.modified_count > 0
+
 def get_tokens_by_inviter(invited_by):
     return list(invite_tokens.find({"invitedBy": ObjectId(invited_by)}))
 

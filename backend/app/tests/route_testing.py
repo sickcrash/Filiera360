@@ -7,6 +7,7 @@ import statistics
 
 from database_mongo.queries.users_queries import get_user_by_email
 from database_mongo.queries.otp_queries import get_otp_by_user_id
+from database_mongo.queries.token_queries import mark_token_as_not_used
 
 BASE_URL = "http://backend:5000"
 
@@ -60,19 +61,33 @@ def warmup(session):
     """Chiama le route principali una volta per eliminare cold start"""
     print("Warm-up start...")
     try:
-        # Signup fittizio
-        email = f"warmup_{uuid.uuid4().hex[:6]}@example.com"
-        manufacturer = f"Warmup_{unique}"
+        # auth senza otp
+        unique = str(uuid.uuid4())[:8]
+        email = f"user_{unique}@example.com"
+        manufacturer = f"Manuf_{unique}"
 
-        # auth
         test_signup(session, email, role="user", manufacturer=manufacturer)
         test_login(session, email)
 
-        product_id = f"WARMUP_PROD_{uuid.uuid4().hex[:6]}"
+        # auth con otp
+        producer_unique = str(uuid.uuid4())[:8]
+        producer_email = f"producer_{producer_unique}@example.com"
+        producer_manufacturer = f"ProducerManuf_{producer_unique}"
 
-        #product
-        test_add_product(session, None, product_id, manufacturer)
-        test_get_product(session, None, product_id)
+        test_signup(session, producer_email, role="producer", invite_token="INVITE456", manufacturer=producer_manufacturer)
+        test_login(session, producer_email)
+
+        otp = get_otp_for_user(producer_email)
+        producer_token = None
+        if otp:
+            producer_token = test_verify_otp(session, producer_email, otp)
+
+        # Creazione prodotti con il producer loggato
+        product_id = f"PROD_TEST_{str(uuid.uuid4())[:8]}"
+        test_add_product(session, producer_token, product_id, producer_manufacturer)
+        test_get_product(session, producer_token, product_id)
+
+        mark_token_as_not_used("INVITE456", producer_email)
 
     except Exception as e:
         print(f"Warm-up failed: {e}")
@@ -197,8 +212,8 @@ def summarize_times(label, times):
 if __name__ == "__main__":
     session = requests.Session()
 
-    warmup(session)
     wait_for_backend(session, BASE_URL)
+    warmup(session)
 
     # Avvia monitoraggio risorse
     monitor_thread = threading.Thread(target=monitor_resources, daemon=True)
@@ -251,6 +266,8 @@ if __name__ == "__main__":
             getprod_times.append(test_get_product(session, producer_token, product_id))
         else:
             getprod_times.append(None)
+
+    mark_token_as_not_used("INVITE456", producer_email)
 
     # Stop monitoraggio risorse
     monitoring = False
